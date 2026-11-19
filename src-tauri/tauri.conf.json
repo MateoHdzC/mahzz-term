@@ -29,12 +29,8 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src blob:; frame-src blob: http://asset.localhost; connect-src ipc: http://ipc.localhost",
-      "devCsp": null,
-      "assetProtocol": {
-        "enable": true,
-        "scope": []
-      }
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src blob:; frame-src blob: http://127.0.0.1:*; connect-src ipc: http://ipc.localhost",
+      "devCsp": null
     }
   },
   "bundle": {

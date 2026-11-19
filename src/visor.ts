@@ -1,4 +1,4 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import {
   bracketMatching,
@@ -466,20 +466,26 @@ export class PanelVisor {
     }
   }
 
-  // La página corre en un marco aislado: sus scripts funcionan, pero no pueden tocar la terminal.
+  // Como Live Server: un servidor local sirve todo el proyecto, así cargan el CSS, el JS
+  // y las imágenes aunque estén en otras carpetas, y la página se recarga sola al guardar.
+  // Corre en otro origen (127.0.0.1) y aislada: no puede tocar la terminal.
   private async mostrarWeb(documento: Documento): Promise<void> {
+    let direccion: string;
     try {
-      await invoke("permitir_vista_html", { ruta: documento.ruta });
+      direccion = await invoke<string>("servir_html", { ruta: documento.ruta });
     } catch (error) {
       documento.contenido.replaceChildren(nota(t("No se pudo abrir: {0}", String(error))));
       return;
     }
+    const actual = documento.contenido.querySelector<HTMLIFrameElement>("iframe.visor__web");
+    // Si ya se está mostrando, la propia página se recarga sola cuando cambia algo.
+    if (actual?.dataset.direccion === direccion && actual.isConnected) return;
     const marco = document.createElement("iframe");
     marco.className = "visor__web";
     marco.title = nombreDe(documento.ruta);
-    marco.setAttribute("sandbox", "allow-scripts allow-forms allow-modals allow-popups");
-    // La fecha en la dirección evita que se vea una versión vieja guardada en caché.
-    marco.src = `${convertFileSrc(documento.ruta)}?v=${documento.fecha}`;
+    marco.dataset.direccion = direccion;
+    marco.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-modals allow-popups");
+    marco.src = direccion;
     documento.contenido.replaceChildren(marco);
   }
 

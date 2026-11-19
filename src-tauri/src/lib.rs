@@ -7,6 +7,7 @@ mod explorador;
 mod google;
 mod procesos;
 mod pty;
+mod servidor;
 mod sesiones;
 mod ventanas;
 
@@ -68,7 +69,6 @@ pub fn iniciar() {
             explorador::leer_binario,
             explorador::leer_texto,
             explorador::mover_rutas,
-            explorador::permitir_vista_html,
             explorador::renombrar_ruta,
             entorno::carpeta_usuario,
             entorno::comandos_powershell,
@@ -94,6 +94,7 @@ pub fn iniciar() {
             pty::pausar_sesion,
             pty::adjuntar_sesion,
             pty::programas_sesiones,
+            servidor::servir_html,
             sesiones::borrar_sesion_guardada,
             sesiones::listar_sesiones,
             ventanas::abrir_ventana,

@@ -68,6 +68,7 @@ pub fn iniciar() {
             explorador::leer_binario,
             explorador::leer_texto,
             explorador::mover_rutas,
+            explorador::permitir_vista_html,
             explorador::renombrar_ruta,
             entorno::carpeta_usuario,
             entorno::comandos_powershell,

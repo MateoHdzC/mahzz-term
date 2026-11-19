@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import {
   bracketMatching,
@@ -23,7 +23,7 @@ import { tags } from "@lezer/highlight";
 import { avisar, confirmar } from "./dialogos";
 import { t } from "./i18n";
 
-type Tipo = "codigo" | "markdown" | "imagen" | "video" | "audio" | "pdf" | "hoja" | "word" | "binario";
+type Tipo = "codigo" | "markdown" | "html" | "imagen" | "video" | "audio" | "pdf" | "hoja" | "word" | "binario";
 
 interface Documento {
   ruta: string;
@@ -53,6 +53,7 @@ interface DatosTexto {
 
 const EXTENSIONES: Record<string, Tipo> = {
   md: "markdown", markdown: "markdown", mdx: "markdown",
+  html: "html", htm: "html", xhtml: "html",
   png: "imagen", jpg: "imagen", jpeg: "imagen", gif: "imagen", webp: "imagen", bmp: "imagen", ico: "imagen", svg: "imagen", avif: "imagen",
   mp4: "video", webm: "video", mov: "video", m4v: "video",
   mp3: "audio", wav: "audio", ogg: "audio", flac: "audio", m4a: "audio", opus: "audio",
@@ -296,7 +297,7 @@ export class PanelVisor {
       crlf: false,
       bom: false,
       fecha: 0,
-      modo: tipo === "markdown" ? "vista" : "codigo",
+      modo: tipo === "markdown" || tipo === "html" ? "vista" : "codigo",
       url: null,
       cambioAfuera: false,
     };
@@ -346,23 +347,28 @@ export class PanelVisor {
     this.ruta.textContent = documento.ruta;
     this.ruta.title = documento.ruta;
     documento.pestana.classList.toggle("visor__pestana--sucia", documento.sucio);
-    const editable = documento.tipo === "codigo" || (documento.tipo === "markdown" && documento.modo === "codigo");
+    const conVista = documento.tipo === "markdown" || documento.tipo === "html";
     this.botonGuardar.hidden = !documento.sucio;
-    this.botonModo.hidden = documento.tipo !== "markdown";
-    this.botonModo.textContent = documento.modo === "vista" ? t("Editar") : t("Vista");
+    this.botonModo.hidden = !conVista;
+    if (documento.tipo === "html") this.botonModo.textContent = documento.modo === "vista" ? t("Código") : t("Web");
+    else this.botonModo.textContent = documento.modo === "vista" ? t("Editar") : t("Vista");
+    // La vista web carga el archivo del disco: con cambios sin guardar muestra la última versión guardada.
+    const webDesactualizada = documento.tipo === "html" && documento.modo === "vista" && documento.sucio;
     this.aviso.textContent = documento.cambioAfuera
       ? t("Cambió afuera")
-      : documento.sucio
-        ? t("Cambios sin guardar")
-        : editable && documento.vista
-          ? ""
+      : webDesactualizada
+        ? t("Web de lo guardado")
+        : documento.sucio
+          ? t("Cambios sin guardar")
           : "";
     this.aviso.classList.toggle("visor__aviso--afuera", documento.cambioAfuera);
   }
 
   private async cargar(documento: Documento, recargando = false): Promise<void> {
     try {
-      if (documento.tipo === "codigo" || documento.tipo === "markdown") await this.cargarTexto(documento, recargando);
+      if (documento.tipo === "codigo" || documento.tipo === "markdown" || documento.tipo === "html") {
+        await this.cargarTexto(documento, recargando);
+      }
       else await this.cargarBinario(documento);
     } catch (error) {
       documento.contenido.replaceChildren(nota(t("No se pudo abrir: {0}", String(error))));
@@ -438,7 +444,9 @@ export class PanelVisor {
 
   private async mostrarTexto(documento: Documento): Promise<void> {
     if (!documento.vista) return;
-    if (documento.tipo === "markdown" && documento.modo === "vista") {
+    if (documento.tipo === "html" && documento.modo === "vista") {
+      await this.mostrarWeb(documento);
+    } else if (documento.tipo === "markdown" && documento.modo === "vista") {
       const [{ marked }] = await Promise.all([import("marked")]);
       const html = await limpiarHtml(await marked.parse(documento.vista.state.doc.toString()));
       const lectura = document.createElement("article");
@@ -458,9 +466,26 @@ export class PanelVisor {
     }
   }
 
+  // La página corre en un marco aislado: sus scripts funcionan, pero no pueden tocar la terminal.
+  private async mostrarWeb(documento: Documento): Promise<void> {
+    try {
+      await invoke("permitir_vista_html", { ruta: documento.ruta });
+    } catch (error) {
+      documento.contenido.replaceChildren(nota(t("No se pudo abrir: {0}", String(error))));
+      return;
+    }
+    const marco = document.createElement("iframe");
+    marco.className = "visor__web";
+    marco.title = nombreDe(documento.ruta);
+    marco.setAttribute("sandbox", "allow-scripts allow-forms allow-modals allow-popups");
+    // La fecha en la dirección evita que se vea una versión vieja guardada en caché.
+    marco.src = `${convertFileSrc(documento.ruta)}?v=${documento.fecha}`;
+    documento.contenido.replaceChildren(marco);
+  }
+
   private async alternarModo(): Promise<void> {
     const documento = this.activo;
-    if (!documento || documento.tipo !== "markdown") return;
+    if (!documento || (documento.tipo !== "markdown" && documento.tipo !== "html")) return;
     documento.modo = documento.modo === "vista" ? "codigo" : "vista";
     await this.mostrarTexto(documento);
     this.pintarBarra();
@@ -580,6 +605,7 @@ export class PanelVisor {
     documento.guardado = texto;
     documento.sucio = false;
     documento.cambioAfuera = false;
+    if (documento.modo === "vista") await this.mostrarTexto(documento);
     if (documento === this.activo) this.pintarBarra();
     else documento.pestana.classList.remove("visor__pestana--sucia");
     avisar(t("Guardado: {0}", nombreDe(documento.ruta)));

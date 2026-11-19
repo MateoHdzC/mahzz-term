@@ -289,6 +289,10 @@ const INGLES: Record<string, string> = {
   "Copiar (Ctrl+C)": "Copy (Ctrl+C)",
   "Pegar (Ctrl+V)": "Paste (Ctrl+V)",
   "Renombrar (F2)": "Rename (F2)",
+  // Vista web de HTML
+  "Web de lo guardado": "Web of the saved version",
+  "Código": "Code",
+  "Web": "Web",
   // Pestañas a un costado
   "Posición de las pestañas": "Tab position",
   "Arriba": "Top",

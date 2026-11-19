@@ -5,6 +5,7 @@ Todas las versiones de MazzTerm. Las fechas usan el formato año-mes-día.
 ## [0.3.0] - 2026-11-19
 
 ### Agregado
+- **Vista web de HTML**: los `.html` se abren en el visor mostrando la página como en el navegador, con un botón para alternar entre **Web** y **Código**. Carga el CSS, el JS y las imágenes enlazadas, y se actualiza al guardar. La página corre aislada y solo puede leer la carpeta de ese archivo.
 - **Pestañas a un costado**: en Ajustes → Apariencia → "Posición de las pestañas" se elige Arriba, A la izquierda o A la derecha. Al costado se reordenan arrastrando hacia arriba o abajo.
 - **Visor y editor de archivos** en un panel lateral que se agranda arrastrando su borde. Un clic en un archivo del árbol lo abre en una pestaña.
   - Código con colores según el lenguaje, números de línea, búsqueda y plegado. Se edita ahí mismo y se guarda con el botón **Guardar** o `Ctrl+S`. Respeta los finales de línea y la marca BOM del archivo.

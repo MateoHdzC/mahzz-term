@@ -6,7 +6,7 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use tauri::{async_runtime::spawn_blocking, ipc::Response};
+use tauri::{async_runtime::spawn_blocking, ipc::Response, AppHandle, Manager};
 use windows::{
     core::PCWSTR,
     Win32::UI::Shell::{
@@ -124,6 +124,19 @@ pub async fn leer_binario(ruta: String) -> Result<Response, String> {
     })
     .await
     .map_err(texto_error)?
+}
+
+// La vista web de un HTML necesita leer su CSS, JS e imágenes con rutas relativas.
+// Se habilita solo la carpeta de ese HTML (o el archivo solo, si está en la raíz de un disco).
+#[tauri::command]
+pub fn permitir_vista_html(app: AppHandle, ruta: String) -> Result<(), String> {
+    let archivo = Path::new(&ruta);
+    let alcance = app.asset_protocol_scope();
+    match archivo.parent() {
+        Some(carpeta) if carpeta.parent().is_some() => alcance.allow_directory(carpeta, true),
+        _ => alcance.allow_file(archivo),
+    }
+    .map_err(texto_error)
 }
 
 #[tauri::command]

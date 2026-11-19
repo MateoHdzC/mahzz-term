@@ -133,6 +133,15 @@ function seccionApariencia(): HTMLElement[] {
       ),
     ),
     fila(t("Cursor con parpadeo"), interruptor("parpadeo")),
+    fila(
+      t("Posición de las pestañas"),
+      lista(
+        [["arriba", t("Arriba")], ["izquierda", t("A la izquierda")], ["derecha", t("A la derecha")]],
+        ajustes().posicionPestanas,
+        (posicion) => void cambiarAjustes({ posicionPestanas: posicion as Ajustes["posicionPestanas"] }),
+      ),
+      t("A un costado entran más pestañas y se leen mejor los nombres."),
+    ),
   ];
 }
 

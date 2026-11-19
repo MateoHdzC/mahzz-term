@@ -11,6 +11,7 @@ export interface Ajustes {
   parpadeo: boolean;
   scrollback: number;
   restaurarPestanas: boolean;
+  posicionPestanas: "arriba" | "izquierda" | "derecha";
   avisarComandos: boolean;
   segundosAviso: number;
   avisarPegado: boolean;
@@ -30,6 +31,7 @@ const VALORES_INICIALES: Ajustes = {
   parpadeo: true,
   scrollback: 10_000,
   restaurarPestanas: true,
+  posicionPestanas: "arriba",
   avisarComandos: true,
   segundosAviso: 30,
   avisarPegado: true,

@@ -2590,3 +2590,93 @@ textarea.dialogo__entrada {
   color: var(--texto);
   background: color-mix(in srgb, var(--acento) 22%, transparent);
 }
+
+/* Pestañas a un costado: columna a la izquierda o a la derecha */
+.cuerpo > .archivos {
+  order: 1;
+}
+
+.cuerpo > .contenido {
+  order: 2;
+}
+
+.cuerpo > .visor {
+  order: 3;
+}
+
+.cuerpo > .cambios {
+  order: 4;
+}
+
+.lateral-pestanas {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  order: 0;
+  width: 210px;
+  padding: 6px;
+  background: var(--fondo-barra);
+  border-right: 1px solid var(--borde);
+}
+
+.lateral-pestanas--derecha {
+  order: 5;
+  border-right: 0;
+  border-left: 1px solid var(--borde);
+}
+
+.lateral-pestanas .pestanas {
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.lateral-pestanas .pestana {
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+.lateral-pestanas .pestana--activa,
+.lateral-pestanas .pestana--activa:hover {
+  background: color-mix(in srgb, var(--acento) 14%, var(--fondo));
+  border-color: var(--borde);
+}
+
+/* La marca de la pestaña activa pasa de arriba al borde izquierdo */
+.lateral-pestanas .pestana--activa::before {
+  top: 8px;
+  right: auto;
+  bottom: 8px;
+  left: -1px;
+  width: 3px;
+  height: auto;
+  border-radius: 0 2px 2px 0;
+}
+
+.lateral-pestanas--derecha .pestana--activa::before {
+  right: -1px;
+  left: auto;
+  border-radius: 2px 0 0 2px;
+}
+
+.lateral-pestanas .pestana--arrastrando {
+  z-index: 2;
+}
+
+.lateral-pestanas .boton-nueva {
+  align-self: stretch;
+  justify-content: start;
+  width: auto;
+  height: 30px;
+  margin: 4px 0 0;
+  padding-left: 12px;
+}

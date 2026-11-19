@@ -8,7 +8,7 @@
 
 - **Bloques de comandos**: cada comando queda agrupado con su salida, su duración y su código de error. Se pueden copiar, repetir o buscar.
 - **Editor de comandos**: resaltado de sintaxis, varios cursores, autocompletado y una barra de contexto con la carpeta, la rama de git y el tipo de proyecto.
-- **Pestañas y paneles**: divisiones horizontales y verticales, colores por pestaña y la opción de arrastrar una pestaña a una ventana nueva.
+- **Pestañas y paneles**: divisiones horizontales y verticales, colores por pestaña, pestañas arriba o en una columna a un costado y la opción de arrastrar una pestaña a una ventana nueva.
 - **Agentes activos**: un botón (✦, `Ctrl+Shift+A`) muestra los agentes que corren en la ventana (Claude Code, Codex, Gemini CLI, Aider…) y si están trabajando o esperando tu respuesta. Te avisa con una notificación cuando un agente termina mientras mirás otra cosa.
 - **Revisión de cambios**: un panel (`Ctrl+Shift+G`) lista los archivos que cambiaron en el repositorio, con el diff de cada uno. Desde ahí podés aceptarlos (`git add`) o revertirlos.
 - **Sesiones**: `mahzz --resume` te deja elegir una sesión anterior y vuelve a abrir sus pestañas, paneles y carpetas. Si había un Claude Code abierto, el panel queda con `claude --continue` listo para ejecutar.

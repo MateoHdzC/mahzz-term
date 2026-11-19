@@ -4,7 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { PanelAgentes } from "./agentes";
 import { PanelArchivos } from "./archivos";
 import { ACCIONES_DE_BLOQUES, accionDeTecla, type Accion } from "./atajos";
-import { cargarAjustes } from "./ajustes";
+import { ajustes, cargarAjustes } from "./ajustes";
 import { abrirAjustes, type SeccionAjustes } from "./ajustesUI";
 import { alCambiarCuenta, cerrarSesion, iniciarSesion, perfilActual, sincronizarAhora } from "./cuenta";
 import { abrirMenu, avisar, confirmar, type ColorMenu, type OpcionMenu } from "./dialogos";
@@ -74,6 +74,7 @@ export class GestorPestanas {
   private readonly inicioSesion = Date.now();
 
   constructor() {
+    this.aplicarPosicionPestanas();
     elemento("nueva-pestana").addEventListener("click", () => void this.nuevaPestana());
     elemento("alternar-archivos").addEventListener("click", () => this.archivos.alternar());
     elemento("alternar-cambios").addEventListener("click", () => this.cambios.alternar());
@@ -136,7 +137,26 @@ export class GestorPestanas {
     abrirAjustes(seccion, () => this.recuperarFoco());
   }
 
+  // Las pestañas pueden ir arriba (en la barra de la ventana) o en una columna a un costado.
+  private aplicarPosicionPestanas(): void {
+    const posicion = ajustes().posicionPestanas;
+    const lateral = elemento("lateral-pestanas");
+    const nueva = elemento("nueva-pestana");
+    const vertical = posicion === "izquierda" || posicion === "derecha";
+    if (vertical) {
+      if (this.barra.parentElement !== lateral) lateral.append(this.barra, nueva);
+    } else if (this.barra.parentElement === lateral) {
+      elemento("alternar-cambios").after(this.barra, nueva);
+    }
+    lateral.hidden = !vertical;
+    lateral.classList.toggle("lateral-pestanas--derecha", posicion === "derecha");
+    document.body.classList.toggle("pestanas-verticales", vertical);
+    this.barra.setAttribute("aria-orientation", vertical ? "vertical" : "horizontal");
+    this.activa?.elemento.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }
+
   aplicarAjustes(): void {
+    this.aplicarPosicionPestanas();
     for (const pestana of this.pestanas) {
       for (const panel of pestana.paneles) panel.aplicarAjustes();
     }
@@ -365,7 +385,9 @@ export class GestorPestanas {
     this.activar(pestana);
 
     const raiz = pestana.elemento;
-    const agarre = inicio.clientX - raiz.getBoundingClientRect().left;
+    const vertical = document.body.classList.contains("pestanas-verticales");
+    const caja = raiz.getBoundingClientRect();
+    const agarre = vertical ? inicio.clientY - caja.top : inicio.clientX - caja.left;
     let arrastrando = false;
     raiz.setPointerCapture(inicio.pointerId);
 
@@ -378,15 +400,20 @@ export class GestorPestanas {
       const otras = this.pestanas.filter((otra) => otra !== pestana);
       const destino = otras.filter((otra) => {
         const caja = otra.elemento.getBoundingClientRect();
-        return caja.left + caja.width / 2 < evento.clientX;
+        return vertical ? caja.top + caja.height / 2 < evento.clientY : caja.left + caja.width / 2 < evento.clientX;
       }).length;
       if (this.pestanas.indexOf(pestana) !== destino) {
         otras.splice(destino, 0, pestana);
         this.pestanas = otras;
         this.barra.append(...this.pestanas.map((actual) => actual.elemento));
       }
-      const origen = this.barra.getBoundingClientRect().left + raiz.offsetLeft - this.barra.scrollLeft;
-      raiz.style.transform = `translateX(${evento.clientX - agarre - origen}px)`;
+      if (vertical) {
+        const origen = this.barra.getBoundingClientRect().top + raiz.offsetTop - this.barra.scrollTop;
+        raiz.style.transform = `translateY(${evento.clientY - agarre - origen}px)`;
+      } else {
+        const origen = this.barra.getBoundingClientRect().left + raiz.offsetLeft - this.barra.scrollLeft;
+        raiz.style.transform = `translateX(${evento.clientX - agarre - origen}px)`;
+      }
     };
 
     const soltar = (evento: PointerEvent) => {

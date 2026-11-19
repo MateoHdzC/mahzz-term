@@ -5,6 +5,7 @@ Todas las versiones de MazzTerm. Las fechas usan el formato año-mes-día.
 ## [0.3.0] - 2026-11-19
 
 ### Agregado
+- **Pestañas a un costado**: en Ajustes → Apariencia → "Posición de las pestañas" se elige Arriba, A la izquierda o A la derecha. Al costado se reordenan arrastrando hacia arriba o abajo.
 - **Visor y editor de archivos** en un panel lateral que se agranda arrastrando su borde. Un clic en un archivo del árbol lo abre en una pestaña.
   - Código con colores según el lenguaje, números de línea, búsqueda y plegado. Se edita ahí mismo y se guarda con el botón **Guardar** o `Ctrl+S`. Respeta los finales de línea y la marca BOM del archivo.
   - Los cambios sin guardar se marcan con un punto en la pestaña. Al cerrar la pestaña o la ventana, pregunta qué hacer.

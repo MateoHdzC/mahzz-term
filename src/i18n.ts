@@ -289,6 +289,12 @@ const INGLES: Record<string, string> = {
   "Copiar (Ctrl+C)": "Copy (Ctrl+C)",
   "Pegar (Ctrl+V)": "Paste (Ctrl+V)",
   "Renombrar (F2)": "Rename (F2)",
+  // Pestañas a un costado
+  "Posición de las pestañas": "Tab position",
+  "Arriba": "Top",
+  "A la izquierda": "Left",
+  "A la derecha": "Right",
+  "A un costado entran más pestañas y se leen mejor los nombres.": "On the side, more tabs fit and names are easier to read.",
   // Sesiones
   "Reanudar sesión": "Resume session",
   "Reanudar una sesión anterior": "Resume a previous session",

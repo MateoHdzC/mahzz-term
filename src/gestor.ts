@@ -14,6 +14,7 @@ import type { Panel } from "./panel";
 import { abrirGuardados, abrirHistorial, abrirPaleta, guardarComando, type ApiPaleta } from "./paleta";
 import { Pestana, type DatosPestana, type Sentido } from "./pestana";
 import { PanelCambios } from "./cambios";
+import { PanelVisor } from "./visor";
 import { elegirSesion, listarSesiones, prepararParaReanudar, type SesionGuardada } from "./sesiones";
 
 const COLORES: ColorMenu[] = [
@@ -46,11 +47,13 @@ export class GestorPestanas {
     abrirAjustes: (seccion) => this.abrirPantallaAjustes(seccion),
   };
   private temporizadorSesion = 0;
-  private readonly archivos = new PanelArchivos(
-    elemento("archivos"),
-    elemento("alternar-archivos"),
-    () => this.activa?.activo ?? null,
-  );
+  private readonly visor = new PanelVisor(elemento("visor"), { alCerrar: () => this.activa?.activo.enfocar() });
+  private readonly archivos = new PanelArchivos(elemento("archivos"), elemento("alternar-archivos"), {
+    panel: () => this.activa?.activo ?? null,
+    abrirArchivo: (ruta) => void this.visor.abrir(ruta),
+    alMoverRuta: (vieja, nueva) => this.visor.alMoverRuta(vieja, nueva),
+    alBorrarRuta: (ruta) => this.visor.alBorrarRuta(ruta),
+  });
   private readonly cambios = new PanelCambios(
     elemento("cambios"),
     elemento("alternar-cambios"),
@@ -227,6 +230,8 @@ export class GestorPestanas {
     if (document.querySelector("dialog[open], .menu")) return;
     if (document.activeElement instanceof HTMLInputElement) return;
     if (window.getSelection()?.isCollapsed === false) return;
+    // Si estabas en el visor o en el árbol de archivos, el foco se queda ahí.
+    if (document.activeElement?.closest("#visor, #archivos")) return;
     this.activa?.activo.enfocar();
   }
 
@@ -479,6 +484,14 @@ export class GestorPestanas {
 
   // La usa el botón de cerrar y también Alt+F4.
   async confirmarCierreVentana(): Promise<boolean> {
+    if (this.visor.hayCambiosSinGuardar()) {
+      const descartar = await confirmar(
+        t("Hay archivos sin guardar"),
+        t("Tenés cambios sin guardar en el visor. Si cerrás ahora, se pierden."),
+        t("Cerrar sin guardar"),
+      );
+      if (!descartar) return false;
+    }
     const paneles = this.pestanas.flatMap((pestana) => pestana.paneles);
     const seguir = await this.confirmarCierre(paneles, t("¿Cerrar esta ventana?"), t("Cerrar ventana"));
     if (!seguir) this.activa?.activo.enfocar();
@@ -503,6 +516,8 @@ export class GestorPestanas {
   private alPresionarTecla(evento: KeyboardEvent): void {
     if (document.querySelector("dialog[open], .menu")) return;
     if (evento.target instanceof HTMLInputElement) return;
+    // En el visor (por ejemplo editando código) las teclas son del editor.
+    if (evento.target instanceof Element && evento.target.closest("#visor")) return;
 
     const panel = this.activa?.activo;
     if (evento.key === "Escape" && panel?.lista.hayBloqueSeleccionado && !panel.ocupado) {

@@ -8,8 +8,19 @@ use std::{
 
 use serde_json::Value;
 use tauri::{AppHandle, LogicalPosition, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window};
-use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Settings3;
+use webview2_com::Microsoft::Web::WebView2::Win32::{
+    ICoreWebView2Settings3, ICoreWebView2_19, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW,
+    COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL,
+};
 use windows::core::Interface;
+
+// Opciones de WebView2 para gastar menos RAM. Todas las ventanas tienen que usar las mismas,
+// porque comparten el mismo proceso del navegador. Medido con una pestaña: unos 25 MB menos.
+// - La red y la GPU corren dentro del proceso principal en vez de en procesos aparte.
+// - El heap joven de JavaScript es chico: la interfaz usa unos 4 MB de JS.
+// Las tres primeras desactivaciones son las que Tauri pone por defecto.
+// Tiene que coincidir con additionalBrowserArgs de tauri.conf.json.
+pub const ARGUMENTOS_NAVEGADOR: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --enable-features=NetworkServiceInProcess2 --in-process-gpu --js-flags=--max-semi-space-size=1";
 
 // Guarda la pestaña que está viajando hasta que su ventana nueva la reclame.
 #[derive(Default)]
@@ -31,6 +42,27 @@ pub fn preparar_webview(ventana: &WebviewWindow) -> tauri::Result<()> {
             let _ = ajustes.SetAreBrowserAcceleratorKeysEnabled(false);
         }
     })
+}
+
+// Con la ventana minimizada, oculta o sin usar, WebView2 libera cachés y comprime memoria.
+// Al volver se pone en normal y la interfaz sigue igual: no pierde estado.
+#[tauri::command]
+pub fn definir_memoria_baja(ventana: WebviewWindow, baja: bool) -> Result<(), String> {
+    ventana
+        .with_webview(move |webview| unsafe {
+            let Ok(nucleo) = webview.controller().CoreWebView2() else {
+                return;
+            };
+            if let Ok(nucleo) = nucleo.cast::<ICoreWebView2_19>() {
+                let nivel = if baja {
+                    COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW
+                } else {
+                    COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL
+                };
+                let _ = nucleo.SetMemoryUsageTargetLevel(nivel);
+            }
+        })
+        .map_err(|error| error.to_string())
 }
 
 // Se crea en un comando async porque en Windows hacerlo en uno síncrono congela la app.
@@ -60,7 +92,9 @@ pub async fn abrir_ventana(
         .decorations(false)
         .visible(false)
         .transparent(true)
-        .shadow(false);
+        .shadow(false)
+        .additional_browser_args(ARGUMENTOS_NAVEGADOR)
+        .disable_drag_drop_handler();
 
     let ventana = constructor.build().map_err(|error| error.to_string())?;
     match (x, y) {

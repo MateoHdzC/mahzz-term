@@ -2168,3 +2168,425 @@ textarea.dialogo__entrada {
   color: var(--acento-claro);
   font-size: 11px;
 }
+
+/* Árbol de archivos: selección, cortado, arrastre y renombre */
+.archivos__fila--seleccionada {
+  background: color-mix(in srgb, var(--acento) 18%, transparent);
+}
+
+.archivos__fila:focus-visible {
+  outline: 1px solid var(--acento);
+  outline-offset: -1px;
+}
+
+.archivos__fila--cortada {
+  opacity: 0.5;
+}
+
+.archivos__fila--destino,
+.archivos__arbol--destino {
+  background: color-mix(in srgb, var(--acento) 25%, transparent);
+  outline: 1px dashed var(--acento);
+  outline-offset: -1px;
+}
+
+.archivos__renombre {
+  flex: 1;
+  min-width: 80px;
+  height: 20px;
+  padding: 0 4px;
+  color: var(--texto);
+  font: inherit;
+  background: var(--fondo);
+  border: 1px solid var(--acento);
+  border-radius: 3px;
+  outline: none;
+}
+
+/* Visor y editor de archivos */
+.visor {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 520px;
+  min-width: 0;
+  background: var(--fondo);
+  border-left: 1px solid var(--borde);
+}
+
+.visor[hidden] {
+  display: none;
+}
+
+.visor__asa {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  z-index: 3;
+  width: 6px;
+  cursor: col-resize;
+}
+
+.visor__cabecera {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  height: 34px;
+  background: var(--fondo-barra);
+  border-bottom: 1px solid var(--borde);
+}
+
+.visor__pestanas {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.visor__pestana {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+  max-width: 200px;
+  padding: 0 6px 0 12px;
+  color: var(--texto-suave);
+  font-size: 12px;
+  border-right: 1px solid var(--borde);
+  cursor: default;
+}
+
+.visor__pestana:hover {
+  color: var(--texto);
+}
+
+.visor__pestana--activa {
+  color: var(--texto);
+  background: var(--fondo);
+  box-shadow: inset 0 2px 0 var(--acento);
+}
+
+.visor__pestana-nombre {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.visor__pestana-cerrar,
+.visor__icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.visor__icono {
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 4px;
+}
+
+.visor__pestana-cerrar svg,
+.visor__icono svg {
+  width: 9px;
+  height: 9px;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.visor__pestana-cerrar:hover,
+.visor__icono:hover {
+  color: var(--texto);
+  background: var(--fondo-hover);
+}
+
+/* Con cambios sin guardar, la X de la pestaña se vuelve un punto, como en VS Code */
+.visor__pestana--sucia .visor__pestana-cerrar svg {
+  display: none;
+}
+
+.visor__pestana--sucia .visor__pestana-cerrar::before {
+  width: 8px;
+  height: 8px;
+  background: var(--acento-claro);
+  border-radius: 50%;
+  content: "";
+}
+
+.visor__pestana--sucia .visor__pestana-cerrar:hover::before {
+  display: none;
+}
+
+.visor__pestana--sucia .visor__pestana-cerrar:hover svg {
+  display: block;
+}
+
+.visor__barra {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px 0 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.visor__ruta {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.visor__aviso {
+  flex: none;
+  color: var(--acento-claro);
+  font-size: 11px;
+}
+
+.visor__aviso--afuera {
+  color: #f4c96b;
+}
+
+.visor__accion {
+  flex: none;
+  height: 22px;
+  padding: 0 9px;
+  color: var(--texto);
+  font-size: 11px;
+  background: var(--fondo-hover);
+  border: 0;
+  border-radius: 5px;
+}
+
+.visor__accion:hover {
+  background: color-mix(in srgb, var(--acento) 25%, transparent);
+}
+
+.visor__accion--guardar {
+  color: #ffffff;
+  background: var(--acento);
+}
+
+.visor__accion--guardar:hover {
+  background: color-mix(in srgb, var(--acento) 80%, #ffffff);
+}
+
+.visor__accion[hidden] {
+  display: none;
+}
+
+.visor__cuerpo {
+  flex: 1;
+  min-height: 0;
+}
+
+.visor__contenido {
+  height: 100%;
+  overflow: auto;
+  scrollbar-color: color-mix(in srgb, var(--acento) 33%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.visor__contenido .cm-editor {
+  height: 100%;
+}
+
+.visor__contenido .cm-editor.cm-focused {
+  outline: none;
+}
+
+.visor__nota {
+  padding: 20px;
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
+/* Markdown y Word renderizados */
+.visor__md {
+  max-width: 820px;
+  padding: 20px 28px 40px;
+  color: var(--texto);
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.visor__md h1,
+.visor__md h2,
+.visor__md h3 {
+  margin: 1.4em 0 0.5em;
+  line-height: 1.25;
+}
+
+.visor__md h1 {
+  font-size: 1.7em;
+}
+
+.visor__md h1,
+.visor__md h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--borde);
+}
+
+.visor__md h2 {
+  font-size: 1.35em;
+}
+
+.visor__md a {
+  color: #74a7ff;
+}
+
+.visor__md code {
+  padding: 0.15em 0.4em;
+  font-family: var(--fuente-mono);
+  font-size: 0.88em;
+  background: var(--fondo-elevado);
+  border-radius: 4px;
+}
+
+.visor__md pre {
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: var(--fondo-elevado);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+
+.visor__md pre code {
+  padding: 0;
+  background: none;
+}
+
+.visor__md blockquote {
+  margin: 0;
+  padding: 0 1em;
+  color: var(--texto-suave);
+  border-left: 3px solid var(--acento);
+}
+
+.visor__md table,
+.visor__tabla table {
+  border-collapse: collapse;
+}
+
+.visor__md th,
+.visor__md td,
+.visor__tabla td,
+.visor__tabla th {
+  padding: 5px 10px;
+  border: 1px solid var(--borde);
+}
+
+.visor__md img {
+  max-width: 100%;
+}
+
+.visor__md hr {
+  border: 0;
+  border-top: 1px solid var(--borde);
+}
+
+.visor__word {
+  max-width: 900px;
+}
+
+/* Imágenes, video, audio y PDF */
+.visor__medio {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 16px;
+  background:
+    repeating-conic-gradient(#ffffff06 0% 25%, transparent 0% 50%) 0 0 / 20px 20px;
+}
+
+.visor__medio img {
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.visor__medio img.visor__imagen--real {
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
+}
+
+.visor__medio video {
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
+}
+
+.visor__medio--pdf {
+  padding: 0;
+}
+
+.visor__medio iframe {
+  width: 100%;
+  height: calc(100vh - 110px);
+  border: 0;
+}
+
+/* Planillas */
+.visor__hoja {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.visor__tabla {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  font-family: var(--fuente-mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.visor__tabla tr:first-child td {
+  position: sticky;
+  top: 0;
+  font-weight: 700;
+  background: var(--fondo-elevado);
+}
+
+.visor__hojas {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 4px 6px;
+  overflow-x: auto;
+  border-top: 1px solid var(--borde);
+}
+
+.visor__hojas button {
+  flex: none;
+  padding: 3px 10px;
+  color: var(--texto-suave);
+  font-size: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.visor__hojas button.visor__hoja-activa {
+  color: var(--texto);
+  background: color-mix(in srgb, var(--acento) 22%, transparent);
+}

@@ -120,4 +120,23 @@ async function iniciar(): Promise<void> {
   }
 }
 
+// Sin foco un rato (o con la ventana oculta), WebView2 pasa a modo de memoria baja.
+const ESPERA_MEMORIA_BAJA = 30_000;
+let temporizadorMemoria = 0;
+let memoriaBaja = false;
+
+function definirMemoriaBaja(baja: boolean): void {
+  clearTimeout(temporizadorMemoria);
+  if (baja === memoriaBaja) return;
+  memoriaBaja = baja;
+  void invoke("definir_memoria_baja", { baja }).catch(() => undefined);
+}
+
+window.addEventListener("blur", () => {
+  clearTimeout(temporizadorMemoria);
+  temporizadorMemoria = window.setTimeout(() => definirMemoriaBaja(true), ESPERA_MEMORIA_BAJA);
+});
+window.addEventListener("focus", () => definirMemoriaBaja(false));
+document.addEventListener("visibilitychange", () => definirMemoriaBaja(document.visibilityState === "hidden"));
+
 void iniciar();

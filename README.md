@@ -12,10 +12,14 @@
 - **Agentes activos**: un botón (✦, `Ctrl+Shift+A`) muestra los agentes que corren en la ventana (Claude Code, Codex, Gemini CLI, Aider…) y si están trabajando o esperando tu respuesta. Te avisa con una notificación cuando un agente termina mientras mirás otra cosa.
 - **Revisión de cambios**: un panel (`Ctrl+Shift+G`) lista los archivos que cambiaron en el repositorio, con el diff de cada uno. Desde ahí podés aceptarlos (`git add`) o revertirlos.
 - **Sesiones**: `mahzz --resume` te deja elegir una sesión anterior y vuelve a abrir sus pestañas, paneles y carpetas. Si había un Claude Code abierto, el panel queda con `claude --continue` listo para ejecutar.
+- **Visor y editor de archivos**: un clic en un archivo lo abre al costado. Código con colores y guardado (`Ctrl+S`), Markdown renderizado, imágenes, video, audio, PDF, Excel y Word, sin salir de la terminal.
+- **Archivos como en VS Code**: renombrar (F2), crear, mandar a la papelera (Supr), cortar, copiar y pegar, y arrastrar para mover.
 - **Productividad**: historial con `Ctrl+R`, paleta de comandos (`Ctrl+Shift+P`), comandos guardados con parámetros y un árbol de archivos.
 - **SSH con bloques**: los hosts de `~/.ssh/config` también tienen bloques dentro del servidor (bash).
 - **Personalización**: temas editables, atajos, español e inglés y secretos cifrados con tu usuario de Windows.
 - **Sincronización opcional**: si iniciás sesión con Google, los ajustes, temas, comandos guardados e historial se guardan en la carpeta privada de la app en tu Drive.
+
+Más detalle en [docs/funciones.md](docs/funciones.md) y el historial de versiones en [CHANGELOG.md](CHANGELOG.md).
 
 ## El comando `mahzz`
 

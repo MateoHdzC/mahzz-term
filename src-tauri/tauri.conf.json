@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "MazzTerm",
   "mainBinaryName": "MazzTerm",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "identifier": "com.mahzz.mahzzterm",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -23,17 +23,21 @@
         "decorations": false,
         "visible": false,
         "transparent": true,
-        "shadow": false
+        "shadow": false,
+        "dragDropEnabled": false,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --enable-features=NetworkServiceInProcess2 --in-process-gpu --js-flags=--max-semi-space-size=1"
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src ipc: http://ipc.localhost",
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src blob:; frame-src blob:; connect-src ipc: http://ipc.localhost",
       "devCsp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

@@ -3,6 +3,7 @@ mod archivos;
 mod cambios;
 mod datos;
 mod entorno;
+mod explorador;
 mod google;
 mod procesos;
 mod pty;
@@ -59,6 +60,15 @@ pub fn iniciar() {
             datos::leer_guardados,
             datos::leer_historial,
             datos::leer_specs_usuario,
+            explorador::crear_archivo,
+            explorador::crear_carpeta,
+            explorador::enviar_papelera,
+            explorador::fecha_archivo,
+            explorador::guardar_texto,
+            explorador::leer_binario,
+            explorador::leer_texto,
+            explorador::mover_rutas,
+            explorador::renombrar_ruta,
             entorno::carpeta_usuario,
             entorno::comandos_powershell,
             entorno::datos_proyecto,
@@ -86,6 +96,7 @@ pub fn iniciar() {
             sesiones::borrar_sesion_guardada,
             sesiones::listar_sesiones,
             ventanas::abrir_ventana,
+            ventanas::definir_memoria_baja,
             ventanas::tomar_traspaso,
         ])
         .on_window_event(|ventana, evento| {

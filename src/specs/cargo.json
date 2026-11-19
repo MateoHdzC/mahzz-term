@@ -1,0 +1,22 @@
+{
+  "nombre": "cargo",
+  "descripcion": "Proyectos de Rust",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "add", "descripcion": "Agrega una dependencia", "opciones": [{ "nombre": "--features", "descripcion": "Activa funciones" }] },
+    { "nombre": "build", "descripcion": "Compila el proyecto", "opciones": [{ "nombre": "--release", "descripcion": "Compila optimizado" }] },
+    { "nombre": "check", "descripcion": "Revisa sin generar binarios" },
+    { "nombre": "clean", "descripcion": "Borra lo compilado" },
+    { "nombre": "clippy", "descripcion": "Busca problemas en el código" },
+    { "nombre": "doc", "descripcion": "Genera la documentación", "opciones": [{ "nombre": "--open", "descripcion": "Abre el resultado" }] },
+    { "nombre": "fmt", "descripcion": "Da formato al código" },
+    { "nombre": "init", "descripcion": "Crea un proyecto en esta carpeta" },
+    { "nombre": "install", "descripcion": "Instala un programa" },
+    { "nombre": "new", "descripcion": "Crea un proyecto nuevo" },
+    { "nombre": "remove", "descripcion": "Quita una dependencia" },
+    { "nombre": "run", "descripcion": "Compila y ejecuta", "opciones": [{ "nombre": "--release", "descripcion": "Ejecuta optimizado" }] },
+    { "nombre": "test", "descripcion": "Ejecuta las pruebas" },
+    { "nombre": "tree", "descripcion": "Muestra las dependencias" },
+    { "nombre": "update", "descripcion": "Actualiza el lockfile" }
+  ]
+}

@@ -1,0 +1,123 @@
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/700.css";
+import { invoke } from "@tauri-apps/api/core";
+import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
+import { ajustes, alCambiarAjustes, cargarAjustes } from "./ajustes";
+import { cargarCuenta } from "./cuenta";
+import { definirAtajos } from "./atajos";
+import "./estilos.css";
+import { GestorPestanas } from "./gestor";
+import { cargarHistorial } from "./historial";
+import { t, traducirPagina } from "./i18n";
+import type { DatosPestana } from "./pestana";
+import { mostrarPrimerUso } from "./primerUso";
+import { aplicarTema, cargarTemas } from "./temas";
+
+const ICONO_MAXIMIZAR = "M0.5 0.5h9v9h-9z";
+const ICONO_RESTAURAR = "M2.5 2.5v-2h7v7h-2M0.5 2.5h7v7h-7z";
+
+const ventana = getCurrentWindow();
+const esPrincipal = ventana.label === "main";
+
+function boton(id: string): HTMLElement {
+  const elemento = document.getElementById(id);
+  if (!elemento) throw new Error(`Falta el elemento #${id}`);
+  return elemento;
+}
+
+async function actualizarIconoMaximizar(): Promise<void> {
+  const maximizada = await ventana.isMaximized();
+  boton("icono-maximizar").setAttribute("d", maximizada ? ICONO_RESTAURAR : ICONO_MAXIMIZAR);
+  boton("maximizar").setAttribute("aria-label", maximizada ? t("Restaurar") : t("Maximizar"));
+  // Maximizada ocupa toda la pantalla, así que las esquinas vuelven a ser rectas.
+  document.body.classList.toggle("ventana--maximizada", maximizada);
+  await compensarBordesMaximizada(maximizada);
+}
+
+// Windows agranda las ventanas sin marco más allá de la pantalla: se recupera ese sobrante.
+async function compensarBordesMaximizada(maximizada: boolean): Promise<void> {
+  if (!maximizada) {
+    document.body.style.padding = "";
+    return;
+  }
+  const [monitor, posicion, tamano, escala] = await Promise.all([
+    currentMonitor(),
+    ventana.outerPosition(),
+    ventana.outerSize(),
+    ventana.scaleFactor(),
+  ]);
+  if (!monitor) return;
+  const { position: inicio, size: disponible } = monitor.workArea;
+  const sobrante = (valor: number) => `${Math.max(0, valor) / escala}px`;
+  document.body.style.padding = [
+    sobrante(inicio.y - posicion.y),
+    sobrante(posicion.x + tamano.width - (inicio.x + disponible.width)),
+    sobrante(posicion.y + tamano.height - (inicio.y + disponible.height)),
+    sobrante(inicio.x - posicion.x),
+  ].join(" ");
+}
+
+// Los botones de la ventana no se quedan con el foco del teclado.
+for (const id of ["minimizar", "maximizar", "cerrar", "perfil", "ajustes", "alternar-archivos", "alternar-cambios", "agentes"]) {
+  boton(id).addEventListener("mousedown", (evento) => evento.preventDefault());
+}
+
+boton("minimizar").addEventListener("click", () => void ventana.minimize());
+boton("maximizar").addEventListener("click", () => void ventana.toggleMaximize());
+boton("cerrar").addEventListener("click", () => void ventana.close());
+
+function sincronizarDesplegable(): void {
+  if (!esPrincipal) return;
+  const { desplegableActivo: activo, desplegableAtajo: atajo } = ajustes();
+  void invoke("definir_desplegable", { activo, atajo }).catch((error) => console.warn(error));
+}
+
+async function iniciar(): Promise<void> {
+  let gestor: GestorPestanas | null = null;
+  try {
+    await cargarAjustes();
+    await cargarTemas();
+    aplicarTema();
+    definirAtajos(ajustes().atajos);
+    traducirPagina();
+
+    // La fuente tiene que estar cargada antes de medir el tamaño de cada celda.
+    await Promise.all([
+      document.fonts.load('400 14px "JetBrains Mono"'),
+      document.fonts.load('700 14px "JetBrains Mono"'),
+    ]);
+
+    await cargarHistorial();
+    const creado = new GestorPestanas();
+    gestor = creado;
+    alCambiarAjustes(() => {
+      aplicarTema();
+      definirAtajos(ajustes().atajos);
+      creado.aplicarAjustes();
+      sincronizarDesplegable();
+    });
+    sincronizarDesplegable();
+    await cargarCuenta();
+
+    await ventana.onCloseRequested(async (evento) => {
+      evento.preventDefault();
+      if (await creado.confirmarCierreVentana()) await ventana.destroy();
+    });
+    await ventana.onResized(() => void actualizarIconoMaximizar());
+    await actualizarIconoMaximizar();
+
+    const traspaso = await invoke<DatosPestana | null>("tomar_traspaso");
+    const restaurada = !traspaso && esPrincipal && ajustes().restaurarPestanas && (await creado.restaurarSesion());
+    if (!restaurada) await creado.nuevaPestana(traspaso ?? undefined);
+  } catch (error) {
+    boton("contenido").textContent = `No se pudo iniciar la terminal: ${String(error)}`;
+  } finally {
+    // La ventana se muestra recién cuando está lista, para evitar el parpadeo blanco.
+    await ventana.show();
+    await ventana.setFocus();
+    gestor?.recuperarFoco();
+    if (esPrincipal && !ajustes().primerUsoHecho) mostrarPrimerUso(() => gestor?.recuperarFoco());
+  }
+}
+
+void iniciar();

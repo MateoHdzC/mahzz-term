@@ -1,0 +1,111 @@
+{
+  "nombre": "git",
+  "descripcion": "Control de versiones",
+  "opciones": [
+    { "nombre": "--version", "descripcion": "Muestra la versión" },
+    { "nombre": "--help", "descripcion": "Muestra la ayuda" },
+    { "nombre": "-C", "descripcion": "Ejecuta en otra carpeta" }
+  ],
+  "subcomandos": [
+    { "nombre": "add", "descripcion": "Prepara archivos para el commit", "argumentos": ["rutas"], "opciones": [
+      { "nombre": "--all", "descripcion": "Agrega todos los cambios" },
+      { "nombre": "--patch", "descripcion": "Elige partes de cada archivo" }
+    ] },
+    { "nombre": "branch", "descripcion": "Lista o crea ramas", "argumentos": ["ramas"], "opciones": [
+      { "nombre": "--all", "descripcion": "Incluye ramas remotas" },
+      { "nombre": "--delete", "descripcion": "Borra una rama" },
+      { "nombre": "--move", "descripcion": "Renombra una rama" },
+      { "nombre": "--show-current", "descripcion": "Muestra la rama actual" }
+    ] },
+    { "nombre": "checkout", "descripcion": "Cambia de rama", "argumentos": ["ramas", "rutas"], "opciones": [
+      { "nombre": "-b", "descripcion": "Crea la rama y cambia a ella" }
+    ] },
+    { "nombre": "cherry-pick", "descripcion": "Aplica un commit de otra rama" },
+    { "nombre": "clone", "descripcion": "Copia un repositorio", "opciones": [
+      { "nombre": "--depth", "descripcion": "Baja solo los últimos commits" },
+      { "nombre": "--branch", "descripcion": "Elige la rama inicial" }
+    ] },
+    { "nombre": "commit", "descripcion": "Guarda los cambios preparados", "opciones": [
+      { "nombre": "--message", "descripcion": "Mensaje del commit" },
+      { "nombre": "--amend", "descripcion": "Modifica el último commit" },
+      { "nombre": "--all", "descripcion": "Incluye archivos modificados" },
+      { "nombre": "-m", "descripcion": "Mensaje del commit" }
+    ] },
+    { "nombre": "config", "descripcion": "Lee o cambia la configuración", "opciones": [
+      { "nombre": "--global", "descripcion": "Usa la configuración del usuario" },
+      { "nombre": "--list", "descripcion": "Lista los valores" }
+    ] },
+    { "nombre": "diff", "descripcion": "Muestra diferencias", "argumentos": ["ramas", "rutas"], "opciones": [
+      { "nombre": "--staged", "descripcion": "Compara lo preparado" },
+      { "nombre": "--stat", "descripcion": "Muestra un resumen" }
+    ] },
+    { "nombre": "fetch", "descripcion": "Baja novedades del remoto", "argumentos": ["remotos"], "opciones": [
+      { "nombre": "--all", "descripcion": "Usa todos los remotos" },
+      { "nombre": "--prune", "descripcion": "Quita ramas remotas borradas" }
+    ] },
+    { "nombre": "init", "descripcion": "Crea un repositorio", "opciones": [
+      { "nombre": "--initial-branch", "descripcion": "Nombre de la rama inicial" }
+    ] },
+    { "nombre": "log", "descripcion": "Muestra el historial", "argumentos": ["ramas", "rutas"], "opciones": [
+      { "nombre": "--oneline", "descripcion": "Un commit por línea" },
+      { "nombre": "--graph", "descripcion": "Dibuja las ramas" },
+      { "nombre": "--stat", "descripcion": "Muestra archivos cambiados" }
+    ] },
+    { "nombre": "merge", "descripcion": "Une otra rama", "argumentos": ["ramas"], "opciones": [
+      { "nombre": "--abort", "descripcion": "Cancela la unión" },
+      { "nombre": "--no-ff", "descripcion": "Crea siempre un commit de unión" }
+    ] },
+    { "nombre": "mv", "descripcion": "Mueve o renombra archivos", "argumentos": ["rutas"] },
+    { "nombre": "pull", "descripcion": "Baja y une cambios", "argumentos": ["remotos"], "opciones": [
+      { "nombre": "--rebase", "descripcion": "Reaplica tus commits arriba" }
+    ] },
+    { "nombre": "push", "descripcion": "Sube commits al remoto", "argumentos": ["remotos", "ramas"], "opciones": [
+      { "nombre": "--set-upstream", "descripcion": "Vincula la rama con el remoto" },
+      { "nombre": "--force-with-lease", "descripcion": "Reemplaza el remoto con protección" },
+      { "nombre": "--tags", "descripcion": "Sube las etiquetas" },
+      { "nombre": "-u", "descripcion": "Vincula la rama con el remoto" }
+    ] },
+    { "nombre": "rebase", "descripcion": "Reaplica commits sobre otra rama", "argumentos": ["ramas"], "opciones": [
+      { "nombre": "--continue", "descripcion": "Sigue después de resolver" },
+      { "nombre": "--abort", "descripcion": "Cancela el rebase" }
+    ] },
+    { "nombre": "remote", "descripcion": "Administra remotos", "subcomandos": [
+      { "nombre": "add", "descripcion": "Agrega un remoto" },
+      { "nombre": "remove", "descripcion": "Quita un remoto", "argumentos": ["remotos"] },
+      { "nombre": "set-url", "descripcion": "Cambia la dirección", "argumentos": ["remotos"] }
+    ], "opciones": [
+      { "nombre": "--verbose", "descripcion": "Muestra las direcciones" }
+    ] },
+    { "nombre": "reset", "descripcion": "Mueve la rama o quita cambios preparados", "argumentos": ["ramas", "rutas"], "opciones": [
+      { "nombre": "--soft", "descripcion": "Conserva todo preparado" },
+      { "nombre": "--mixed", "descripcion": "Conserva los archivos" },
+      { "nombre": "--hard", "descripcion": "Descarta los cambios" }
+    ] },
+    { "nombre": "restore", "descripcion": "Recupera archivos", "argumentos": ["rutas"], "opciones": [
+      { "nombre": "--staged", "descripcion": "Quita de lo preparado" }
+    ] },
+    { "nombre": "revert", "descripcion": "Deshace un commit con otro commit" },
+    { "nombre": "rm", "descripcion": "Quita archivos del repositorio", "argumentos": ["rutas"], "opciones": [
+      { "nombre": "--cached", "descripcion": "Conserva el archivo en disco" }
+    ] },
+    { "nombre": "show", "descripcion": "Muestra un commit", "argumentos": ["ramas"] },
+    { "nombre": "stash", "descripcion": "Guarda cambios temporalmente", "subcomandos": [
+      { "nombre": "list", "descripcion": "Lista lo guardado" },
+      { "nombre": "pop", "descripcion": "Recupera y quita lo último" },
+      { "nombre": "apply", "descripcion": "Recupera sin quitar" },
+      { "nombre": "drop", "descripcion": "Borra una entrada" },
+      { "nombre": "push", "descripcion": "Guarda cambios" }
+    ] },
+    { "nombre": "status", "descripcion": "Muestra el estado", "opciones": [
+      { "nombre": "--short", "descripcion": "Formato breve" }
+    ] },
+    { "nombre": "switch", "descripcion": "Cambia de rama", "argumentos": ["ramas"], "opciones": [
+      { "nombre": "--create", "descripcion": "Crea la rama" },
+      { "nombre": "-c", "descripcion": "Crea la rama" }
+    ] },
+    { "nombre": "tag", "descripcion": "Administra etiquetas", "opciones": [
+      { "nombre": "--annotate", "descripcion": "Crea una etiqueta con mensaje" },
+      { "nombre": "--delete", "descripcion": "Borra una etiqueta" }
+    ] }
+  ]
+}

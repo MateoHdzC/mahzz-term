@@ -1,0 +1,17 @@
+{
+  "nombre": "winget",
+  "descripcion": "Programas de Windows",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "install", "descripcion": "Instala un programa", "opciones": [
+      { "nombre": "--id", "descripcion": "Identificador del programa" },
+      { "nombre": "--exact", "descripcion": "Busca el nombre exacto" },
+      { "nombre": "--silent", "descripcion": "Instala sin ventanas" }
+    ] },
+    { "nombre": "list", "descripcion": "Lista programas instalados" },
+    { "nombre": "search", "descripcion": "Busca programas" },
+    { "nombre": "show", "descripcion": "Muestra datos de un programa" },
+    { "nombre": "uninstall", "descripcion": "Quita un programa" },
+    { "nombre": "upgrade", "descripcion": "Actualiza programas", "opciones": [{ "nombre": "--all", "descripcion": "Actualiza todo" }] }
+  ]
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MazzTerm</title>
+  </head>
+  <body>
+    <header class="barra">
+      <img class="barra__logo" src="/logo.png" alt="" draggable="false" data-tauri-drag-region />
+      <button id="alternar-archivos" class="barra__boton" type="button" aria-label="Mostrar u ocultar archivos" aria-pressed="false" title="Archivos (Ctrl+Shift+B)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
+      </button>
+      <button id="alternar-cambios" class="barra__boton" type="button" aria-label="Revisar cambios" aria-pressed="false" title="Revisar cambios (Ctrl+Shift+G)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M6 8.5v4a5 5 0 0 0 5 5h4.5M18 15.5v-4a5 5 0 0 0-5-5H8.5" /></svg>
+      </button>
+      <div id="pestanas" class="pestanas" role="tablist" aria-label="Pestañas"></div>
+      <button id="nueva-pestana" class="boton-nueva" type="button" aria-label="Nueva pestaña" title="Nueva pestaña (Ctrl+Shift+T)">
+        <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0v10M0 5h10" /></svg>
+      </button>
+      <div class="barra__espacio" data-tauri-drag-region></div>
+      <button id="agentes" class="barra__boton" type="button" aria-label="Agentes activos" aria-pressed="false" title="Agentes (Ctrl+Shift+A)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+      </button>
+      <button id="perfil" class="barra__boton" type="button" aria-label="Perfil" title="Perfil">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+      </button>
+      <button id="ajustes" class="barra__boton" type="button" aria-label="Ajustes" title="Ajustes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+      </button>
+      <div class="controles">
+        <button id="minimizar" class="control" type="button" aria-label="Minimizar">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M0 5h10" /></svg>
+        </button>
+        <button id="maximizar" class="control" type="button" aria-label="Maximizar">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path id="icono-maximizar" d="M0.5 0.5h9v9h-9z" /></svg>
+        </button>
+        <button id="cerrar" class="control control--cerrar" type="button" aria-label="Cerrar">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0l10 10M10 0L0 10" /></svg>
+        </button>
+      </div>
+    </header>
+    <div class="cuerpo">
+      <aside id="archivos" class="archivos" aria-label="Archivos" hidden></aside>
+      <main id="contenido" class="contenido"></main>
+      <aside id="cambios" class="cambios" aria-label="Revisar cambios" hidden></aside>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

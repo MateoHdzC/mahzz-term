@@ -1,0 +1,43 @@
+[package]
+name = "mahzzterm"
+version = "0.1.0"
+description = "Terminal para Windows con bloques de comandos"
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "mahzzterm_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+serde_json = "1"
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+base64 = "0.22"
+getrandom = "0.3"
+portable-pty = "0.9"
+serde_json = "1"
+sha2 = "0.10"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-notification = "2"
+toml = "0.9"
+ureq = "3"
+url = "2"
+webview2-com = "0.39"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Security_Cryptography",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

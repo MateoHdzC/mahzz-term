@@ -1,0 +1,22 @@
+{
+  "nombre": "npm",
+  "descripcion": "Paquetes de Node",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "audit", "descripcion": "Revisa vulnerabilidades" },
+    { "nombre": "ci", "descripcion": "Instala exacto desde el lockfile" },
+    { "nombre": "init", "descripcion": "Crea package.json", "opciones": [{ "nombre": "--yes", "descripcion": "Acepta los valores por defecto" }] },
+    { "nombre": "install", "alias": ["i"], "descripcion": "Instala paquetes", "opciones": [
+      { "nombre": "--save-dev", "descripcion": "Dependencia de desarrollo" },
+      { "nombre": "--global", "descripcion": "Instala para todo el sistema" }
+    ] },
+    { "nombre": "list", "descripcion": "Lista paquetes instalados" },
+    { "nombre": "outdated", "descripcion": "Muestra paquetes desactualizados" },
+    { "nombre": "publish", "descripcion": "Publica el paquete" },
+    { "nombre": "run", "descripcion": "Ejecuta un script", "argumentos": ["scripts"] },
+    { "nombre": "start", "descripcion": "Ejecuta el script start" },
+    { "nombre": "test", "descripcion": "Ejecuta el script test" },
+    { "nombre": "uninstall", "descripcion": "Quita paquetes" },
+    { "nombre": "update", "descripcion": "Actualiza paquetes" }
+  ]
+}

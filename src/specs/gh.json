@@ -1,0 +1,40 @@
+{
+  "nombre": "gh",
+  "descripcion": "GitHub desde la terminal",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "auth", "descripcion": "Administra la sesión", "subcomandos": [
+      { "nombre": "login", "descripcion": "Inicia sesión" },
+      { "nombre": "status", "descripcion": "Muestra la sesión actual" }
+    ] },
+    { "nombre": "issue", "descripcion": "Issues", "subcomandos": [
+      { "nombre": "create", "descripcion": "Crea un issue" },
+      { "nombre": "list", "descripcion": "Lista issues" },
+      { "nombre": "view", "descripcion": "Muestra un issue" }
+    ] },
+    { "nombre": "pr", "descripcion": "Pull requests", "subcomandos": [
+      { "nombre": "checkout", "descripcion": "Baja un pull request" },
+      { "nombre": "create", "descripcion": "Crea un pull request", "opciones": [
+        { "nombre": "--fill", "descripcion": "Usa los datos de los commits" },
+        { "nombre": "--draft", "descripcion": "Lo marca como borrador" }
+      ] },
+      { "nombre": "list", "descripcion": "Lista pull requests" },
+      { "nombre": "merge", "descripcion": "Une un pull request" },
+      { "nombre": "view", "descripcion": "Muestra un pull request" }
+    ] },
+    { "nombre": "release", "descripcion": "Versiones publicadas", "subcomandos": [
+      { "nombre": "create", "descripcion": "Publica una versión" },
+      { "nombre": "list", "descripcion": "Lista versiones" }
+    ] },
+    { "nombre": "repo", "descripcion": "Repositorios", "subcomandos": [
+      { "nombre": "clone", "descripcion": "Clona un repositorio" },
+      { "nombre": "create", "descripcion": "Crea un repositorio" },
+      { "nombre": "view", "descripcion": "Muestra un repositorio" }
+    ] },
+    { "nombre": "run", "descripcion": "GitHub Actions", "subcomandos": [
+      { "nombre": "list", "descripcion": "Lista ejecuciones" },
+      { "nombre": "view", "descripcion": "Muestra una ejecución" },
+      { "nombre": "watch", "descripcion": "Sigue una ejecución" }
+    ] }
+  ]
+}

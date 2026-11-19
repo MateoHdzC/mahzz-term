@@ -1,0 +1,36 @@
+{
+  "nombre": "glab",
+  "descripcion": "GitLab desde la terminal",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "auth", "descripcion": "Administra la sesión", "subcomandos": [
+      { "nombre": "login", "descripcion": "Inicia sesión" },
+      { "nombre": "status", "descripcion": "Muestra la sesión actual" }
+    ] },
+    { "nombre": "ci", "descripcion": "Pipelines", "subcomandos": [
+      { "nombre": "list", "descripcion": "Lista pipelines" },
+      { "nombre": "status", "descripcion": "Estado del pipeline actual" },
+      { "nombre": "view", "descripcion": "Abre el pipeline" }
+    ] },
+    { "nombre": "issue", "descripcion": "Issues", "subcomandos": [
+      { "nombre": "create", "descripcion": "Crea un issue" },
+      { "nombre": "list", "descripcion": "Lista issues" },
+      { "nombre": "view", "descripcion": "Muestra un issue" }
+    ] },
+    { "nombre": "mr", "descripcion": "Merge requests", "subcomandos": [
+      { "nombre": "create", "descripcion": "Crea un merge request", "opciones": [
+        { "nombre": "--fill", "descripcion": "Usa los datos de los commits" },
+        { "nombre": "--draft", "descripcion": "Lo marca como borrador" }
+      ] },
+      { "nombre": "list", "descripcion": "Lista merge requests" },
+      { "nombre": "merge", "descripcion": "Une un merge request" },
+      { "nombre": "view", "descripcion": "Muestra un merge request" }
+    ] },
+    { "nombre": "repo", "descripcion": "Repositorios", "subcomandos": [
+      { "nombre": "clone", "descripcion": "Clona un repositorio" },
+      { "nombre": "create", "descripcion": "Crea un repositorio" },
+      { "nombre": "list", "descripcion": "Lista repositorios" },
+      { "nombre": "view", "descripcion": "Muestra un repositorio" }
+    ] }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "nombre": "docker",
+  "descripcion": "Contenedores",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "build", "descripcion": "Crea una imagen", "argumentos": ["rutas"], "opciones": [{ "nombre": "--tag", "descripcion": "Nombre de la imagen" }] },
+    { "nombre": "compose", "descripcion": "Administra varios servicios", "subcomandos": [
+      { "nombre": "up", "descripcion": "Levanta los servicios", "opciones": [
+        { "nombre": "--detach", "descripcion": "Corre en segundo plano" },
+        { "nombre": "--build", "descripcion": "Reconstruye antes de levantar" }
+      ] },
+      { "nombre": "down", "descripcion": "Detiene y quita los servicios" },
+      { "nombre": "logs", "descripcion": "Muestra los registros", "opciones": [{ "nombre": "--follow", "descripcion": "Sigue en vivo" }] },
+      { "nombre": "ps", "descripcion": "Lista los servicios" },
+      { "nombre": "restart", "descripcion": "Reinicia los servicios" }
+    ] },
+    { "nombre": "exec", "descripcion": "Ejecuta dentro de un contenedor", "opciones": [{ "nombre": "-it", "descripcion": "Abre una sesión interactiva" }] },
+    { "nombre": "images", "descripcion": "Lista las imágenes" },
+    { "nombre": "logs", "descripcion": "Muestra los registros", "opciones": [{ "nombre": "--follow", "descripcion": "Sigue en vivo" }] },
+    { "nombre": "ps", "descripcion": "Lista los contenedores", "opciones": [{ "nombre": "--all", "descripcion": "Incluye los detenidos" }] },
+    { "nombre": "pull", "descripcion": "Baja una imagen" },
+    { "nombre": "push", "descripcion": "Sube una imagen" },
+    { "nombre": "restart", "descripcion": "Reinicia un contenedor" },
+    { "nombre": "rm", "descripcion": "Borra un contenedor" },
+    { "nombre": "rmi", "descripcion": "Borra una imagen" },
+    { "nombre": "run", "descripcion": "Crea y ejecuta un contenedor", "opciones": [
+      { "nombre": "--detach", "descripcion": "Corre en segundo plano" },
+      { "nombre": "--name", "descripcion": "Nombre del contenedor" },
+      { "nombre": "--publish", "descripcion": "Expone un puerto" },
+      { "nombre": "--rm", "descripcion": "Lo borra al terminar" },
+      { "nombre": "--volume", "descripcion": "Conecta una carpeta" }
+    ] },
+    { "nombre": "stop", "descripcion": "Detiene un contenedor" },
+    { "nombre": "system", "descripcion": "Administra Docker", "subcomandos": [
+      { "nombre": "df", "descripcion": "Muestra el espacio usado" },
+      { "nombre": "prune", "descripcion": "Limpia lo que no se usa" }
+    ] }
+  ]
+}

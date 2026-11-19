@@ -1,0 +1,25 @@
+{
+  "nombre": "pnpm",
+  "descripcion": "Paquetes de Node",
+  "argumentos": ["scripts"],
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "add", "descripcion": "Agrega paquetes", "opciones": [
+      { "nombre": "--save-dev", "descripcion": "Dependencia de desarrollo" },
+      { "nombre": "--save-exact", "descripcion": "Fija la versión exacta" },
+      { "nombre": "--global", "descripcion": "Instala para todo el sistema" }
+    ] },
+    { "nombre": "build", "descripcion": "Ejecuta el script build" },
+    { "nombre": "dev", "descripcion": "Ejecuta el script dev" },
+    { "nombre": "dlx", "descripcion": "Ejecuta un paquete sin instalarlo" },
+    { "nombre": "exec", "descripcion": "Ejecuta un programa del proyecto" },
+    { "nombre": "install", "alias": ["i"], "descripcion": "Instala dependencias" },
+    { "nombre": "list", "descripcion": "Lista paquetes instalados" },
+    { "nombre": "outdated", "descripcion": "Muestra paquetes desactualizados" },
+    { "nombre": "remove", "descripcion": "Quita paquetes" },
+    { "nombre": "run", "descripcion": "Ejecuta un script", "argumentos": ["scripts"] },
+    { "nombre": "store", "descripcion": "Administra el almacén global" },
+    { "nombre": "test", "descripcion": "Ejecuta el script test" },
+    { "nombre": "update", "descripcion": "Actualiza paquetes" }
+  ]
+}

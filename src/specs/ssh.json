@@ -1,0 +1,13 @@
+{
+  "nombre": "ssh",
+  "descripcion": "Conexión a servidores",
+  "argumentos": ["hosts"],
+  "opciones": [
+    { "nombre": "-i", "descripcion": "Archivo de clave privada" },
+    { "nombre": "-p", "descripcion": "Puerto del servidor" },
+    { "nombre": "-J", "descripcion": "Servidor intermedio" },
+    { "nombre": "-L", "descripcion": "Redirige un puerto local" },
+    { "nombre": "-R", "descripcion": "Redirige un puerto remoto" },
+    { "nombre": "-N", "descripcion": "Conecta sin abrir una sesión" }
+  ]
+}

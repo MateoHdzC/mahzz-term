@@ -1,0 +1,16 @@
+{
+  "nombre": "pip",
+  "descripcion": "Paquetes de Python",
+  "opciones": [{ "nombre": "--version", "descripcion": "Muestra la versión" }],
+  "subcomandos": [
+    { "nombre": "freeze", "descripcion": "Lista versiones exactas" },
+    { "nombre": "install", "descripcion": "Instala paquetes", "argumentos": ["rutas"], "opciones": [
+      { "nombre": "--requirement", "descripcion": "Instala desde un archivo" },
+      { "nombre": "--upgrade", "descripcion": "Actualiza si ya existe" },
+      { "nombre": "-r", "descripcion": "Instala desde un archivo" }
+    ] },
+    { "nombre": "list", "descripcion": "Lista paquetes instalados", "opciones": [{ "nombre": "--outdated", "descripcion": "Solo los desactualizados" }] },
+    { "nombre": "show", "descripcion": "Muestra datos de un paquete" },
+    { "nombre": "uninstall", "descripcion": "Quita paquetes" }
+  ]
+}

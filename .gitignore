@@ -1,0 +1,14 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/schemas/
+*.log
+client_secret*.json
+datos/
+src-tauri/credenciales/
+
+# Configuración y notas locales: no se publican
+.claude/
+RESPUESTAS.md
+SPEC.md
+mahzz.webp

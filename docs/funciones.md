@@ -73,6 +73,40 @@ En el selector, Enter abre la sesión elegida y Supr la borra de la lista. Las p
 
 **Código:** [`src/sesiones.ts`](../src/sesiones.ts), [`src-tauri/src/sesiones.rs`](../src-tauri/src/sesiones.rs) y `reanudarSesion` en [`src/gestor.ts`](../src/gestor.ts).
 
+## Control por IA (MCP)
+
+**Para qué sirve:** que Claude Code (u otra IA compatible con MCP) use la terminal como vos. Puede correr comandos y leer su resultado ya separado en bloques, mirar los logs de un servidor que sigue corriendo o coordinar a otros agentes que corren en otras pestañas.
+
+**Cómo se conecta:** en Ajustes → General, **Conectar con Claude Code** copia este comando con la ruta de tu `MahzzTerm.exe`. Pegalo en una terminal:
+
+```powershell
+claude mcp add --scope user mahzzterm -- "C:\ruta\a\MahzzTerm.exe" --mcp
+```
+
+Si MahzzTerm no está abierta cuando la IA la necesita, se abre sola.
+
+**Herramientas**
+
+| Herramienta | Qué hace |
+|---|---|
+| `listar_pestanas` | Pestañas y paneles con su id, carpeta, programa, rama de git y si están ocupados |
+| `leer_bloques` | Los últimos comandos terminados, con salida, código de salida, duración y carpeta (`solo_errores` para filtrar) |
+| `leer_pantalla` | Lo que se ve ahora: la salida en vivo de un comando largo o la pantalla de un programa interactivo |
+| `ejecutar` | Corre un comando y devuelve su bloque. Si tarda más que `timeout_s`, devuelve lo que se ve y el comando sigue (`esperar=false` para no esperar) |
+| `enviar_teclas` | Texto y teclas (`enter`, `ctrl+c`, flechas…) para programas interactivos |
+| `nueva_pestana`, `dividir_panel`, `cerrar_panel`, `enfocar_panel`, `renombrar_pestana` | Manejo del espacio de trabajo |
+| `estado_agentes` | Qué agentes corren y si están trabajando, esperando o necesitan respuesta |
+| `historial` | Los últimos comandos ejecutados, con filtro |
+| `abrir_archivo` | Abre un archivo en el visor para que lo veas |
+
+Sin `panel`, las herramientas usan el panel activo. `cerrar_panel` no cierra un panel con algo corriendo salvo que se pase `forzar=true`.
+
+**Cómo funciona:** `MahzzTerm.exe --mcp` no abre ninguna ventana: habla MCP por entrada y salida estándar y le pasa cada pedido a la MahzzTerm abierta. Esa conexión es local (`127.0.0.1`, puerto al azar) y usa una clave que la app guarda en `control.json`, dentro de la carpeta de datos. La interfaz ejecuta el pedido y devuelve el resultado.
+
+**Seguridad:** la IA puede ejecutar cualquier comando, igual que si lo escribieras vos. Para apagarlo, desactivá **Control por IA (MCP)** en Ajustes: los pedidos se rechazan al instante.
+
+**Código:** [`src-tauri/src/mcp.rs`](../src-tauri/src/mcp.rs) (protocolo MCP), [`src-tauri/src/control.rs`](../src-tauri/src/control.rs) (conexión local) y [`src/control.ts`](../src/control.ts) (cada herramienta).
+
 ## Dónde se guardan los datos
 
 Todo lo de MahzzTerm (ajustes, historial, sesiones, temas, secretos y la sesión de Google) vive en:

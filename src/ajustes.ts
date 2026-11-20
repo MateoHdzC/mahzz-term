@@ -12,6 +12,7 @@ export interface Ajustes {
   scrollback: number;
   restaurarPestanas: boolean;
   posicionPestanas: "arriba" | "izquierda" | "derecha";
+  controlIA: boolean;
   avisarComandos: boolean;
   segundosAviso: number;
   avisarPegado: boolean;
@@ -32,6 +33,7 @@ const VALORES_INICIALES: Ajustes = {
   scrollback: 10_000,
   restaurarPestanas: true,
   posicionPestanas: "arriba",
+  controlIA: true,
   avisarComandos: true,
   segundosAviso: 30,
   avisarPegado: true,

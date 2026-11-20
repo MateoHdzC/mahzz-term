@@ -293,6 +293,11 @@ const INGLES: Record<string, string> = {
   "Web de lo guardado": "Web of the saved version",
   "Código": "Code",
   "Web": "Web",
+  // Control por IA
+  "Control por IA (MCP)": "AI control (MCP)",
+  "Deja que Claude Code y otras IAs usen la terminal: leer bloques y logs, ejecutar comandos y manejar pestañas.": "Lets Claude Code and other AIs use the terminal: read blocks and logs, run commands and manage tabs.",
+  "Conectar con Claude Code": "Connect to Claude Code",
+  "Pegalo en una terminal: registra el MCP de MahzzTerm en Claude Code.": "Paste it in a terminal: it registers the MahzzTerm MCP in Claude Code.",
   // Pestañas a un costado
   "Posición de las pestañas": "Tab position",
   "Arriba": "Top",

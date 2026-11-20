@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { ajustes, cambiarAjustes, type Ajustes } from "./ajustes";
 import { ACCIONES_EDITABLES, combinacionActual, combinacionDeEvento, textoAtajo } from "./atajos";
 import { avisar, confirmar } from "./dialogos";
@@ -99,6 +100,15 @@ function boton(texto: string, accion: () => void, clase = "boton"): HTMLButtonEl
   return elemento;
 }
 
+// El comando usa la ruta real de este .exe, así funciona instalado o compilado.
+async function copiarComandoMcp(): Promise<void> {
+  const exe = await invoke<string | null>("ruta_ejecutable");
+  if (!exe) return;
+  const comando = `claude mcp add --scope user mahzzterm -- "${exe}" --mcp`;
+  await navigator.clipboard.writeText(comando);
+  avisar(t("Copiado: {0}", comando));
+}
+
 function seccionGeneral(): HTMLElement[] {
   return [
     fila(
@@ -111,6 +121,16 @@ function seccionGeneral(): HTMLElement[] {
       t("El idioma se aplica al volver a abrir MahzzTerm."),
     ),
     fila(t("Restaurar pestañas al abrir"), interruptor("restaurarPestanas")),
+    fila(
+      t("Control por IA (MCP)"),
+      interruptor("controlIA"),
+      t("Deja que Claude Code y otras IAs usen la terminal: leer bloques y logs, ejecutar comandos y manejar pestañas."),
+    ),
+    fila(
+      t("Conectar con Claude Code"),
+      boton(t("Copiar comando"), () => void copiarComandoMcp()),
+      t("Pegalo en una terminal: registra el MCP de MahzzTerm en Claude Code."),
+    ),
     fila(t("Avisar cuando termina un comando largo"), interruptor("avisarComandos")),
     fila(t("Segundos para avisar"), numero("segundosAviso", 5, 3600)),
     fila(t("Ventana desplegable"), interruptor("desplegableActivo"), t("Baja desde arriba de la pantalla con un atajo global.")),

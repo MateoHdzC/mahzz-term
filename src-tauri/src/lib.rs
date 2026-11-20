@@ -1,10 +1,12 @@
 mod ajustes;
 mod archivos;
 mod cambios;
+mod control;
 mod datos;
 mod entorno;
 mod explorador;
 mod google;
+mod mcp;
 mod procesos;
 mod pty;
 mod servidor;
@@ -18,6 +20,10 @@ use pty::Sesiones;
 use tauri::{Manager, WindowEvent};
 use ventanas::Traspasos;
 
+pub fn correr_mcp() {
+    mcp::correr();
+}
+
 pub fn iniciar() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -28,9 +34,13 @@ pub fn iniciar() {
         .manage(Versiones::default())
         .manage(Historial::default())
         .manage(TokenGoogle::default())
+        .manage(control::Control::default())
         .setup(|app| {
             if let Some(ventana) = app.get_webview_window("main") {
                 ventanas::preparar_webview(&ventana)?;
+            }
+            if let Err(error) = control::iniciar(app.handle().clone()) {
+                eprintln!("No se pudo iniciar el control por IA: {error}");
             }
             Ok(())
         })
@@ -55,6 +65,8 @@ pub fn iniciar() {
             cambios::diff_cambio,
             cambios::listar_cambios,
             cambios::revertir_cambio,
+            control::responder_control,
+            control::ruta_ejecutable,
             datos::agregar_historial,
             datos::escribir_guardados,
             datos::fusionar_historial,

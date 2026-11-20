@@ -2,6 +2,15 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.4.0] - 2026-11-20
+
+### Agregado
+- **MCP para que una IA controle la terminal.** `MahzzTerm.exe --mcp` es un servidor MCP: Claude Code (u otra IA compatible) puede ver las pestañas y paneles, leer los bloques con su salida y código de error, leer la pantalla en vivo (logs de un servidor, la pantalla de otro agente), ejecutar comandos y recibir el resultado, mandar teclas a programas interactivos, abrir, dividir, cerrar y renombrar pestañas, ver el estado de los agentes, leer el historial y abrir archivos en el visor. Si MahzzTerm no está abierta, la abre sola.
+- En Ajustes → General: interruptor **Control por IA (MCP)** y botón **Conectar con Claude Code**, que copia el comando para registrarlo.
+
+### Cambiado
+- El nombre pasa a ser **MahzzTerm** (antes MazzTerm).
+
 ## [0.3.0] - 2026-11-19
 
 ### Agregado

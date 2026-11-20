@@ -114,6 +114,10 @@ export class Pestana {
     }
   }
 
+  activarPanel(panel: Panel): void {
+    this.marcarActivo(panel);
+  }
+
   private marcarActivo(panel: Panel): void {
     if (panel === this.activo) return;
     this.activo = panel;

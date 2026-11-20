@@ -15,6 +15,7 @@ import { abrirGuardados, abrirHistorial, abrirPaleta, guardarComando, type ApiPa
 import { Pestana, type DatosPestana, type Sentido } from "./pestana";
 import { PanelCambios } from "./cambios";
 import { PanelVisor } from "./visor";
+import { iniciarControl } from "./control";
 import { elegirSesion, listarSesiones, prepararParaReanudar, type SesionGuardada } from "./sesiones";
 
 const COLORES: ColorMenu[] = [
@@ -75,6 +76,7 @@ export class GestorPestanas {
 
   constructor() {
     this.aplicarPosicionPestanas();
+    if (this.ventana.label === "main") this.prepararControl();
     elemento("nueva-pestana").addEventListener("click", () => void this.nuevaPestana());
     elemento("alternar-archivos").addEventListener("click", () => this.archivos.alternar());
     elemento("alternar-cambios").addEventListener("click", () => this.cambios.alternar());
@@ -153,6 +155,41 @@ export class GestorPestanas {
     document.body.classList.toggle("pestanas-verticales", vertical);
     this.barra.setAttribute("aria-orientation", vertical ? "vertical" : "horizontal");
     this.activa?.elemento.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }
+
+  // Lo que puede hacer una IA conectada por MCP (ver control.ts).
+  private prepararControl(): void {
+    iniciarControl({
+      pestanas: () => this.pestanas,
+      activa: () => this.activa,
+      activar: (pestana) => this.activar(pestana),
+      nuevaPestana: async (carpeta, titulo) => {
+        await this.nuevaPestana({
+          tituloManual: titulo,
+          color: null,
+          nodo: {
+            tipo: "panel",
+            activo: true,
+            datos: { sesion: null, carpeta: carpeta ?? this.activa?.activo.carpeta ?? null, contenido: null },
+          },
+        });
+        if (!this.activa) throw new Error("No se pudo abrir la pestaña");
+        return this.activa;
+      },
+      cerrarPanel: (pestana, panel) => {
+        if (!pestana.cerrarPanel(panel)) {
+          pestana.contenido.remove();
+          pestana.elemento.remove();
+          this.quitarDeLista(pestana);
+        }
+      },
+      renombrar: (pestana, titulo) => {
+        pestana.tituloManual = titulo;
+        this.pintarPestana(pestana);
+      },
+      agentes: () => this.agentes.listar(),
+      abrirArchivo: (ruta) => void this.visor.abrir(ruta),
+    });
   }
 
   aplicarAjustes(): void {

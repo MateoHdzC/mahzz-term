@@ -1,6 +1,6 @@
 [package]
 name = "mahzzterm"
-version = "0.3.0"
+version = "0.4.0"
 description = "Terminal para Windows con bloques de comandos"
 edition = "2021"
 license = "MIT"
@@ -31,6 +31,7 @@ webview2-com = "0.39"
 windows = { version = "0.62", features = [
     "Win32_Foundation",
     "Win32_Security_Cryptography",
+    "Win32_System_Console",
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",

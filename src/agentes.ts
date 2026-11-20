@@ -143,6 +143,19 @@ export class PanelAgentes {
     this.api.alCerrar();
   }
 
+  // Lo que ve la IA con estado_agentes.
+  listar() {
+    return this.filas.map((fila) => ({
+      panel: fila.panel.id,
+      agente: fila.info.nombre,
+      estado: fila.seguimiento.estado,
+      sin_ver: fila.seguimiento.pendiente,
+      pestana: fila.pestana.titulo,
+      carpeta: fila.panel.carpeta,
+      abierto_hace_s: Math.round((Date.now() - fila.panel.programaDesde) / 1000),
+    }));
+  }
+
   // Se llama una vez por segundo, después de actualizar qué programa corre en cada panel.
   actualizar(): void {
     const ahora = Date.now();

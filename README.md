@@ -14,6 +14,7 @@
 - **Sesiones**: `mahzz --resume` te deja elegir una sesión anterior y vuelve a abrir sus pestañas, paneles y carpetas. Si había un Claude Code abierto, el panel queda con `claude --continue` listo para ejecutar.
 - **Visor y editor de archivos**: un clic en un archivo lo abre al costado. Código con colores y guardado (`Ctrl+S`), Markdown renderizado, HTML con vista web, imágenes, video, audio, PDF, Excel y Word, sin salir de la terminal.
 - **Archivos como en VS Code**: renombrar (F2), crear, mandar a la papelera (Supr), cortar, copiar y pegar, y arrastrar para mover.
+- **Control por IA (MCP)**: Claude Code y otras IAs pueden leer los bloques y los logs, ejecutar comandos y manejar las pestañas de MahzzTerm.
 - **Productividad**: historial con `Ctrl+R`, paleta de comandos (`Ctrl+Shift+P`), comandos guardados con parámetros y un árbol de archivos.
 - **SSH con bloques**: los hosts de `~/.ssh/config` también tienen bloques dentro del servidor (bash).
 - **Personalización**: temas editables, atajos, español e inglés y secretos cifrados con tu usuario de Windows.
@@ -31,6 +32,16 @@ mahzz --resume 2    # abrir directo la segunda sesión más reciente
 mahzz --agentes     # ver los agentes que están corriendo
 mahzz --cambios     # revisar los cambios del repositorio
 ```
+
+## Control por IA (MCP)
+
+MahzzTerm trae un servidor MCP para que una IA use la terminal como vos: ver las pestañas, leer los bloques y los logs, ejecutar comandos, mandar teclas a programas interactivos y manejar pestañas y paneles. Para conectarlo con Claude Code:
+
+```powershell
+claude mcp add --scope user mahzzterm -- "C:\ruta\a\MahzzTerm.exe" --mcp
+```
+
+En Ajustes → General, el botón **Conectar con Claude Code** copia ese comando con la ruta correcta, y el interruptor **Control por IA** lo apaga cuando quieras. Más detalle en [docs/funciones.md](docs/funciones.md#control-por-ia-mcp).
 
 ## Requisitos
 

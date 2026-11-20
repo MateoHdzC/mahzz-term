@@ -111,7 +111,20 @@ function codificarBase64(texto: string): string {
   return btoa(binario);
 }
 
+// Resultado de un comando terminado, para quien lo esté esperando (por ejemplo, la IA).
+export interface FinComando {
+  comando: string;
+  carpeta: string | null;
+  codigo: number;
+  duracion: number;
+  salida: string;
+}
+
+let ultimoIdPanel = 0;
+
 export class Panel {
+  // Número fijo mientras el panel exista: así lo nombra la IA.
+  readonly id = ++ultimoIdPanel;
   readonly elemento = document.createElement("div");
   readonly terminal: Terminal;
   readonly lista: ListaBloques;
@@ -123,6 +136,7 @@ export class Panel {
   programaDesde = 0;
   pideAtencion = false;
   private ultimaEntrada = 0;
+  private esperasFin: ((fin: FinComando) => void)[] = [];
 
   private readonly lienzo = document.createElement("div");
   private readonly entrada = document.createElement("div");
@@ -505,6 +519,13 @@ export class Panel {
       ? { lineasHtml: [], texto: "" }
       : capturarRango(this.terminal, desde, this.lineaFinal());
     actual.marcador?.dispose();
+    this.avisarFinComando({
+      comando: actual.comando,
+      carpeta: actual.carpeta,
+      codigo,
+      duracion: Date.now() - actual.inicio,
+      salida: captura.texto,
+    });
     registrarEnHistorial({
       comando: actual.comando,
       carpeta: actual.carpeta,
@@ -534,6 +555,43 @@ export class Panel {
       });
     }
     this.eventos.alCambiarEstado(this);
+  }
+
+  get ramaActual(): string | null {
+    return this.rama;
+  }
+
+  // Promesa que se cumple cuando termina el próximo comando de este panel.
+  esperarFinComando(): Promise<FinComando> {
+    return new Promise((cumplir) => this.esperasFin.push(cumplir));
+  }
+
+  private avisarFinComando(fin: FinComando): void {
+    const esperas = this.esperasFin;
+    this.esperasFin = [];
+    for (const cumplir of esperas) cumplir(fin);
+  }
+
+  // Las últimas líneas de lo que muestra la terminal ahora (salida en vivo o un programa interactivo).
+  textoPantalla(lineas: number): string {
+    const buffer = this.terminal.buffer.active;
+    const leer = (indice: number) => buffer.getLine(indice)?.translateToString(true) ?? "";
+    // Se cuenta desde la última línea con texto: las filas vacías de abajo no suman.
+    let fin = buffer.length;
+    while (fin > 0 && !leer(fin - 1).trim()) fin--;
+    const textos: string[] = [];
+    for (let indice = Math.max(0, fin - lineas); indice < fin; indice++) {
+      // El editor manda los comandos codificados: se muestra el comando real.
+      textos.push(leer(indice).replace(/#mahzz:([A-Za-z0-9+/=]+)/, (_, codigo: string) => decodificarBase64(codigo)));
+    }
+    return textos.join("\n");
+  }
+
+  // Manda bytes tal cual al programa que corre (teclas, respuestas, Ctrl+C).
+  escribirCrudo(datos: string): boolean {
+    if (this.sesion === null) return false;
+    void invoke("escribir_sesion", { id: this.sesion, datos });
+    return true;
   }
 
   get textoEditor(): string {

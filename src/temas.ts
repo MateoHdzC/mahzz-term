@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ITheme } from "@xterm/xterm";
 import { ajustes } from "./ajustes";
 
-const avisarCambio = () => window.dispatchEvent(new Event("mazz:datos-cambiados"));
+const avisarCambio = () => window.dispatchEvent(new Event("mahzz:datos-cambiados"));
 
 export const CLAVES_COLOR = [
   "fondo",
@@ -37,7 +37,7 @@ const VARIABLES: Record<ClaveColor, string> = {
 
 export const TEMA_MAHZZ: Tema = {
   id: "mahzz",
-  nombre: "MazzTerm",
+  nombre: "MahzzTerm",
   colores: {
     fondo: "#050507",
     barra: "#000000",

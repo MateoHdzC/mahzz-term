@@ -103,7 +103,7 @@ fn comando_shell(carpeta: Option<&str>) -> CommandBuilder {
     comando.arg(integracion_codificada());
     comando.env("TERM", "xterm-256color");
     comando.env("COLORTERM", "truecolor");
-    comando.env("TERM_PROGRAM", "MazzTerm");
+    comando.env("TERM_PROGRAM", "MahzzTerm");
     comando.env("TERM_PROGRAM_VERSION", env!("CARGO_PKG_VERSION"));
 
     let carpeta_valida = carpeta

@@ -1,6 +1,6 @@
-<p align="center"><img src="public/logo.png" width="96" alt="MazzTerm"></p>
+<p align="center"><img src="public/logo.png" width="96" alt="MahzzTerm"></p>
 
-<h1 align="center">MazzTerm</h1>
+<h1 align="center">MahzzTerm</h1>
 
 <p align="center">Terminal para Windows con bloques de comandos, pensada para trabajar con agentes de IA.<br>Hecha con Tauri 2, Rust y xterm.js.</p>
 
@@ -23,7 +23,7 @@ Más detalle en [docs/funciones.md](docs/funciones.md) y el historial de version
 
 ## El comando `mahzz`
 
-Dentro de MazzTerm:
+Dentro de MahzzTerm:
 
 ```powershell
 mahzz --resume      # elegir una sesión anterior y abrir sus pestañas
@@ -48,7 +48,7 @@ pnpm tauri build    # instalador en src-tauri/target/release/bundle
 
 ## Datos
 
-MazzTerm guarda los ajustes, el historial, las sesiones y la cuenta en `%LOCALAPPDATA%\com.mahzz.mahzzterm\datos`. Para usar otra carpeta (por ejemplo, una versión portable o pruebas), definí la variable `MAHZZTERM_DATOS`.
+MahzzTerm guarda los ajustes, el historial, las sesiones y la cuenta en `%LOCALAPPDATA%\com.mahzz.mahzzterm\datos`. Para usar otra carpeta (por ejemplo, una versión portable o pruebas), definí la variable `MAHZZTERM_DATOS`.
 
 ## Inicio de sesión con Google (opcional)
 

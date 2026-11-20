@@ -26,6 +26,7 @@ interface Paquete {
   historial: EntradaHistorial[];
 }
 
+// Nombre de antes del cambio a MahzzTerm: cambiarlo haría que se vuelva a mezclar todo con Drive.
 const CLAVE_FECHA = "mazz-sync-fecha";
 const RETRASO_SUBIDA = 8000;
 
@@ -131,14 +132,14 @@ function programarSubida(): void {
 
 export async function cargarCuenta(): Promise<void> {
   alCambiarAjustes(programarSubida);
-  window.addEventListener("mazz:datos-cambiados", programarSubida);
+  window.addEventListener("mahzz:datos-cambiados", programarSubida);
   definirPerfil(await invoke<Perfil | null>("cuenta_google"));
   void sincronizar(false);
 }
 
 export async function iniciarSesion(): Promise<void> {
   if (!(await invoke<boolean>("google_configurado"))) {
-    avisar(t("Esta copia de MazzTerm no tiene configurado Google"));
+    avisar(t("Esta copia de MahzzTerm no tiene configurado Google"));
     return;
   }
   avisar(t("Completá el inicio de sesión en tu navegador"));

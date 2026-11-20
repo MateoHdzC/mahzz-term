@@ -28,7 +28,7 @@ export function registrarEnHistorial(entrada: EntradaHistorial): void {
   }
   entradas.push(entrada);
   void invoke("agregar_historial", { entrada });
-  window.dispatchEvent(new Event("mazz:datos-cambiados"));
+  window.dispatchEvent(new Event("mahzz:datos-cambiados"));
 }
 
 export function entradasHistorial(): readonly EntradaHistorial[] {

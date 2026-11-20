@@ -100,7 +100,7 @@ function global:mahzz {
     if ($orden -and $orden -notmatch '^\s*(--help|-h)\s*$') {
         Write-Host "mahzz: no conozco '$orden'" -ForegroundColor Red
     }
-    Write-Host 'MazzTerm' -ForegroundColor Magenta
+    Write-Host 'MahzzTerm' -ForegroundColor Magenta
     Write-Host '  mahzz --resume      elegir una sesión anterior y abrir sus pestañas'
     Write-Host '  mahzz --resume 2    abrir directo la segunda sesión más reciente'
     Write-Host '  mahzz --agentes     ver los agentes que están corriendo'

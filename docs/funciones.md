@@ -20,7 +20,7 @@ Esta guía explica qué hace cada función nueva, cómo usarla y dónde está el
 | Esperando | Pasaron más de 3 segundos sin salida. |
 | Te necesita | El programa tocó la campana de la terminal (BEL). Claude Code lo hace si en su configuración tiene la notificación por campana. |
 
-Si un agente trabajó 10 segundos o más y pasa a esperar mientras estás en otra pestaña o en otra ventana, MazzTerm manda una notificación de Windows (si "Avisar cuando termina un comando largo" está activado en Ajustes) y pone ámbar el punto de esa pestaña. Mientras trabaja, el punto late.
+Si un agente trabajó 10 segundos o más y pasa a esperar mientras estás en otra pestaña o en otra ventana, MahzzTerm manda una notificación de Windows (si "Avisar cuando termina un comando largo" está activado en Ajustes) y pone ámbar el punto de esa pestaña. Mientras trabaja, el punto late.
 
 **Qué cuenta como agente:** el nombre del programa que corre dentro del shell. La lista está en `AGENTES`, en [`src/agentes.ts`](../src/agentes.ts): claude, codex, gemini, aider, opencode, cursor-agent, copilot, goose, crush, qwen, amp y ollama. Un agente instalado con npm corre como `node` y no se detecta. Claude Code con el instalador nativo (`claude.exe`) sí.
 
@@ -69,13 +69,13 @@ En el selector, Enter abre la sesión elegida y Supr la borra de la lista. Las p
 
 **Claude Code:** si un panel tenía `claude` corriendo, al reabrirlo queda escrito `claude --continue` en el editor. No se ejecuta solo: lo confirmás con Enter.
 
-**Cómo funciona `mahzz`:** es una función de PowerShell que MazzTerm carga en cada sesión ([`integracion.ps1`](../src-tauri/src/integracion.ps1)). No abre nada por su cuenta: escribe una marca invisible (`OSC 133;X`) que la interfaz lee y convierte en la acción.
+**Cómo funciona `mahzz`:** es una función de PowerShell que MahzzTerm carga en cada sesión ([`integracion.ps1`](../src-tauri/src/integracion.ps1)). No abre nada por su cuenta: escribe una marca invisible (`OSC 133;X`) que la interfaz lee y convierte en la acción.
 
 **Código:** [`src/sesiones.ts`](../src/sesiones.ts), [`src-tauri/src/sesiones.rs`](../src-tauri/src/sesiones.rs) y `reanudarSesion` en [`src/gestor.ts`](../src/gestor.ts).
 
 ## Dónde se guardan los datos
 
-Todo lo de MazzTerm (ajustes, historial, sesiones, temas, secretos y la sesión de Google) vive en:
+Todo lo de MahzzTerm (ajustes, historial, sesiones, temas, secretos y la sesión de Google) vive en:
 
 ```
 %LOCALAPPDATA%\com.mahzz.mahzzterm\datos

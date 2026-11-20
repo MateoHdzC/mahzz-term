@@ -86,7 +86,7 @@ pub async fn abrir_ventana(
     }
 
     let constructor = WebviewWindowBuilder::new(&app, &etiqueta, WebviewUrl::App("index.html".into()))
-        .title("MazzTerm")
+        .title("MahzzTerm")
         .inner_size(1100.0, 700.0)
         .min_inner_size(520.0, 320.0)
         .decorations(false)

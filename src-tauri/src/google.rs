@@ -33,11 +33,12 @@ const PERFIL: &str = "https://openidconnect.googleapis.com/v1/userinfo";
 const ARCHIVOS: &str = "https://www.googleapis.com/drive/v3/files";
 const SUBIDA: &str = "https://www.googleapis.com/upload/drive/v3/files";
 const PERMISOS: &str = "openid email profile https://www.googleapis.com/auth/drive.appdata";
+// Conserva el nombre de antes del cambio a MahzzTerm: con otro nombre se perdería lo ya sincronizado.
 const ARCHIVO_SYNC: &str = "mazzterm-sync.json";
 const LIMITE_LOGIN: Duration = Duration::from_secs(180);
 const LIMITE_RESPUESTA: u64 = 64 * 1024 * 1024;
 
-const PAGINA_LISTA: &str = "<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>MazzTerm</title><body style=\"margin:0;display:grid;place-items:center;height:100vh;background:#050507;color:#e4e2ec;font-family:Segoe UI,sans-serif\"><main style=\"text-align:center\"><h1 style=\"font-size:24px\">Listo</h1><p>Ya podés volver a MazzTerm y cerrar esta pestaña.</p></main></body></html>";
+const PAGINA_LISTA: &str = "<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>MahzzTerm</title><body style=\"margin:0;display:grid;place-items:center;height:100vh;background:#050507;color:#e4e2ec;font-family:Segoe UI,sans-serif\"><main style=\"text-align:center\"><h1 style=\"font-size:24px\">Listo</h1><p>Ya podés volver a MahzzTerm y cerrar esta pestaña.</p></main></body></html>";
 
 #[derive(Default)]
 pub struct TokenGoogle(Mutex<Option<(String, Instant)>>);
@@ -45,7 +46,7 @@ pub struct TokenGoogle(Mutex<Option<(String, Instant)>>);
 fn credenciales() -> Result<(&'static str, &'static str), String> {
     match (CLIENTE, CLAVE) {
         (Some(cliente), Some(clave)) => Ok((cliente, clave)),
-        _ => Err("Esta copia de MazzTerm no tiene configurado Google".to_string()),
+        _ => Err("Esta copia de MahzzTerm no tiene configurado Google".to_string()),
     }
 }
 

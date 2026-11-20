@@ -108,7 +108,7 @@ function seccionGeneral(): HTMLElement[] {
         ajustes().idioma,
         (valor) => void cambiarAjustes({ idioma: valor as Ajustes["idioma"] }),
       ),
-      t("El idioma se aplica al volver a abrir MazzTerm."),
+      t("El idioma se aplica al volver a abrir MahzzTerm."),
     ),
     fila(t("Restaurar pestañas al abrir"), interruptor("restaurarPestanas")),
     fila(t("Avisar cuando termina un comando largo"), interruptor("avisarComandos")),

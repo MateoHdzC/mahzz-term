@@ -58,7 +58,7 @@ async function leerGuardados(): Promise<ComandoGuardado[]> {
 
 async function escribirGuardados(lista: ComandoGuardado[]): Promise<void> {
   await invoke("escribir_guardados", { lista });
-  window.dispatchEvent(new Event("mazz:datos-cambiados"));
+  window.dispatchEvent(new Event("mahzz:datos-cambiados"));
 }
 
 export function parametrosDe(comando: string): string[] {

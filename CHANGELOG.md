@@ -1,6 +1,6 @@
 # Cambios
 
-Todas las versiones de MazzTerm. Las fechas usan el formato año-mes-día.
+Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
 ## [0.3.0] - 2026-11-19
 
@@ -29,7 +29,7 @@ Todas las versiones de MazzTerm. Las fechas usan el formato año-mes-día.
 - Acciones nuevas en la paleta de comandos: "Revisar cambios", "Ver agentes activos" y "Reanudar una sesión anterior".
 
 ### Corregido
-- **La sesión de Google se perdía al cerrar la app o reiniciar la PC.** Los datos se guardaban en una carpeta `datos` junto al ejecutable, así que cada forma de abrir MazzTerm (desarrollo, release, instalador) tenía su propia carpeta y no veía la sesión de las otras. Ahora todo vive en `%LOCALAPPDATA%\com.mahzz.mahzzterm\datos`, y la primera vez se copia lo que había en la carpeta vieja, sin pisar nada.
+- **La sesión de Google se perdía al cerrar la app o reiniciar la PC.** Los datos se guardaban en una carpeta `datos` junto al ejecutable, así que cada forma de abrir MahzzTerm (desarrollo, release, instalador) tenía su propia carpeta y no veía la sesión de las otras. Ahora todo vive en `%LOCALAPPDATA%\com.mahzz.mahzzterm\datos`, y la primera vez se copia lo que había en la carpeta vieja, sin pisar nada.
 
 ## [0.1.0] - 2026-11-18
 

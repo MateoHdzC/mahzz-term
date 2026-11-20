@@ -19,7 +19,7 @@ pub struct Historial {
 
 // Los datos viven en una carpeta fija del usuario (%LOCALAPPDATA%), no junto al .exe.
 // Así la sesión de Google y los ajustes sobreviven a reinicios, actualizaciones y a
-// abrir MazzTerm desde otra ruta. MAHZZTERM_DATOS permite usar otra carpeta (pruebas o portable).
+// abrir MahzzTerm desde otra ruta. MAHZZTERM_DATOS permite usar otra carpeta (pruebas o portable).
 pub(crate) fn carpeta_datos(app: &AppHandle) -> Result<PathBuf, String> {
     // Una variable vacía se ignora para no guardar datos en la carpeta donde se abrió la app.
     if let Some(propia) = env::var_os("MAHZZTERM_DATOS").filter(|valor| !valor.is_empty()) {

@@ -307,6 +307,13 @@ const INGLES: Record<string, string> = {
   "Descargando la actualización…": "Downloading the update…",
   "No se pudo actualizar: {0}": "Could not update: {0}",
   "Actualizaciones": "Updates",
+  "Ajustes: MahzzTerm {0} está disponible": "Settings: MahzzTerm {0} is available",
+  "Abrí Ajustes y tocá Actualizar. Tarda menos de un minuto.": "Open Settings and click Update. It takes less than a minute.",
+  "Descargando MahzzTerm {0}…": "Downloading MahzzTerm {0}…",
+  "Actualización disponible": "Update available",
+  "Actualizar a {0}": "Update to {0}",
+  "Se descarga, se instala y MahzzTerm se reinicia.": "It downloads, installs and MahzzTerm restarts.",
+  "MahzzTerm se fija sola al abrirse y cada 6 horas, y te avisa con una notificación.": "MahzzTerm checks when it opens and every 6 hours, and notifies you.",
   "Buscar ahora": "Check now",
   "MahzzTerm también se fija sola al abrirse.": "MahzzTerm also checks on its own when it opens.",
   // Logs y tareas en paralelo

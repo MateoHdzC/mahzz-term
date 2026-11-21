@@ -2877,3 +2877,20 @@ textarea.dialogo__entrada {
   color: #ffffff;
   background: var(--peligro);
 }
+
+/* Puntito en el botón de Ajustes cuando hay una actualización sin instalar */
+#ajustes {
+  position: relative;
+}
+
+.barra__boton--aviso::after {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: #6fdc9c;
+  border: 2px solid var(--fondo-barra);
+  border-radius: 50%;
+  content: "";
+}

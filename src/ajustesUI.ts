@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { buscarActualizacion } from "./actualizaciones";
+import { actualizacionPendiente, buscarActualizacion, instalarActualizacion } from "./actualizaciones";
 import { ajustes, cambiarAjustes, type Ajustes } from "./ajustes";
 import { ACCIONES_EDITABLES, combinacionActual, combinacionDeEvento, textoAtajo } from "./atajos";
 import { avisar, confirmar } from "./dialogos";
@@ -101,6 +101,23 @@ function boton(texto: string, accion: () => void, clase = "boton"): HTMLButtonEl
   return elemento;
 }
 
+// Si ya hay una versión nueva descargable, el botón la instala directo.
+function filaActualizaciones(): HTMLElement {
+  const nueva = actualizacionPendiente();
+  if (nueva) {
+    return fila(
+      t("Actualización disponible"),
+      boton(t("Actualizar a {0}", nueva.version), () => void instalarActualizacion(), "boton boton--principal"),
+      t("Se descarga, se instala y MahzzTerm se reinicia."),
+    );
+  }
+  return fila(
+    t("Actualizaciones"),
+    boton(t("Buscar ahora"), () => void buscarActualizacion()),
+    t("MahzzTerm se fija sola al abrirse y cada 6 horas, y te avisa con una notificación."),
+  );
+}
+
 // El comando usa la ruta real de este .exe, así funciona instalado o compilado.
 async function copiarComandoMcp(): Promise<void> {
   const exe = await invoke<string | null>("ruta_ejecutable");
@@ -122,7 +139,7 @@ function seccionGeneral(): HTMLElement[] {
       t("El idioma se aplica al volver a abrir MahzzTerm."),
     ),
     fila(t("Restaurar pestañas al abrir"), interruptor("restaurarPestanas")),
-    fila(t("Actualizaciones"), boton(t("Buscar ahora"), () => void buscarActualizacion(true)), t("MahzzTerm también se fija sola al abrirse.")),
+    filaActualizaciones(),
     fila(
       t("Control por IA (MCP)"),
       interruptor("controlIA"),

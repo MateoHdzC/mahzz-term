@@ -11,7 +11,7 @@ import { cargarHistorial } from "./historial";
 import { t, traducirPagina } from "./i18n";
 import type { DatosPestana } from "./pestana";
 import { mostrarPrimerUso } from "./primerUso";
-import { buscarActualizacion } from "./actualizaciones";
+import { iniciarActualizaciones } from "./actualizaciones";
 import { aplicarTema, cargarTemas } from "./temas";
 
 const ICONO_MAXIMIZAR = "M0.5 0.5h9v9h-9z";
@@ -118,8 +118,8 @@ async function iniciar(): Promise<void> {
     await ventana.setFocus();
     gestor?.recuperarFoco();
     if (esPrincipal && !ajustes().primerUsoHecho) mostrarPrimerUso(() => gestor?.recuperarFoco());
-    // Se busca una vez por apertura, unos segundos después, para no demorar el arranque.
-    if (esPrincipal && !import.meta.env.DEV) setTimeout(() => void buscarActualizacion(false), 8000);
+    // Busca versiones nuevas al abrir y cada 6 horas; avisa con una notificación de Windows.
+    if (esPrincipal && !import.meta.env.DEV) iniciarActualizaciones();
   }
 }
 

@@ -2,6 +2,11 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.5.1] - 2026-11-21
+
+### Cambiado
+- **Aviso de actualizaciones más cómodo.** MahzzTerm busca versiones nuevas al abrirse y **cada 6 horas** mientras está abierta. Cuando hay una, avisa con una **notificación de Windows** (una sola vez por versión) y deja un puntito verde en el botón de Ajustes, sin cartel que interrumpa. En Ajustes → General aparece **Actualizar a X**, que la instala y reinicia la app.
+
 ## [0.5.0] - 2026-11-20
 
 ### Agregado

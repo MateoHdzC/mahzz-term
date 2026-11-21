@@ -4,6 +4,8 @@
 
 <p align="center">Terminal para Windows con bloques de comandos, pensada para trabajar con agentes de IA.<br>Hecha con Tauri 2, Rust y xterm.js.</p>
 
+<p align="center"><a href="https://mahzzterm.xyz">mahzzterm.xyz</a> · <a href="https://github.com/MateoHdzC/mahzz-term/releases/latest">Descargar</a></p>
+
 ## Qué tiene
 
 - **Bloques de comandos**: cada comando queda agrupado con su salida, su duración y su código de error. Se pueden copiar, repetir o buscar.

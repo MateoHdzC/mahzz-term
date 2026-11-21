@@ -2,6 +2,12 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.5.2] - 2026-11-21
+
+### Cambiado
+- **Instalador con la identidad de MahzzTerm**: panel lateral y encabezado propios con el logo, ícono de MahzzTerm y textos en español (o en inglés, según el idioma de Windows).
+- **Datos del ejecutable**: en Propiedades → Detalles y en "Aplicaciones instaladas" ahora figuran el nombre, la descripción, el autor, el copyright y la web.
+
 ## [0.5.1] - 2026-11-21
 
 ### Cambiado

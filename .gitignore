@@ -12,3 +12,6 @@ src-tauri/credenciales/
 RESPUESTAS.md
 SPEC.md
 mahzz.webp
+
+# Vistas previas de las imágenes del instalador
+src-tauri/instalador/*-vista.png

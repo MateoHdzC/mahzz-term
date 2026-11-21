@@ -130,6 +130,47 @@ fn herramientas() -> Value {
             } }
         },
         {
+            "name": "buscar_logs",
+            "description": "Busca en los logs de TODOS los comandos terminados en MahzzTerm (cualquier pestaña, últimos 30 días): en el comando y en su salida. Sin consulta devuelve los más recientes.",
+            "inputSchema": { "type": "object", "properties": {
+                "consulta": { "type": "string", "description": "Texto a buscar, sin distinguir mayúsculas." },
+                "solo_errores": { "type": "boolean" },
+                "limite": { "type": "integer", "description": "Por defecto 20." },
+                "max_caracteres": { "type": "integer", "description": "Máximo de salida por resultado. Por defecto 4000." }
+            } }
+        },
+        {
+            "name": "nueva_tarea",
+            "description": "Crea una tarea en paralelo para un agente: un worktree de git con su propia rama (mahzz/<nombre>) en una carpeta aparte, abre una pestaña ahí y arranca al agente con las instrucciones. Así varios agentes trabajan a la vez sin pisarse.",
+            "inputSchema": { "type": "object", "properties": {
+                "nombre": { "type": "string", "description": "Nombre corto de la tarea; se usa para la rama." },
+                "instrucciones": { "type": "string", "description": "Lo que tiene que hacer el agente." },
+                "agente": { "type": "string", "description": "Comando del agente. Por defecto claude." },
+                "carpeta": { "type": "string", "description": "Carpeta del repositorio. Por defecto la del panel activo." }
+            }, "required": ["nombre"] }
+        },
+        {
+            "name": "listar_tareas",
+            "description": "Lista las tareas en paralelo (worktrees con rama mahzz/…) del repositorio, con sus cambios sin guardar y commits.",
+            "inputSchema": { "type": "object", "properties": {
+                "carpeta": { "type": "string", "description": "Carpeta del repositorio. Por defecto la del panel activo." }
+            } }
+        },
+        {
+            "name": "unir_tarea",
+            "description": "Une una tarea terminada: guarda en un commit lo que dejó el agente, la une a la rama actual del repositorio y borra su carpeta. Si hay conflictos, no cambia nada.",
+            "inputSchema": { "type": "object", "properties": {
+                "carpeta": { "type": "string", "description": "Carpeta de la tarea (de listar_tareas)." }
+            }, "required": ["carpeta"] }
+        },
+        {
+            "name": "descartar_tarea",
+            "description": "Descarta una tarea: borra su carpeta y su rama con todo lo que hizo el agente.",
+            "inputSchema": { "type": "object", "properties": {
+                "carpeta": { "type": "string", "description": "Carpeta de la tarea (de listar_tareas)." }
+            }, "required": ["carpeta"] }
+        },
+        {
             "name": "abrir_archivo",
             "description": "Abre un archivo en el visor lateral de MahzzTerm para que la persona lo vea (código, Markdown, HTML, imágenes, PDF…).",
             "inputSchema": { "type": "object", "properties": { "ruta": { "type": "string" } }, "required": ["ruta"] }

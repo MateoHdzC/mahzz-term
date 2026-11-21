@@ -14,6 +14,8 @@
 - **Sesiones**: `mahzz --resume` te deja elegir una sesión anterior y vuelve a abrir sus pestañas, paneles y carpetas. Si había un Claude Code abierto, el panel queda con `claude --continue` listo para ejecutar.
 - **Visor y editor de archivos**: un clic en un archivo lo abre al costado. Código con colores y guardado (`Ctrl+S`), Markdown renderizado, HTML con vista web, imágenes, video, audio, PDF, Excel y Word, sin salir de la terminal.
 - **Archivos como en VS Code**: renombrar (F2), crear, mandar a la papelera (Supr), cortar, copiar y pegar, y arrastrar para mover.
+- **Tareas en paralelo**: cada agente trabaja en su propio worktree de git (rama `mahzz/…`), sin pisarse con los demás. Al terminar, unís o descartás con un clic.
+- **Todos los logs, buscables** (`Ctrl+Shift+F`): los comandos y salidas de cualquier pestaña de los últimos 30 días. Al reabrir, cada panel vuelve con sus bloques.
 - **Control por IA (MCP)**: Claude Code y otras IAs pueden leer los bloques y los logs, ejecutar comandos y manejar las pestañas de MahzzTerm.
 - **Productividad**: historial con `Ctrl+R`, paleta de comandos (`Ctrl+Shift+P`), comandos guardados con parámetros y un árbol de archivos.
 - **SSH con bloques**: los hosts de `~/.ssh/config` también tienen bloques dentro del servidor (bash).
@@ -43,6 +45,10 @@ claude mcp add --scope user mahzzterm -- "C:\ruta\a\MahzzTerm.exe" --mcp
 
 En Ajustes → General, el botón **Conectar con Claude Code** copia ese comando con la ruta correcta, y el interruptor **Control por IA** lo apaga cuando quieras. Más detalle en [docs/funciones.md](docs/funciones.md#control-por-ia-mcp).
 
+## Instalar
+
+Bajá `MahzzTerm-setup.exe` del [último release](https://github.com/MateoHdzC/mahzz-term/releases/latest) y abrilo. No pide permisos de administrador. Después MahzzTerm se actualiza sola: al abrirse avisa si hay una versión nueva.
+
 ## Requisitos
 
 - Windows 10 u 11 con WebView2
@@ -56,6 +62,15 @@ pnpm install
 pnpm tauri dev      # versión de desarrollo
 pnpm tauri build    # instalador en src-tauri/target/release/bundle
 ```
+
+Para publicar una versión (instalador firmado, `latest.json` para las actualizaciones y release en GitHub):
+
+```powershell
+.\scripts\publicar.ps1             # compila y deja los archivos en src-tauri/target/release/publicar
+.\scripts\publicar.ps1 -Publicar   # además crea el release vX.Y.Z
+```
+
+Necesita la clave privada de firma en `~\.tauri\mahzzterm.key`, que nunca va al repositorio.
 
 ## Datos
 

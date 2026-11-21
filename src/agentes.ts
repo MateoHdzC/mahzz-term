@@ -3,6 +3,7 @@ import { ajustes } from "./ajustes";
 import { t } from "./i18n";
 import type { Panel } from "./panel";
 import type { Pestana } from "./pestana";
+import { listarTareas, type ListaTareas, type Tarea } from "./tareas";
 
 interface InfoAgente {
   nombre: string;
@@ -57,8 +58,15 @@ export interface ApiAgentes {
   activa(): Pestana | null;
   irA(pestana: Pestana, panel: Panel): void;
   nuevoAgente(comando: string): void;
+  carpetaActiva(): string | null;
+  nuevaTarea(): void;
+  abrirTarea(tarea: Tarea): void;
+  unirTarea(tarea: Tarea): void;
+  descartarTarea(tarea: Tarea): void;
   alCerrar(): void;
 }
+
+const INTERVALO_TAREAS = 4000;
 
 function tiempoDesde(momento: number): string {
   const segundos = Math.max(0, Math.round((Date.now() - momento) / 1000));
@@ -84,6 +92,9 @@ export class PanelAgentes {
   private readonly insignia = document.createElement("span");
   private readonly seguimientos = new WeakMap<Panel, Seguimiento>();
   private filas: FilaAgente[] = [];
+  private tareas: ListaTareas = { repo: null, tareas: [] };
+  private ultimaRevisionTareas = 0;
+  private revisandoTareas = false;
 
   constructor(
     private readonly boton: HTMLElement,
@@ -134,6 +145,23 @@ export class PanelAgentes {
     this.boton.setAttribute("aria-pressed", "true");
     this.dibujar();
     this.desplegable.querySelector<HTMLElement>("button")?.focus();
+    void this.refrescarTareas();
+  }
+
+  // Las tareas salen de git (worktrees con rama mahzz/…) del repo de la pestaña activa.
+  async refrescarTareas(): Promise<void> {
+    const carpeta = this.api.carpetaActiva();
+    if (this.revisandoTareas) return;
+    this.revisandoTareas = true;
+    this.ultimaRevisionTareas = Date.now();
+    try {
+      this.tareas = carpeta ? await listarTareas(carpeta) : { repo: null, tareas: [] };
+    } catch {
+      this.tareas = { repo: null, tareas: [] };
+    } finally {
+      this.revisandoTareas = false;
+    }
+    if (this.abierto) this.dibujar();
   }
 
   private cerrar(): void {
@@ -187,7 +215,10 @@ export class PanelAgentes {
     this.insignia.classList.toggle("barra__insignia--aviso", pendientes > 0);
     this.boton.title =
       filas.length === 0 ? t("Agentes (ninguno activo)") : t("Agentes: {0} activos", filas.length);
-    if (this.abierto) this.dibujar();
+    if (this.abierto) {
+      this.dibujar();
+      if (Date.now() - this.ultimaRevisionTareas > INTERVALO_TAREAS) void this.refrescarTareas();
+    }
   }
 
   private seguir(panel: Panel, ahora: number, pestana: Pestana, activa: Pestana | null): Seguimiento {
@@ -252,12 +283,74 @@ export class PanelAgentes {
       this.api.nuevoAgente("claude");
     });
 
+    const nuevaTarea = document.createElement("button");
+    nuevaTarea.type = "button";
+    nuevaTarea.className = "agentes__nuevo";
+    nuevaTarea.innerHTML = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1v8M1 5h8" /></svg>';
+    nuevaTarea.append(t("Nueva tarea en paralelo (worktree)"));
+    nuevaTarea.title = t("Crea una copia de trabajo de git aparte y abre un agente ahí, para que no se pise con los demás");
+    nuevaTarea.addEventListener("click", () => {
+      this.cerrar();
+      this.api.nuevaTarea();
+    });
+
     // Se conserva el foco del teclado al redibujar cada segundo.
     const enfocada = this.desplegable.contains(document.activeElement)
       ? (document.activeElement as HTMLElement).dataset.clave
       : undefined;
-    this.desplegable.replaceChildren(encabezado, lista, nuevo);
+    this.desplegable.replaceChildren(encabezado, lista, ...this.dibujarTareas(), nuevaTarea, nuevo);
     if (enfocada) this.desplegable.querySelector<HTMLElement>(`[data-clave="${enfocada}"]`)?.focus();
+  }
+
+  private dibujarTareas(): HTMLElement[] {
+    if (this.tareas.tareas.length === 0) return [];
+    const titulo = document.createElement("div");
+    titulo.className = "agentes__encabezado agentes__encabezado--tareas";
+    titulo.textContent = t("Tareas en paralelo");
+    const base = document.createElement("span");
+    base.className = "agentes__cantidad";
+    base.textContent = this.tareas.base ? t("se unen a {0}", this.tareas.base) : "";
+    titulo.append(base);
+    const lista = document.createElement("div");
+    lista.className = "agentes__lista";
+    for (const tarea of this.tareas.tareas) {
+      const fila = document.createElement("div");
+      fila.className = "agentes__tarea";
+      const textos = document.createElement("button");
+      textos.type = "button";
+      textos.className = "agentes__tarea-abrir";
+      textos.dataset.clave = `tarea:${tarea.rama}`;
+      textos.title = tarea.carpeta;
+      const nombre = document.createElement("span");
+      nombre.className = "agentes__nombre";
+      nombre.textContent = tarea.nombre;
+      const detalle = document.createElement("span");
+      detalle.className = "agentes__detalle";
+      detalle.textContent = t("{0} cambios sin guardar · {1} commits", tarea.cambios, tarea.commits);
+      textos.append(nombre, detalle);
+      textos.addEventListener("click", () => {
+        this.cerrar();
+        this.api.abrirTarea(tarea);
+      });
+      const accion = (texto: string, clase: string, alHacer: () => void) => {
+        const boton = document.createElement("button");
+        boton.type = "button";
+        boton.className = `agentes__accion ${clase}`;
+        boton.textContent = texto;
+        boton.addEventListener("click", () => {
+          this.cerrar();
+          alHacer();
+        });
+        return boton;
+      };
+      fila.append(
+        textos,
+        accion(t("Unir"), "agentes__accion--unir", () => this.api.unirTarea(tarea)),
+        accion(t("Descartar"), "agentes__accion--descartar", () => this.api.descartarTarea(tarea)),
+      );
+      lista.append(fila);
+    }
+    return [titulo, lista];
   }
 
   private crearFila({ pestana, panel, info, seguimiento }: FilaAgente): HTMLElement {

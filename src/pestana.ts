@@ -21,6 +21,22 @@ export interface DatosPestana {
   titulo?: string;
 }
 
+// Al reabrir, cada panel vuelve con sus últimos bloques. Se recortan para que la sesión no pese.
+const BLOQUES_GUARDADOS = 30;
+const LINEAS_POR_BLOQUE = 400;
+const TEXTO_POR_BLOQUE = 50_000;
+
+function bloquesParaGuardar(panel: Panel) {
+  return panel.lista
+    .exportar()
+    .slice(-BLOQUES_GUARDADOS)
+    .map((bloque) => ({
+      ...bloque,
+      lineasHtml: bloque.lineasHtml.slice(-LINEAS_POR_BLOQUE),
+      texto: bloque.texto.length > TEXTO_POR_BLOQUE ? bloque.texto.slice(-TEXTO_POR_BLOQUE) : bloque.texto,
+    }));
+}
+
 export type Sentido = "izquierda" | "derecha" | "arriba" | "abajo";
 
 export interface EventosPestana {
@@ -231,7 +247,13 @@ export class Pestana {
       return {
         tipo: "panel",
         activo: nodo.panel === this.activo,
-        datos: { sesion: null, carpeta: nodo.panel.carpeta, contenido: null, programa: nodo.panel.programa },
+        datos: {
+          sesion: null,
+          carpeta: nodo.panel.carpeta,
+          contenido: null,
+          programa: nodo.panel.programa,
+          bloques: bloquesParaGuardar(nodo.panel),
+        },
       };
     }
     return {

@@ -2689,3 +2689,191 @@ textarea.dialogo__entrada {
   background: #ffffff;
   border: 0;
 }
+
+/* Buscador de todos los logs */
+.registros {
+  width: min(860px, calc(100vw - 80px));
+  max-height: calc(100vh - 100px);
+  padding: 0;
+  color: var(--texto);
+  background: var(--fondo-elevado);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px #000000a0;
+}
+
+.registros[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.registros__cabecera {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.registros__entrada {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 2px;
+  color: var(--texto);
+  font: inherit;
+  font-size: 15px;
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+.registros__filtro {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+.registros__lista {
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.registros__vacio,
+.registros__ayuda {
+  padding: 14px;
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+.registros__ayuda {
+  padding: 8px 14px;
+  border-top: 1px solid var(--borde);
+}
+
+.registro {
+  border-radius: 8px;
+}
+
+.registro__encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--texto);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid #6fdc9c;
+  border-radius: 6px;
+}
+
+.registro--error .registro__encabezado {
+  border-left-color: var(--peligro);
+}
+
+.registro__encabezado:hover {
+  background: color-mix(in srgb, var(--acento) 12%, transparent);
+}
+
+.registro__comando {
+  overflow: hidden;
+  font-family: var(--fuente-mono);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.registro__datos,
+.registro__fragmento {
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.registro__fragmento {
+  font-family: var(--fuente-mono);
+}
+
+.registro__detalle {
+  margin: 2px 0 8px 12px;
+}
+
+.registro__detalle pre {
+  max-height: 360px;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  font-family: var(--fuente-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+.registro__acciones {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Tareas en paralelo dentro del desplegable de agentes */
+.agentes__encabezado--tareas {
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid var(--borde);
+}
+
+.agentes__tarea {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 4px 2px 0;
+  border-radius: 7px;
+}
+
+.agentes__tarea:hover {
+  background: color-mix(in srgb, var(--acento) 10%, transparent);
+}
+
+.agentes__tarea-abrir {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 6px 8px;
+  color: var(--texto);
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+
+.agentes__accion {
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  color: var(--texto);
+  font-size: 11px;
+  background: var(--fondo-hover);
+  border: 0;
+  border-radius: 5px;
+}
+
+.agentes__accion--unir:hover {
+  color: #0b1a10;
+  background: #6fdc9c;
+}
+
+.agentes__accion--descartar:hover {
+  color: #ffffff;
+  background: var(--peligro);
+}

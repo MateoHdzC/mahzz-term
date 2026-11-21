@@ -37,6 +37,8 @@ const ACCIONES: { accion: Accion; titulo: string }[] = [
   { accion: "alternarCambios", titulo: t("Revisar cambios") },
   { accion: "alternarAgentes", titulo: t("Ver agentes activos") },
   { accion: "reanudarSesion", titulo: t("Reanudar una sesión anterior") },
+  { accion: "buscarLogs", titulo: t("Buscar en todos los logs") },
+  { accion: "nuevaTarea", titulo: t("Nueva tarea en paralelo para un agente") },
 ];
 
 const PARAMETRO = /\{\{\s*([\p{L}\p{N}_-]+)\s*\}\}/gu;

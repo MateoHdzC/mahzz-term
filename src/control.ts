@@ -4,6 +4,8 @@ import { ajustes } from "./ajustes";
 import { entradasHistorial } from "./historial";
 import type { Panel } from "./panel";
 import type { Pestana } from "./pestana";
+import { buscarRegistros } from "./registros";
+import { listarTareas, type PedidoTarea, type TareaCreada } from "./tareas";
 
 // Lo que el gestor de pestañas le presta al control por IA.
 export interface ApiControl {
@@ -12,6 +14,8 @@ export interface ApiControl {
   activar(pestana: Pestana): void;
   nuevaPestana(carpeta: string | null, titulo: string | null): Promise<Pestana>;
   cerrarPanel(pestana: Pestana, panel: Panel): void;
+  crearTarea(pedido: PedidoTarea, carpeta: string | null): Promise<{ pestana: Pestana; tarea: TareaCreada }>;
+  terminarTarea(carpeta: string, modo: "unir" | "descartar"): Promise<unknown>;
   renombrar(pestana: Pestana, titulo: string | null): void;
   agentes(): unknown[];
   abrirArchivo(ruta: string): void;
@@ -234,6 +238,54 @@ async function atender(api: ApiControl, accion: string, args: Record<string, unk
           codigo: entrada.codigo,
         })),
       };
+    }
+
+    case "buscar_logs": {
+      const maximo = numero(args.max_caracteres, 4000, 200, 100_000);
+      const resultados = await buscarRegistros(
+        typeof args.consulta === "string" ? args.consulta : "",
+        numero(args.limite, 20, 1, 200),
+        args.solo_errores === true,
+      );
+      return {
+        resultados: resultados.map((registro) => ({
+          comando: registro.comando,
+          carpeta: registro.carpeta,
+          host: registro.host,
+          fecha: new Date(registro.inicio).toISOString(),
+          codigo: registro.codigo,
+          duracion_ms: registro.duracion,
+          fragmento: registro.fragmento,
+          salida: recortar(registro.texto, maximo),
+        })),
+      };
+    }
+
+    case "listar_tareas": {
+      const carpeta = texto(args.carpeta) ?? api.activa()?.activo.carpeta ?? null;
+      if (!carpeta) throw new Error("No hay una carpeta activa");
+      return listarTareas(carpeta);
+    }
+
+    case "nueva_tarea": {
+      const nombre = texto(args.nombre);
+      if (!nombre) throw new Error("Falta el nombre de la tarea");
+      const { pestana, tarea } = await api.crearTarea(
+        {
+          nombre,
+          instrucciones: typeof args.instrucciones === "string" ? args.instrucciones : "",
+          agente: texto(args.agente) ?? "claude",
+        },
+        texto(args.carpeta),
+      );
+      return { panel: pestana.activo.id, ...tarea };
+    }
+
+    case "unir_tarea":
+    case "descartar_tarea": {
+      const carpeta = texto(args.carpeta);
+      if (!carpeta) throw new Error("Falta la carpeta de la tarea (está en listar_tareas)");
+      return api.terminarTarea(carpeta, accion === "unir_tarea" ? "unir" : "descartar");
     }
 
     case "abrir_archivo": {

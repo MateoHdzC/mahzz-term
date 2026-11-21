@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { buscarActualizacion } from "./actualizaciones";
 import { ajustes, cambiarAjustes, type Ajustes } from "./ajustes";
 import { ACCIONES_EDITABLES, combinacionActual, combinacionDeEvento, textoAtajo } from "./atajos";
 import { avisar, confirmar } from "./dialogos";
@@ -121,6 +122,7 @@ function seccionGeneral(): HTMLElement[] {
       t("El idioma se aplica al volver a abrir MahzzTerm."),
     ),
     fila(t("Restaurar pestañas al abrir"), interruptor("restaurarPestanas")),
+    fila(t("Actualizaciones"), boton(t("Buscar ahora"), () => void buscarActualizacion(true)), t("MahzzTerm también se fija sola al abrirse.")),
     fila(
       t("Control por IA (MCP)"),
       interruptor("controlIA"),

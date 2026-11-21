@@ -16,6 +16,18 @@ import { Pestana, type DatosPestana, type Sentido } from "./pestana";
 import { PanelCambios } from "./cambios";
 import { PanelVisor } from "./visor";
 import { iniciarControl } from "./control";
+import { abrirBuscadorRegistros, iniciarRegistro } from "./registros";
+import {
+  comandoAgente,
+  crearTarea,
+  descartarTarea,
+  estaDentro,
+  pedirNuevaTarea,
+  unirTarea,
+  type PedidoTarea,
+  type Tarea,
+  type TareaCreada,
+} from "./tareas";
 import { elegirSesion, listarSesiones, prepararParaReanudar, type SesionGuardada } from "./sesiones";
 
 const COLORES: ColorMenu[] = [
@@ -68,6 +80,12 @@ export class GestorPestanas {
       requestAnimationFrame(() => panel.enfocar());
     },
     nuevoAgente: (comando) => void this.nuevaPestanaCon(comando),
+    carpetaActiva: () => this.activa?.activo.carpeta ?? null,
+    nuevaTarea: () => void this.nuevaTareaInteractiva(),
+    abrirTarea: (tarea) => void this.abrirTarea(tarea),
+    unirTarea: (tarea) => void this.terminarTarea(tarea.carpeta, tarea.nombre, "unir", true).catch((error) => avisar(String(error))),
+    descartarTarea: (tarea) =>
+      void this.terminarTarea(tarea.carpeta, tarea.nombre, "descartar", true).catch((error) => avisar(String(error))),
     alCerrar: () => this.recuperarFoco(),
   });
   // Cada ventana principal es una sesión: se guarda con este id para reanudarla después.
@@ -76,6 +94,7 @@ export class GestorPestanas {
 
   constructor() {
     this.aplicarPosicionPestanas();
+    iniciarRegistro();
     if (this.ventana.label === "main") this.prepararControl();
     elemento("nueva-pestana").addEventListener("click", () => void this.nuevaPestana());
     elemento("alternar-archivos").addEventListener("click", () => this.archivos.alternar());
@@ -157,6 +176,105 @@ export class GestorPestanas {
     this.activa?.elemento.scrollIntoView({ inline: "nearest", block: "nearest" });
   }
 
+  private cerrarPanelSinPreguntar(pestana: Pestana, panel: Panel): void {
+    if (!pestana.cerrarPanel(panel)) {
+      pestana.contenido.remove();
+      pestana.elemento.remove();
+      this.quitarDeLista(pestana);
+    }
+  }
+
+  // Crea el worktree de la tarea, abre una pestaña ahí y arranca al agente.
+  private async crearTareaConAgente(
+    pedido: PedidoTarea,
+    carpetaBase: string | null,
+  ): Promise<{ pestana: Pestana; tarea: TareaCreada }> {
+    if (!carpetaBase) throw new Error(t("No hay una carpeta activa para crear la tarea"));
+    const tarea = await crearTarea(carpetaBase, pedido.nombre);
+    await this.nuevaPestana({
+      tituloManual: `🤖 ${tarea.nombre}`,
+      color: "#62d6e8",
+      nodo: { tipo: "panel", activo: true, datos: { sesion: null, carpeta: tarea.carpeta, contenido: null } },
+    });
+    const pestana = this.activa;
+    if (!pestana) throw new Error(t("No se pudo abrir la pestaña"));
+    pestana.activo.ejecutarComando(comandoAgente(pedido.agente, pedido.instrucciones));
+    return { pestana, tarea };
+  }
+
+  private async nuevaTareaInteractiva(): Promise<void> {
+    const carpeta = this.activa?.activo.carpeta ?? null;
+    const pedido = await pedirNuevaTarea();
+    if (!pedido) {
+      this.recuperarFoco();
+      return;
+    }
+    try {
+      const { tarea } = await this.crearTareaConAgente(pedido, carpeta);
+      avisar(t("Tarea {0} creada en la rama {1}", tarea.nombre, tarea.rama));
+    } catch (error) {
+      avisar(t("No se pudo crear la tarea: {0}", String(error)));
+    }
+  }
+
+  private async abrirTarea(tarea: Tarea): Promise<void> {
+    for (const pestana of this.pestanas) {
+      const panel = pestana.paneles.find((actual) => estaDentro(actual.carpeta, tarea.carpeta));
+      if (panel) {
+        this.activar(pestana);
+        pestana.activarPanel(panel);
+        panel.enfocar();
+        return;
+      }
+    }
+    await this.nuevaPestana({
+      tituloManual: `🤖 ${tarea.nombre}`,
+      color: "#62d6e8",
+      nodo: { tipo: "panel", activo: true, datos: { sesion: null, carpeta: tarea.carpeta, contenido: null } },
+    });
+  }
+
+  // Une o descarta una tarea. Antes cierra los paneles que están en esa carpeta,
+  // porque Windows no deja borrar una carpeta que un PowerShell tiene abierta.
+  private async terminarTarea(
+    carpeta: string,
+    nombre: string | null,
+    modo: "unir" | "descartar",
+    preguntar: boolean,
+  ): Promise<unknown> {
+    const etiqueta = nombre ?? carpeta.split("\\").filter(Boolean).at(-1) ?? carpeta;
+    if (preguntar) {
+      const seguir =
+        modo === "unir"
+          ? await confirmar(
+              t("¿Unir la tarea {0}?", etiqueta),
+              t("Lo que dejó el agente se guarda en un commit, se une a tu rama actual y se borra la carpeta de la tarea. Las pestañas abiertas en esa carpeta se cierran."),
+              t("Unir"),
+            )
+          : await confirmar(
+              t("¿Descartar la tarea {0}?", etiqueta),
+              t("Se borran la carpeta y la rama con todo lo que hizo el agente. No se puede deshacer."),
+              t("Descartar"),
+            );
+      if (!seguir) return null;
+    }
+    let cerro = false;
+    for (const pestana of [...this.pestanas]) {
+      for (const panel of [...pestana.paneles]) {
+        if (estaDentro(panel.carpeta, carpeta)) {
+          this.cerrarPanelSinPreguntar(pestana, panel);
+          cerro = true;
+        }
+      }
+    }
+    if (cerro) await new Promise((listo) => setTimeout(listo, 900));
+    const resultado = modo === "unir" ? await unirTarea(carpeta) : await descartarTarea(carpeta);
+    avisar(modo === "unir" ? t("Tarea {0} unida", etiqueta) : t("Tarea {0} descartada", etiqueta));
+    this.cambios.sincronizar();
+    void this.agentes.refrescarTareas();
+    return resultado;
+  }
+
   // Lo que puede hacer una IA conectada por MCP (ver control.ts).
   private prepararControl(): void {
     iniciarControl({
@@ -176,13 +294,9 @@ export class GestorPestanas {
         if (!this.activa) throw new Error("No se pudo abrir la pestaña");
         return this.activa;
       },
-      cerrarPanel: (pestana, panel) => {
-        if (!pestana.cerrarPanel(panel)) {
-          pestana.contenido.remove();
-          pestana.elemento.remove();
-          this.quitarDeLista(pestana);
-        }
-      },
+      cerrarPanel: (pestana, panel) => this.cerrarPanelSinPreguntar(pestana, panel),
+      crearTarea: (pedido, carpeta) => this.crearTareaConAgente(pedido, carpeta ?? this.activa?.activo.carpeta ?? null),
+      terminarTarea: (carpeta, modo) => this.terminarTarea(carpeta, null, modo, false),
       renombrar: (pestana, titulo) => {
         pestana.tituloManual = titulo;
         this.pintarPestana(pestana);
@@ -685,6 +799,15 @@ export class GestorPestanas {
         break;
       case "reanudarSesion":
         void this.reanudarSesion(null);
+        break;
+      case "buscarLogs":
+        abrirBuscadorRegistros(
+          (comando) => this.activa?.activo.ponerEnEditor(comando),
+          () => this.recuperarFoco(),
+        );
+        break;
+      case "nuevaTarea":
+        void this.nuevaTareaInteractiva();
         break;
     }
   }

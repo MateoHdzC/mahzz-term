@@ -526,6 +526,21 @@ export class Panel {
       duracion: Date.now() - actual.inicio,
       salida: captura.texto,
     });
+    if (!sinSalida) {
+      window.dispatchEvent(
+        new CustomEvent("mahzz:bloque-terminado", {
+          detail: {
+            comando: actual.comando,
+            carpeta: actual.carpeta,
+            codigo,
+            duracion: Date.now() - actual.inicio,
+            inicio: actual.inicio,
+            texto: captura.texto,
+            host: this.remoto?.host ?? null,
+          },
+        }),
+      );
+    }
     registrarEnHistorial({
       comando: actual.comando,
       carpeta: actual.carpeta,

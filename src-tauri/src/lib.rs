@@ -9,8 +9,10 @@ mod google;
 mod mcp;
 mod procesos;
 mod pty;
+mod registros;
 mod servidor;
 mod sesiones;
+mod tareas;
 mod ventanas;
 
 use datos::Historial;
@@ -28,6 +30,8 @@ pub fn iniciar() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(Sesiones::default())
         .manage(Traspasos::default())
@@ -35,6 +39,7 @@ pub fn iniciar() {
         .manage(Historial::default())
         .manage(TokenGoogle::default())
         .manage(control::Control::default())
+        .manage(registros::Registros::default())
         .setup(|app| {
             if let Some(ventana) = app.get_webview_window("main") {
                 ventanas::preparar_webview(&ventana)?;
@@ -106,9 +111,15 @@ pub fn iniciar() {
             pty::pausar_sesion,
             pty::adjuntar_sesion,
             pty::programas_sesiones,
+            registros::buscar_registros,
+            registros::guardar_registro,
             servidor::servir_html,
             sesiones::borrar_sesion_guardada,
             sesiones::listar_sesiones,
+            tareas::crear_tarea,
+            tareas::descartar_tarea,
+            tareas::listar_tareas,
+            tareas::unir_tarea,
             ventanas::abrir_ventana,
             ventanas::definir_memoria_baja,
             ventanas::tomar_traspaso,

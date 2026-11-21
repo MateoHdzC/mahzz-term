@@ -2,6 +2,15 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.5.0] - 2026-11-20
+
+### Agregado
+- **Instalador y actualizaciones automáticas.** MahzzTerm se instala con `MahzzTerm-setup.exe` desde los releases de GitHub. Al abrirse se fija si hay una versión nueva y ofrece instalarla; también se puede buscar desde Ajustes → General. Las actualizaciones vienen firmadas y la app rechaza las que no coinciden con su clave.
+- **Tareas en paralelo para agentes (worktrees).** Desde el panel de agentes (✦), "Nueva tarea en paralelo" crea una copia de trabajo de git aparte con su propia rama (`mahzz/<nombre>`), abre una pestaña ahí y arranca al agente con las instrucciones. Varias tareas pueden avanzar a la vez sin pisarse. Cada tarea se puede abrir, **unir** a tu rama (guarda lo que dejó el agente en un commit) o **descartar**.
+- **Búsqueda en todos los logs** (`Ctrl+Shift+F`): busca en los comandos y en sus salidas de cualquier pestaña, de los últimos 30 días, con filtro de solo errores.
+- **Los bloques sobreviven al reabrir**: al restaurar o reanudar una sesión, cada panel vuelve con sus últimos 30 bloques.
+- Herramientas MCP nuevas: `buscar_logs`, `nueva_tarea`, `listar_tareas`, `unir_tarea` y `descartar_tarea`.
+
 ## [0.4.0] - 2026-11-20
 
 ### Agregado

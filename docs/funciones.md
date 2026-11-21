@@ -73,6 +73,44 @@ En el selector, Enter abre la sesión elegida y Supr la borra de la lista. Las p
 
 **Código:** [`src/sesiones.ts`](../src/sesiones.ts), [`src-tauri/src/sesiones.rs`](../src-tauri/src/sesiones.rs) y `reanudarSesion` en [`src/gestor.ts`](../src/gestor.ts).
 
+## Tareas en paralelo (worktrees)
+
+**Para qué sirve:** darle una tarea a cada agente sin que se pisen. Cada tarea es una copia de trabajo de git aparte (un *worktree*) con su propia rama, así dos Claude pueden tocar los mismos archivos sin chocar.
+
+**Cómo se usa**
+- En el panel de agentes (✦), **Nueva tarea en paralelo (worktree)**. También está en la paleta.
+- Ponés el nombre, que pasa a ser la rama `mahzz/<nombre>`, lo que tiene que hacer el agente y el comando del agente (`claude` por defecto).
+- MahzzTerm crea la carpeta `<repo>-agentes\<nombre>` al lado de tu repositorio, abre una pestaña ahí (🤖, en cian) y arranca al agente con las instrucciones.
+- En el mismo panel, la sección **Tareas en paralelo** lista cada tarea con sus cambios sin guardar y sus commits:
+  - **Clic en la tarea**: va a su pestaña, o abre una nueva si la cerraste. Con la revisión de cambios (`Ctrl+Shift+G`) ves el diff de lo que hizo.
+  - **Unir**: guarda en un commit lo que dejó el agente, lo une a la rama actual de tu repositorio y borra la carpeta de la tarea. Si hay conflictos, no cambia nada y te avisa.
+  - **Descartar**: borra la carpeta y la rama con todo lo que hizo el agente.
+- Antes de unir o descartar, se cierran las pestañas abiertas en esa carpeta, porque Windows no deja borrar una carpeta que un PowerShell tiene abierta.
+
+**Requisito:** que la carpeta sea un repositorio de git con al menos un commit.
+
+**Código:** [`src-tauri/src/tareas.rs`](../src-tauri/src/tareas.rs) (git) y [`src/tareas.ts`](../src/tareas.ts).
+
+## Logs y búsqueda global
+
+**Para qué sirve:** encontrar ese error que viste ayer en otra pestaña, o revisar qué salió de un comando aunque hayas cerrado la terminal.
+
+- Cada bloque terminado se guarda en `datos\logs\AAAA-MM-DD.jsonl`, con comando, carpeta, código de salida, duración y salida (hasta 200 KB por bloque). Se guardan 30 días.
+- **`Ctrl+Shift+F`** abre el buscador: busca en los comandos y en las salidas de todas las pestañas, con filtro de **solo errores**. Un clic muestra la salida completa, para copiarla o volver a usar el comando.
+- Los comandos que parecen tener una contraseña o una clave no se guardan, igual que en el historial.
+- **Al reabrir** una sesión (al abrir la app o con `mahzz --resume`), cada panel vuelve con sus últimos 30 bloques.
+
+**Código:** [`src-tauri/src/registros.rs`](../src-tauri/src/registros.rs) y [`src/registros.ts`](../src/registros.ts).
+
+## Actualizaciones automáticas
+
+- MahzzTerm se instala con `MahzzTerm-setup.exe` y no pide permisos de administrador.
+- Al abrirse, consulta `latest.json` en el último release de GitHub. Si hay una versión nueva, pregunta si querés instalarla; si aceptás, se descarga, se instala y la app se reinicia. También se puede buscar desde Ajustes → General → **Buscar ahora**.
+- Cada actualización viene **firmada**: la app trae la clave pública y rechaza cualquier instalador que no esté firmado con la clave privada del proyecto.
+- Para publicar una versión: `.\scripts\publicar.ps1 -Publicar` (ver el README).
+
+**Código:** [`src/actualizaciones.ts`](../src/actualizaciones.ts) y [`scripts/publicar.ps1`](../scripts/publicar.ps1).
+
 ## Control por IA (MCP)
 
 **Para qué sirve:** que Claude Code (u otra IA compatible con MCP) use la terminal como vos. Puede correr comandos y leer su resultado ya separado en bloques, mirar los logs de un servidor que sigue corriendo o coordinar a otros agentes que corren en otras pestañas.
@@ -97,6 +135,8 @@ Si MahzzTerm no está abierta cuando la IA la necesita, se abre sola.
 | `nueva_pestana`, `dividir_panel`, `cerrar_panel`, `enfocar_panel`, `renombrar_pestana` | Manejo del espacio de trabajo |
 | `estado_agentes` | Qué agentes corren y si están trabajando, esperando o necesitan respuesta |
 | `historial` | Los últimos comandos ejecutados, con filtro |
+| `buscar_logs` | Busca en los comandos y salidas de todas las pestañas (últimos 30 días) |
+| `nueva_tarea`, `listar_tareas`, `unir_tarea`, `descartar_tarea` | Tareas en paralelo con worktrees de git |
 | `abrir_archivo` | Abre un archivo en el visor para que lo veas |
 
 Sin `panel`, las herramientas usan el panel activo. `cerrar_panel` no cierra un panel con algo corriendo salvo que se pase `forzar=true`.
@@ -127,5 +167,6 @@ Todo lo de MahzzTerm (ajustes, historial, sesiones, temas, secretos y la sesión
 |---|---|
 | `Ctrl+Shift+A` | Mostrar u ocultar los agentes activos |
 | `Ctrl+Shift+G` | Mostrar u ocultar la revisión de cambios |
+| `Ctrl+Shift+F` | Buscar en todos los logs |
 
 Se pueden cambiar en Ajustes → Atajos.

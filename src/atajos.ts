@@ -24,6 +24,8 @@ export type Accion =
   | "alternarCambios"
   | "alternarAgentes"
   | "reanudarSesion"
+  | "buscarLogs"
+  | "nuevaTarea"
   | `irPestana${number}`;
 
 interface Atajo {
@@ -60,6 +62,7 @@ const ATAJOS: Atajo[] = [
   { accion: "abrirAjustes", tecla: ",", ctrl: true },
   { accion: "alternarCambios", tecla: "g", ctrl: true, shift: true },
   { accion: "alternarAgentes", tecla: "a", ctrl: true, shift: true },
+  { accion: "buscarLogs", tecla: "f", ctrl: true, shift: true },
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
     (numero): Atajo => ({ accion: `irPestana${numero}`, tecla: String(numero), ctrl: true }),
   ),
@@ -83,6 +86,8 @@ export const ACCIONES_EDITABLES: { accion: Accion; titulo: string }[] = [
   { accion: "alternarCambios", titulo: t("Revisar cambios") },
   { accion: "alternarAgentes", titulo: t("Ver agentes activos") },
   { accion: "reanudarSesion", titulo: t("Reanudar una sesión anterior") },
+  { accion: "buscarLogs", titulo: t("Buscar en todos los logs") },
+  { accion: "nuevaTarea", titulo: t("Nueva tarea en paralelo para un agente") },
 ];
 
 function desdeTexto(accion: Accion, combinacion: string): Atajo {

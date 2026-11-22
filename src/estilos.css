@@ -2608,6 +2608,10 @@ textarea.dialogo__entrada {
   order: 4;
 }
 
+.cuerpo > .copiloto {
+  order: 5;
+}
+
 .lateral-pestanas {
   display: flex;
   flex: none;
@@ -3432,4 +3436,111 @@ textarea.dialogo__entrada {
   color: var(--texto-suave);
   font-size: 10.5px;
   opacity: 0.7;
+}
+
+/* Mahzz-AI flotante: ventanita que se mueve del encabezado y se agranda desde los bordes */
+.copiloto--flotante {
+  position: fixed;
+  z-index: 35;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--acento) 35%, var(--borde));
+  border-radius: 14px;
+  box-shadow:
+    0 24px 60px #000000b3,
+    0 0 0 1px #00000080,
+    0 0 40px color-mix(in srgb, var(--acento) 18%, transparent);
+}
+
+.copiloto--flotante .copiloto__asa {
+  display: none;
+}
+
+.copiloto--flotante .copiloto__encabezado {
+  cursor: grab;
+  user-select: none;
+}
+
+.copiloto--flotante.copiloto--moviendo,
+.copiloto--flotante.copiloto--moviendo .copiloto__encabezado {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.copiloto--moviendo .copiloto__lista {
+  pointer-events: none;
+}
+
+.copiloto__borde {
+  display: none;
+  position: absolute;
+  z-index: 3;
+}
+
+.copiloto--flotante .copiloto__borde {
+  display: block;
+}
+
+.copiloto__borde--n,
+.copiloto__borde--s {
+  right: 16px;
+  left: 16px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.copiloto__borde--n {
+  top: 0;
+}
+
+.copiloto__borde--s {
+  bottom: 0;
+}
+
+.copiloto__borde--e,
+.copiloto__borde--o {
+  top: 16px;
+  bottom: 16px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.copiloto__borde--e {
+  right: 0;
+}
+
+.copiloto__borde--o {
+  left: 0;
+}
+
+.copiloto__borde--ne,
+.copiloto__borde--no,
+.copiloto__borde--se,
+.copiloto__borde--so {
+  width: 16px;
+  height: 16px;
+}
+
+.copiloto__borde--ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.copiloto__borde--so {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.copiloto__borde--no {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.copiloto__borde--se {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
 }

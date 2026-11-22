@@ -398,6 +398,8 @@ const INGLES: Record<string, string> = {
   "A la terminal": "To terminal",
   "Lo escribe en la terminal activa sin ejecutarlo": "Types it into the active terminal without running it",
   "Abrir Mahzz-AI": "Open Mahzz-AI",
+  "Anclar al costado": "Dock to the side",
+  "Soltar como ventana flotante": "Pop out as a floating window",
 };
 
 function leerGuardado(): Idioma {

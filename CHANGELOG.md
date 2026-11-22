@@ -2,6 +2,14 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.1] - 2026-11-22
+
+### Cambiado
+- **Mahzz-AI ahora es una ventanita flotante.** Aparece chica abajo a la derecha: se mueve arrastrándola del encabezado y se agranda o achica desde cualquier borde o esquina. Con el botón del encabezado (o doble clic en él) se ancla al costado derecho y vuelve a flotar. Recuerda el modo, la posición y el tamaño.
+
+### Corregido
+- El panel de Mahzz-AI aparecía a la izquierda de la terminal en vez de a la derecha.
+
 ## [0.6.0] - 2026-11-22
 
 ### Agregado

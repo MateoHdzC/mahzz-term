@@ -24,12 +24,36 @@ const CLAVE_ANCHO = "mahzz-copiloto-ancho";
 const ANCHO_MINIMO = 300;
 const ANCHO_MAXIMO = 900;
 const LIMITE_SALIDA = 4000;
+const CLAVE_MODO = "mahzz-copiloto-modo";
+const CLAVE_CAJA = "mahzz-copiloto-caja";
+// Tamaño de la ventanita flotante: chica de entrada, se agranda desde los bordes.
+const FLOTANTE_ANCHO = 360;
+const FLOTANTE_ALTO = 520;
+const FLOTANTE_MIN_ANCHO = 300;
+const FLOTANTE_MIN_ALTO = 320;
+const MARGEN = 12;
+// Qué bordes mueve cada asa al redimensionar la ventanita.
+const BORDES = ["n", "s", "e", "o", "ne", "no", "se", "so"] as const;
+type Borde = (typeof BORDES)[number];
+
+type Modo = "flotante" | "anclado";
+
+interface Caja {
+  x: number;
+  y: number;
+  ancho: number;
+  alto: number;
+}
 
 const ICONO_ENVIAR = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" /></svg>';
 const ICONO_DETENER = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" /></svg>';
 const ICONO_NUEVA =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4.5M11.5 1.5l3 3L8 11H5V8z" /></svg>';
 const ICONO_CERRAR = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>';
+const ICONO_SOLTAR =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2" /><rect x="7.5" y="7.5" width="5" height="5" rx="1" /></svg>';
+const ICONO_ANCLAR =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2" /><path d="M10 2v12" /></svg>';
 const ICONO_BLOQUE =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12v9H2zM4.5 7l2 1.5-2 1.5M8.5 10h3" /></svg>';
 
@@ -80,6 +104,9 @@ export class PanelCopiloto {
   private respondiendo = false;
   private conContexto = true;
   private disponible = true;
+  private modo: Modo = leerPreferencia(CLAVE_MODO) === "anclado" ? "anclado" : "flotante";
+  private caja: Caja | null = null;
+  private readonly botonModo = boton("archivos__boton", ICONO_ANCLAR, "");
 
   constructor(
     private readonly elemento: HTMLElement,
@@ -114,7 +141,13 @@ export class PanelCopiloto {
 
     const encabezado = document.createElement("div");
     encabezado.className = "copiloto__encabezado";
-    encabezado.append(marca, nueva, cerrar);
+    this.botonModo.addEventListener("click", () => this.cambiarModo());
+    encabezado.append(marca, nueva, this.botonModo, cerrar);
+    // En modo flotante, la ventanita se mueve arrastrándola del encabezado.
+    encabezado.addEventListener("pointerdown", (evento) => this.iniciarArrastre(encabezado, evento));
+    encabezado.addEventListener("dblclick", (evento) => {
+      if (!(evento.target as HTMLElement).closest("button")) this.cambiarModo();
+    });
 
     this.lista.className = "copiloto__lista";
 
@@ -163,10 +196,20 @@ export class PanelCopiloto {
     aviso.textContent = t("Corre en tu PC. Puede equivocarse: revisá los comandos antes de ejecutarlos.");
     pie.append(caja, aviso);
 
-    this.elemento.append(asa, encabezado, this.lista, pie);
+    const bordes = BORDES.map((borde) => {
+      const asaBorde = document.createElement("div");
+      asaBorde.className = `copiloto__borde copiloto__borde--${borde}`;
+      asaBorde.addEventListener("pointerdown", (evento) => this.iniciarRedimension(asaBorde, borde, evento));
+      return asaBorde;
+    });
 
-    const ancho = Number(leerPreferencia(CLAVE_ANCHO));
-    if (ancho >= ANCHO_MINIMO && ancho <= ANCHO_MAXIMO) this.elemento.style.width = `${ancho}px`;
+    this.elemento.append(asa, ...bordes, encabezado, this.lista, pie);
+
+    this.caja = this.leerCaja();
+    this.aplicarModo();
+    window.addEventListener("resize", () => {
+      if (this.modo === "flotante" && this.caja) this.pintarCaja(this.acomodar(this.caja));
+    });
     this.pintarContexto();
     this.mostrarBienvenida();
     this.definirVisible(leerPreferencia(CLAVE_VISIBLE) === "si");
@@ -488,7 +531,130 @@ export class PanelCopiloto {
     if (cerca || !this.respondiendo) this.lista.scrollTop = this.lista.scrollHeight;
   }
 
+  // ----- Flotante o anclado -----
+
+  private cambiarModo(): void {
+    this.modo = this.modo === "flotante" ? "anclado" : "flotante";
+    guardarPreferencia(CLAVE_MODO, this.modo);
+    this.aplicarModo();
+  }
+
+  private aplicarModo(): void {
+    const flotante = this.modo === "flotante";
+    this.elemento.classList.toggle("copiloto--flotante", flotante);
+    const titulo = flotante ? t("Anclar al costado") : t("Soltar como ventana flotante");
+    this.botonModo.innerHTML = flotante ? ICONO_ANCLAR : ICONO_SOLTAR;
+    this.botonModo.title = titulo;
+    this.botonModo.setAttribute("aria-label", titulo);
+    const estilo = this.elemento.style;
+    if (flotante) {
+      this.pintarCaja(this.acomodar(this.caja ?? this.cajaInicial()));
+    } else {
+      estilo.left = "";
+      estilo.top = "";
+      estilo.height = "";
+      const ancho = Number(leerPreferencia(CLAVE_ANCHO));
+      estilo.width = ancho >= ANCHO_MINIMO && ancho <= ANCHO_MAXIMO ? `${ancho}px` : "";
+    }
+  }
+
+  // De entrada aparece chica, abajo a la derecha, sin tapar la barra de la ventana.
+  private cajaInicial(): Caja {
+    const alto = Math.min(FLOTANTE_ALTO, window.innerHeight - this.techo() - MARGEN * 2);
+    return {
+      x: window.innerWidth - FLOTANTE_ANCHO - MARGEN * 2,
+      y: window.innerHeight - alto - MARGEN * 2,
+      ancho: FLOTANTE_ANCHO,
+      alto,
+    };
+  }
+
+  private techo(): number {
+    return document.querySelector(".barra")?.getBoundingClientRect().bottom ?? 40;
+  }
+
+  // Que nunca quede afuera de la ventana ni más chica que el mínimo.
+  private acomodar(caja: Caja): Caja {
+    const maxAncho = Math.max(FLOTANTE_MIN_ANCHO, window.innerWidth - MARGEN * 2);
+    const maxAlto = Math.max(FLOTANTE_MIN_ALTO, window.innerHeight - this.techo() - MARGEN);
+    const ancho = Math.min(maxAncho, Math.max(FLOTANTE_MIN_ANCHO, caja.ancho));
+    const alto = Math.min(maxAlto, Math.max(FLOTANTE_MIN_ALTO, caja.alto));
+    const x = Math.min(window.innerWidth - ancho - MARGEN, Math.max(MARGEN, caja.x));
+    const y = Math.min(window.innerHeight - alto - MARGEN, Math.max(this.techo(), caja.y));
+    return { x, y, ancho, alto };
+  }
+
+  private pintarCaja(caja: Caja): void {
+    this.caja = caja;
+    const estilo = this.elemento.style;
+    estilo.left = `${caja.x}px`;
+    estilo.top = `${caja.y}px`;
+    estilo.width = `${caja.ancho}px`;
+    estilo.height = `${caja.alto}px`;
+  }
+
+  private leerCaja(): Caja | null {
+    try {
+      const caja = JSON.parse(leerPreferencia(CLAVE_CAJA) ?? "null") as Caja | null;
+      return caja && [caja.x, caja.y, caja.ancho, caja.alto].every(Number.isFinite) ? caja : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private guardarCaja(): void {
+    if (this.caja) guardarPreferencia(CLAVE_CAJA, JSON.stringify(this.caja));
+  }
+
+  // Sigue al puntero hasta soltarlo y guarda la posición final.
+  private seguirPuntero(asa: HTMLElement, inicio: PointerEvent, mover: (dx: number, dy: number) => void): void {
+    inicio.preventDefault();
+    asa.setPointerCapture(inicio.pointerId);
+    this.elemento.classList.add("copiloto--moviendo");
+    const alMover = (evento: PointerEvent) => mover(evento.clientX - inicio.clientX, evento.clientY - inicio.clientY);
+    const soltar = () => {
+      asa.removeEventListener("pointermove", alMover);
+      asa.removeEventListener("pointerup", soltar);
+      asa.removeEventListener("pointercancel", soltar);
+      this.elemento.classList.remove("copiloto--moviendo");
+      this.guardarCaja();
+    };
+    asa.addEventListener("pointermove", alMover);
+    asa.addEventListener("pointerup", soltar);
+    asa.addEventListener("pointercancel", soltar);
+  }
+
+  private iniciarArrastre(encabezado: HTMLElement, inicio: PointerEvent): void {
+    if (this.modo !== "flotante" || inicio.button !== 0 || !this.caja) return;
+    if ((inicio.target as HTMLElement).closest("button")) return;
+    const base = { ...this.caja };
+    this.seguirPuntero(encabezado, inicio, (dx, dy) =>
+      this.pintarCaja(this.acomodar({ ...base, x: base.x + dx, y: base.y + dy })),
+    );
+  }
+
+  private iniciarRedimension(asa: HTMLElement, borde: Borde, inicio: PointerEvent): void {
+    if (this.modo !== "flotante" || !this.caja) return;
+    const base = { ...this.caja };
+    this.seguirPuntero(asa, inicio, (dx, dy) => {
+      const caja = { ...base };
+      // Al tirar del borde izquierdo o de arriba, se corre el origen y el lado opuesto queda quieto.
+      if (borde.includes("e")) caja.ancho = Math.max(FLOTANTE_MIN_ANCHO, base.ancho + dx);
+      if (borde.includes("s")) caja.alto = Math.max(FLOTANTE_MIN_ALTO, base.alto + dy);
+      if (borde.includes("o")) {
+        caja.ancho = Math.max(FLOTANTE_MIN_ANCHO, base.ancho - dx);
+        caja.x = base.x + base.ancho - caja.ancho;
+      }
+      if (borde.includes("n")) {
+        caja.alto = Math.max(FLOTANTE_MIN_ALTO, base.alto - dy);
+        caja.y = base.y + base.alto - caja.alto;
+      }
+      this.pintarCaja(this.acomodar(caja));
+    });
+  }
+
   private iniciarAjusteAncho(asa: HTMLElement, inicio: PointerEvent): void {
+    if (this.modo !== "anclado") return;
     inicio.preventDefault();
     asa.setPointerCapture(inicio.pointerId);
     const derecha = this.elemento.getBoundingClientRect().right;

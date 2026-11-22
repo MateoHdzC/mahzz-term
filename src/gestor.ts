@@ -14,6 +14,7 @@ import type { Panel } from "./panel";
 import { abrirGuardados, abrirHistorial, abrirPaleta, guardarComando, type ApiPaleta } from "./paleta";
 import { Pestana, type DatosPestana, type Sentido } from "./pestana";
 import { PanelCambios } from "./cambios";
+import { PanelCopiloto } from "./copiloto";
 import { PanelVisor } from "./visor";
 import { iniciarControl } from "./control";
 import { abrirBuscadorRegistros, iniciarRegistro } from "./registros";
@@ -72,6 +73,11 @@ export class GestorPestanas {
     elemento("alternar-cambios"),
     () => this.activa?.activo ?? null,
   );
+  private readonly copiloto = new PanelCopiloto(
+    elemento("copiloto"),
+    elemento("alternar-mahzz"),
+    () => this.activa?.activo ?? null,
+  );
   private readonly agentes = new PanelAgentes(elemento("agentes"), {
     pestanas: () => this.pestanas,
     activa: () => this.activa,
@@ -99,6 +105,7 @@ export class GestorPestanas {
     elemento("nueva-pestana").addEventListener("click", () => void this.nuevaPestana());
     elemento("alternar-archivos").addEventListener("click", () => this.archivos.alternar());
     elemento("alternar-cambios").addEventListener("click", () => this.cambios.alternar());
+    elemento("alternar-mahzz").addEventListener("click", () => this.copiloto.alternar());
     window.addEventListener("mahzz:orden", (evento) => this.alRecibirOrden((evento as CustomEvent<string>).detail));
     elemento("perfil").addEventListener("click", (evento) => this.abrirMenuPerfil(evento));
     alCambiarCuenta(() => this.pintarPerfil());
@@ -796,6 +803,9 @@ export class GestorPestanas {
         break;
       case "alternarAgentes":
         this.agentes.alternar();
+        break;
+      case "alternarMahzz":
+        this.copiloto.alternar();
         break;
       case "reanudarSesion":
         void this.reanudarSesion(null);

@@ -23,6 +23,7 @@ export type Accion =
   | "abrirAjustes"
   | "alternarCambios"
   | "alternarAgentes"
+  | "alternarMahzz"
   | "reanudarSesion"
   | "buscarLogs"
   | "nuevaTarea"
@@ -62,6 +63,7 @@ const ATAJOS: Atajo[] = [
   { accion: "abrirAjustes", tecla: ",", ctrl: true },
   { accion: "alternarCambios", tecla: "g", ctrl: true, shift: true },
   { accion: "alternarAgentes", tecla: "a", ctrl: true, shift: true },
+  { accion: "alternarMahzz", tecla: "m", ctrl: true, shift: true },
   { accion: "buscarLogs", tecla: "f", ctrl: true, shift: true },
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
     (numero): Atajo => ({ accion: `irPestana${numero}`, tecla: String(numero), ctrl: true }),
@@ -85,6 +87,7 @@ export const ACCIONES_EDITABLES: { accion: Accion; titulo: string }[] = [
   { accion: "abrirAjustes", titulo: t("Abrir ajustes") },
   { accion: "alternarCambios", titulo: t("Revisar cambios") },
   { accion: "alternarAgentes", titulo: t("Ver agentes activos") },
+  { accion: "alternarMahzz", titulo: t("Abrir Mahzz-AI") },
   { accion: "reanudarSesion", titulo: t("Reanudar una sesión anterior") },
   { accion: "buscarLogs", titulo: t("Buscar en todos los logs") },
   { accion: "nuevaTarea", titulo: t("Nueva tarea en paralelo para un agente") },

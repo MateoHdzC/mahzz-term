@@ -19,6 +19,9 @@
         <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0v10M0 5h10" /></svg>
       </button>
       <div class="barra__espacio" data-tauri-drag-region></div>
+      <button id="alternar-mahzz" class="barra__boton barra__boton--mahzz" type="button" aria-label="Mahzz-AI" aria-pressed="false" title="Mahzz-AI (Ctrl+Shift+M)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z" /><path d="M12 8l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z" /></svg>
+      </button>
       <button id="agentes" class="barra__boton" type="button" aria-label="Agentes activos" aria-pressed="false" title="Agentes (Ctrl+Shift+A)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
       </button>
@@ -46,6 +49,7 @@
       <main id="contenido" class="contenido"></main>
       <aside id="visor" class="visor" aria-label="Visor de archivos" hidden></aside>
       <aside id="cambios" class="cambios" aria-label="Revisar cambios" hidden></aside>
+      <aside id="copiloto" class="copiloto" aria-label="Mahzz-AI" hidden></aside>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

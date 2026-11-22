@@ -6,6 +6,7 @@ mod datos;
 mod entorno;
 mod explorador;
 mod google;
+mod mahzz;
 mod mcp;
 mod procesos;
 mod pty;
@@ -51,6 +52,9 @@ pub fn iniciar() {
         })
         .invoke_handler(tauri::generate_handler![
             ajustes::abrir_externo,
+            mahzz::mahzz_chat,
+            mahzz::mahzz_detener,
+            mahzz::mahzz_estado,
             ajustes::avisar_comando,
             ajustes::borrar_secreto,
             ajustes::borrar_tema,

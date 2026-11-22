@@ -59,7 +59,7 @@ async function compensarBordesMaximizada(maximizada: boolean): Promise<void> {
 }
 
 // Los botones de la ventana no se quedan con el foco del teclado.
-for (const id of ["minimizar", "maximizar", "cerrar", "perfil", "ajustes", "alternar-archivos", "alternar-cambios", "agentes"]) {
+for (const id of ["minimizar", "maximizar", "cerrar", "perfil", "ajustes", "alternar-archivos", "alternar-cambios", "alternar-mahzz", "agentes"]) {
   boton(id).addEventListener("mousedown", (evento) => evento.preventDefault());
 }
 

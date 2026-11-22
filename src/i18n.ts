@@ -367,6 +367,37 @@ const INGLES: Record<string, string> = {
   "No hay una sesión número {0}": "There is no session number {0}",
   "No se pudieron leer las sesiones: {0}": "Could not read sessions: {0}",
   "No se pudo borrar: {0}": "Could not delete: {0}",
+  "¿Por qué falló el último comando?": "Why did the last command fail?",
+  "Explicame qué hizo el último comando": "Explain what the last command did",
+  "Dame un comando para ver qué ocupa espacio en esta carpeta": "Give me a command to see what's taking up space in this folder",
+  "Enviar (Enter)": "Send (Enter)",
+  "Nueva charla": "New chat",
+  "Preguntale algo a Mahzz-AI…": "Ask Mahzz-AI something…",
+  "Último comando": "Last command",
+  "Le pasa a Mahzz-AI el último comando de la terminal y su salida": "Sends Mahzz-AI the terminal's last command and its output",
+  "Corre en tu PC. Puede equivocarse: revisá los comandos antes de ejecutarlos.": "Runs on your PC. It can make mistakes: check commands before running them.",
+  "conectando…": "connecting…",
+  "{0} · provisorio": "{0} · temporary",
+  "El modelo propio todavía no está instalado: se usa la base con la identidad de Mahzz-AI.": "The custom model isn't installed yet: the base model runs with the Mahzz-AI identity.",
+  "sin conexión": "offline",
+  "Próximamente": "Coming soon",
+  "Mahzz-AI llega pronto": "Mahzz-AI is coming soon",
+  "Es el copiloto propio de MahzzTerm: corre en tu PC, ve tus comandos y te ayuda a arreglarlos. Todavía no se puede descargar.": "MahzzTerm's own copilot: it runs on your PC, sees your commands and helps you fix them. It can't be downloaded yet.",
+  "Ver más en mahzzterm.xyz": "Learn more at mahzzterm.xyz",
+  "Volver a buscar el modelo": "Look for the model again",
+  "¿En qué te ayudo?": "How can I help?",
+  "Mahzz-AI ve el último comando de la terminal si dejás prendido el chip.": "Mahzz-AI sees the terminal's last command when the chip is on.",
+  "_(Solo pensó, sin respuesta.)_": "_(It only thought, no answer.)_",
+  "_(Sin respuesta.)_": "_(No answer.)_",
+  "Pensamiento": "Thoughts",
+  "Detener": "Stop",
+  "con el último comando": "with the last command",
+  "Pensando…": "Thinking…",
+  "código": "code",
+  "Copiado": "Copied",
+  "A la terminal": "To terminal",
+  "Lo escribe en la terminal activa sin ejecutarlo": "Types it into the active terminal without running it",
+  "Abrir Mahzz-AI": "Open Mahzz-AI",
 };
 
 function leerGuardado(): Idioma {
@@ -390,6 +421,10 @@ const elegido = leerGuardado();
 const enIngles = elegido === "en" || (elegido === "auto" && !navigator.language.toLowerCase().startsWith("es"));
 
 // El texto en español funciona como clave. {0}, {1} son valores que se reemplazan.
+export function idiomaWeb(): "es" | "en" {
+  return enIngles ? "en" : "es";
+}
+
 export function t(texto: string, ...valores: (string | number)[]): string {
   const base = enIngles ? (INGLES[texto] ?? texto) : texto;
   return base.replace(/\{(\d+)\}/g, (marca, indice: string) => String(valores[Number(indice)] ?? marca));

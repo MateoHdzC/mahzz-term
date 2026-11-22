@@ -2,6 +2,12 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.0] - 2026-11-22
+
+### Agregado
+- **Mahzz-AI, el copiloto de MahzzTerm** (vista previa). Un panel a la derecha, con su botón en la barra o con `Ctrl+Shift+M`, para charlar con una IA que corre en tu PC con Ollama. Ve el último comando de la terminal (su salida y su código de error) si dejás prendido el chip **Último comando**, así le podés preguntar por qué falló algo sin copiar nada. Las respuestas aparecen mientras las escribe, con su razonamiento plegable, y cada bloque de código trae **Copiar** y **A la terminal** (lo escribe sin ejecutarlo).
+- El modelo de Mahzz-AI todavía no se puede descargar: si no está instalado, el panel lo avisa y lleva a la página de Mahzz-AI en mahzzterm.xyz.
+
 ## [0.5.2] - 2026-11-21
 
 ### Cambiado

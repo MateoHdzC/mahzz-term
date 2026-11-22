@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import { t } from "./i18n";
+import { idiomaWeb, t } from "./i18n";
 import type { Panel } from "./panel";
 
 // Panel lateral de Mahzz-AI: el copiloto local que corre en Ollama.
@@ -79,6 +79,7 @@ export class PanelCopiloto {
   private readonly historial: Mensaje[] = [];
   private respondiendo = false;
   private conContexto = true;
+  private disponible = true;
 
   constructor(
     private readonly elemento: HTMLElement,
@@ -195,6 +196,10 @@ export class PanelCopiloto {
       const estado = await invoke<Estado>("mahzz_estado");
       const nombre = estado.modelo.replace(/:latest$/, "");
       this.modelo.textContent = estado.provisorio ? t("{0} · provisorio", nombre) : nombre;
+      if (!this.disponible) {
+        this.disponible = true;
+        if (this.historial.length === 0) this.mostrarBienvenida();
+      }
       this.modelo.title = estado.provisorio
         ? t("El modelo propio todavía no está instalado: se usa la base con la identidad de Mahzz-AI.")
         : "";
@@ -202,7 +207,48 @@ export class PanelCopiloto {
       this.modelo.textContent = t("sin conexión");
       this.modelo.title = String(error);
       this.modelo.classList.add("copiloto__modelo--error");
+      this.disponible = false;
+      if (this.historial.length === 0) this.mostrarProximamente(String(error));
     }
+  }
+
+  // Sin Ollama o sin el modelo: se cuenta qué es Mahzz-AI y se manda a la web.
+  private mostrarProximamente(motivo: string): void {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "copiloto__bienvenida";
+    const orbe = document.createElement("div");
+    orbe.className = "copiloto__orbe copiloto__orbe--grande";
+    const etiqueta = document.createElement("span");
+    etiqueta.className = "copiloto__etiqueta";
+    etiqueta.textContent = t("Próximamente");
+    const titulo = document.createElement("div");
+    titulo.className = "copiloto__saludo";
+    titulo.textContent = t("Mahzz-AI llega pronto");
+    const texto = document.createElement("div");
+    texto.className = "copiloto__subtitulo";
+    texto.textContent = t(
+      "Es el copiloto propio de MahzzTerm: corre en tu PC, ve tus comandos y te ayuda a arreglarlos. Todavía no se puede descargar.",
+    );
+    const detalle = document.createElement("div");
+    detalle.className = "copiloto__detalle";
+    detalle.textContent = motivo;
+    const web = document.createElement("button");
+    web.type = "button";
+    web.className = "copiloto__sugerencia copiloto__sugerencia--principal";
+    web.textContent = t("Ver más en mahzzterm.xyz");
+    web.addEventListener("click", () => {
+      void invoke("abrir_externo", { destino: `https://mahzzterm.xyz/${idiomaWeb()}/mahzz-ai/` });
+    });
+    const reintentar = document.createElement("button");
+    reintentar.type = "button";
+    reintentar.className = "copiloto__sugerencia";
+    reintentar.textContent = t("Volver a buscar el modelo");
+    reintentar.addEventListener("click", () => void this.revisarModelo());
+    const acciones = document.createElement("div");
+    acciones.className = "copiloto__sugerencias";
+    acciones.append(web, reintentar);
+    tarjeta.append(orbe, etiqueta, titulo, texto, acciones, detalle);
+    this.lista.replaceChildren(tarjeta);
   }
 
   private pintarContexto(): void {
@@ -274,6 +320,10 @@ export class PanelCopiloto {
   private async mandar(): Promise<void> {
     const pregunta = this.entrada.value.trim();
     if (!pregunta || this.respondiendo) return;
+    if (!this.disponible) {
+      await this.revisarModelo();
+      if (!this.disponible) return;
+    }
     if (this.historial.length === 0) this.lista.replaceChildren();
 
     const contexto = this.conContexto ? this.ultimoComando() : null;

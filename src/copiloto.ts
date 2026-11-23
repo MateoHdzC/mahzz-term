@@ -15,9 +15,21 @@ interface Trozo {
 }
 
 interface Estado {
+  proveedor: "local" | "api";
   modelo: string;
-  provisorio: boolean;
 }
+
+interface ConfigApi {
+  usarApi: boolean;
+  url: string;
+  modelo: string;
+  tieneKey: boolean;
+}
+
+// El modelo publicado en ollama.com: el comando de instalación que se muestra en el panel y en la web.
+const MODELO_PUBLICO = "dkdidmateo/mahzz";
+const COMANDO_INSTALAR = `ollama pull ${MODELO_PUBLICO}`;
+const URL_API_DEFECTO = "https://api.openai.com/v1";
 
 const CLAVE_VISIBLE = "mahzz-copiloto-visible";
 const CLAVE_ANCHO = "mahzz-copiloto-ancho";
@@ -54,6 +66,8 @@ const ICONO_SOLTAR =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2" /><rect x="7.5" y="7.5" width="5" height="5" rx="1" /></svg>';
 const ICONO_ANCLAR =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2" /><path d="M10 2v12" /></svg>';
+const ICONO_AJUSTES =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" /></svg>';
 const ICONO_BLOQUE =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12v9H2zM4.5 7l2 1.5-2 1.5M8.5 10h3" /></svg>';
 
@@ -100,6 +114,7 @@ export class PanelCopiloto {
   private readonly enviar = boton("copiloto__enviar", ICONO_ENVIAR, t("Enviar (Enter)"));
   private readonly contexto = document.createElement("button");
   private readonly modelo = document.createElement("span");
+  private readonly aviso = document.createElement("div");
   private readonly historial: Mensaje[] = [];
   private respondiendo = false;
   private conContexto = true;
@@ -134,6 +149,8 @@ export class PanelCopiloto {
     textos.append(nombre, this.modelo);
     marca.append(orbe, textos);
 
+    const ajustes = boton("archivos__boton", ICONO_AJUSTES, t("Modelo y API key"));
+    ajustes.addEventListener("click", () => void this.mostrarAjustes());
     const nueva = boton("archivos__boton", ICONO_NUEVA, t("Nueva charla"));
     nueva.addEventListener("click", () => this.nuevaCharla());
     const cerrar = boton("archivos__boton", ICONO_CERRAR, t("Cerrar"));
@@ -142,7 +159,7 @@ export class PanelCopiloto {
     const encabezado = document.createElement("div");
     encabezado.className = "copiloto__encabezado";
     this.botonModo.addEventListener("click", () => this.cambiarModo());
-    encabezado.append(marca, nueva, this.botonModo, cerrar);
+    encabezado.append(marca, ajustes, nueva, this.botonModo, cerrar);
     // En modo flotante, la ventanita se mueve arrastrándola del encabezado.
     encabezado.addEventListener("pointerdown", (evento) => this.iniciarArrastre(encabezado, evento));
     encabezado.addEventListener("dblclick", (evento) => {
@@ -191,10 +208,9 @@ export class PanelCopiloto {
 
     const pie = document.createElement("div");
     pie.className = "copiloto__pie";
-    const aviso = document.createElement("div");
-    aviso.className = "copiloto__aviso";
-    aviso.textContent = t("Corre en tu PC. Puede equivocarse: revisá los comandos antes de ejecutarlos.");
-    pie.append(caja, aviso);
+    this.aviso.className = "copiloto__aviso";
+    this.aviso.textContent = t("Corre en tu PC. Puede equivocarse: revisá los comandos antes de ejecutarlos.");
+    pie.append(caja, this.aviso);
 
     const bordes = BORDES.map((borde) => {
       const asaBorde = document.createElement("div");
@@ -235,63 +251,217 @@ export class PanelCopiloto {
   private async revisarModelo(): Promise<void> {
     this.modelo.textContent = t("conectando…");
     this.modelo.classList.remove("copiloto__modelo--error");
+    this.modelo.title = "";
     try {
       const estado = await invoke<Estado>("mahzz_estado");
-      const nombre = estado.modelo.replace(/:latest$/, "");
-      this.modelo.textContent = estado.provisorio ? t("{0} · provisorio", nombre) : nombre;
-      if (!this.disponible) {
+      const nombre = estado.modelo.replace(/:latest$/, "").replace(/^.*\//, "");
+      if (estado.proveedor === "api") {
+        this.modelo.textContent = t("API · {0}", nombre);
+        this.aviso.textContent = t("Usa tu API key: lo que preguntás va a ese servicio. Revisá los comandos antes de ejecutarlos.");
+      } else {
+        this.modelo.textContent = t("{0} · en tu PC", nombre);
+        this.aviso.textContent = t("Corre en tu PC. Puede equivocarse: revisá los comandos antes de ejecutarlos.");
+      }
+      if (!this.disponible || this.lista.querySelector(".copiloto__instalar")) {
         this.disponible = true;
         if (this.historial.length === 0) this.mostrarBienvenida();
       }
-      this.modelo.title = estado.provisorio
-        ? t("El modelo propio todavía no está instalado: se usa la base con la identidad de Mahzz-AI.")
-        : "";
     } catch (error) {
-      this.modelo.textContent = t("sin conexión");
-      this.modelo.title = String(error);
+      const [codigo, motivo] = String(error).includes("|") ? String(error).split("|", 2) : ["", String(error)];
+      this.modelo.textContent = codigo === "sin_modelo" ? t("sin instalar") : t("sin conexión");
+      this.modelo.title = motivo;
       this.modelo.classList.add("copiloto__modelo--error");
       this.disponible = false;
-      if (this.historial.length === 0) this.mostrarProximamente(String(error));
+      if (this.historial.length === 0) this.mostrarInstalar(codigo, motivo);
     }
   }
 
-  // Sin Ollama o sin el modelo: se cuenta qué es Mahzz-AI y se manda a la web.
-  private mostrarProximamente(motivo: string): void {
+  private botonAccion(texto: string, principal: boolean, accion: () => void): HTMLButtonElement {
+    const elemento = document.createElement("button");
+    elemento.type = "button";
+    elemento.className = principal ? "copiloto__sugerencia copiloto__sugerencia--principal" : "copiloto__sugerencia";
+    elemento.textContent = texto;
+    elemento.addEventListener("click", accion);
+    return elemento;
+  }
+
+  private abrirWeb(destino: string): void {
+    void invoke("abrir_externo", { destino });
+  }
+
+  // Sin el modelo: el comando para bajarlo (con "A la terminal") o la opción de usar una API key.
+  private mostrarInstalar(codigo: string, motivo: string): void {
     const tarjeta = document.createElement("div");
-    tarjeta.className = "copiloto__bienvenida";
+    tarjeta.className = "copiloto__bienvenida copiloto__instalar";
     const orbe = document.createElement("div");
     orbe.className = "copiloto__orbe copiloto__orbe--grande";
-    const etiqueta = document.createElement("span");
-    etiqueta.className = "copiloto__etiqueta";
-    etiqueta.textContent = t("Próximamente");
     const titulo = document.createElement("div");
     titulo.className = "copiloto__saludo";
-    titulo.textContent = t("Mahzz-AI llega pronto");
+    titulo.textContent = t("Instalá Mahzz-AI");
     const texto = document.createElement("div");
     texto.className = "copiloto__subtitulo";
     texto.textContent = t(
-      "Es el copiloto propio de MahzzTerm: corre en tu PC, ve tus comandos y te ayuda a arreglarlos. Todavía no se puede descargar.",
+      "Para usarlo en tu PC, bajá el modelo con Ollama (unos 13 GB). Si preferís, podés usar tu propia API key.",
+    );
+
+    const pasos = document.createElement("ol");
+    pasos.className = "copiloto__pasos";
+    const pasoOllama = document.createElement("li");
+    pasoOllama.append(t("Instalá Ollama (gratis). "));
+    const enlace = document.createElement("button");
+    enlace.type = "button";
+    enlace.className = "copiloto__enlace";
+    enlace.textContent = "ollama.com/download";
+    enlace.addEventListener("click", () => this.abrirWeb("https://ollama.com/download"));
+    pasoOllama.append(enlace);
+    if (codigo === "sin_modelo") pasoOllama.classList.add("copiloto__paso--hecho");
+    const pasoModelo = document.createElement("li");
+    pasoModelo.append(t("Corré este comando en la terminal:"), this.bloqueCodigo(COMANDO_INSTALAR, "powershell"));
+    const pasoListo = document.createElement("li");
+    pasoListo.textContent = t("Cuando termine, tocá «Ya lo instalé».");
+    pasos.append(pasoOllama, pasoModelo, pasoListo);
+
+    const acciones = document.createElement("div");
+    acciones.className = "copiloto__sugerencias";
+    acciones.append(
+      this.botonAccion(t("Ya lo instalé"), true, () => void this.revisarModelo()),
+      this.botonAccion(t("Usar una API key"), false, () => void this.mostrarAjustes()),
+      this.botonAccion(t("Ver más en mahzzterm.xyz"), false, () =>
+        this.abrirWeb(`https://mahzzterm.xyz/${idiomaWeb()}/mahzz-ai/`),
+      ),
     );
     const detalle = document.createElement("div");
     detalle.className = "copiloto__detalle";
     detalle.textContent = motivo;
-    const web = document.createElement("button");
-    web.type = "button";
-    web.className = "copiloto__sugerencia copiloto__sugerencia--principal";
-    web.textContent = t("Ver más en mahzzterm.xyz");
-    web.addEventListener("click", () => {
-      void invoke("abrir_externo", { destino: `https://mahzzterm.xyz/${idiomaWeb()}/mahzz-ai/` });
-    });
-    const reintentar = document.createElement("button");
-    reintentar.type = "button";
-    reintentar.className = "copiloto__sugerencia";
-    reintentar.textContent = t("Volver a buscar el modelo");
-    reintentar.addEventListener("click", () => void this.revisarModelo());
+    tarjeta.append(orbe, titulo, texto, pasos, acciones, detalle);
+    this.lista.replaceChildren(tarjeta);
+  }
+
+  // Elegir entre el modelo local y una API compatible con OpenAI. La key se guarda cifrada y nunca vuelve a la interfaz.
+  private async mostrarAjustes(): Promise<void> {
+    if (this.respondiendo) return;
+    let config: ConfigApi;
+    try {
+      config = await invoke<ConfigApi>("mahzz_config");
+    } catch {
+      config = { usarApi: false, url: "", modelo: "", tieneKey: false };
+    }
+
+    // Lo que había en la lista vuelve si se cancela.
+    const anteriores = this.lista.querySelector(".copiloto__ajustes") ? null : [...this.lista.childNodes];
+    const formulario = document.createElement("form");
+    formulario.className = "copiloto__ajustes";
+    formulario.addEventListener("keydown", (evento) => evento.stopPropagation());
+    const titulo = document.createElement("div");
+    titulo.className = "copiloto__saludo";
+    titulo.textContent = t("Con qué responde Mahzz-AI");
+
+    const opcion = (valor: "local" | "api", nombre: string, ayuda: string) => {
+      const etiqueta = document.createElement("label");
+      etiqueta.className = "copiloto__opcion";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "mahzz-proveedor";
+      radio.value = valor;
+      radio.checked = (valor === "api") === config.usarApi;
+      const textos = document.createElement("span");
+      const fuerte = document.createElement("strong");
+      fuerte.textContent = nombre;
+      const suave = document.createElement("small");
+      suave.textContent = ayuda;
+      textos.append(fuerte, suave);
+      etiqueta.append(radio, textos);
+      return { etiqueta, radio };
+    };
+    const local = opcion("local", t("Modelo Mahzz-AI en tu PC"), t("Necesita el modelo instalado en Ollama. No sale nada de tu PC."));
+    const api = opcion("api", t("API compatible con OpenAI"), t("OpenAI, OpenRouter, Groq, DeepSeek, LM Studio… con tu key."));
+
+    const campo = (nombre: string, tipo: string, valor: string, ejemplo: string) => {
+      const etiqueta = document.createElement("label");
+      etiqueta.className = "copiloto__campo";
+      etiqueta.append(nombre);
+      const entrada = document.createElement("input");
+      entrada.type = tipo;
+      entrada.value = valor;
+      entrada.placeholder = ejemplo;
+      entrada.spellcheck = false;
+      entrada.autocomplete = "off";
+      etiqueta.append(entrada);
+      return { etiqueta, entrada };
+    };
+    const url = campo(t("Dirección"), "url", config.url || URL_API_DEFECTO, URL_API_DEFECTO);
+    const modelo = campo(t("Modelo"), "text", config.modelo, "gpt-4o-mini");
+    const key = campo(
+      t("API key"),
+      "password",
+      "",
+      config.tieneKey ? t("Guardada · dejala vacía para no cambiarla") : "sk-…",
+    );
+    const camposApi = document.createElement("div");
+    camposApi.className = "copiloto__campos";
+    camposApi.append(url.etiqueta, modelo.etiqueta, key.etiqueta);
+    const pintarCampos = () => (camposApi.hidden = !api.radio.checked);
+    local.radio.addEventListener("change", pintarCampos);
+    api.radio.addEventListener("change", pintarCampos);
+    pintarCampos();
+
+    const error = document.createElement("div");
+    error.className = "copiloto__detalle copiloto__detalle--error";
+    error.hidden = true;
+
+    const guardar = document.createElement("button");
+    guardar.type = "submit";
+    guardar.className = "copiloto__sugerencia copiloto__sugerencia--principal";
+    guardar.textContent = t("Guardar");
     const acciones = document.createElement("div");
     acciones.className = "copiloto__sugerencias";
-    acciones.append(web, reintentar);
-    tarjeta.append(orbe, etiqueta, titulo, texto, acciones, detalle);
-    this.lista.replaceChildren(tarjeta);
+    acciones.append(guardar);
+    if (config.tieneKey) {
+      acciones.append(
+        this.botonAccion(t("Borrar la API key"), false, async () => {
+          await invoke("mahzz_borrar_key");
+          await this.cerrarAjustes(null);
+        }),
+      );
+    }
+    acciones.append(this.botonAccion(t("Cancelar"), false, () => void this.cerrarAjustes(anteriores)));
+
+    const nota = document.createElement("div");
+    nota.className = "copiloto__detalle";
+    nota.textContent = t("La key se guarda cifrada con tu usuario de Windows, solo en esta PC.");
+
+    formulario.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      error.hidden = true;
+      try {
+        await invoke("mahzz_guardar_config", {
+          usarApi: api.radio.checked,
+          url: url.entrada.value,
+          modelo: modelo.entrada.value,
+          key: key.entrada.value,
+        });
+        await this.cerrarAjustes(null);
+      } catch (motivo) {
+        error.textContent = String(motivo);
+        error.hidden = false;
+      }
+    });
+
+    formulario.append(titulo, local.etiqueta, api.etiqueta, camposApi, error, acciones, nota);
+    this.lista.replaceChildren(formulario);
+    (api.radio.checked ? modelo.entrada : local.radio).focus();
+  }
+
+  // Al cancelar vuelve lo de antes; al guardar arranca una charla nueva con el motor elegido.
+  private async cerrarAjustes(anteriores: ChildNode[] | null): Promise<void> {
+    if (anteriores) {
+      this.lista.replaceChildren(...anteriores);
+    } else {
+      this.historial.length = 0;
+      this.disponible = false;
+      this.mostrarBienvenida();
+    }
+    await this.revisarModelo();
   }
 
   private pintarContexto(): void {
@@ -496,34 +666,50 @@ export class PanelCopiloto {
     for (const pre of cuerpo.querySelectorAll("pre")) {
       const codigo = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
       const lenguaje = /language-(\S+)/.exec(pre.querySelector("code")?.className ?? "")?.[1] ?? "";
-      const barra = document.createElement("div");
-      barra.className = "copiloto__codigo-barra";
-      const nombre = document.createElement("span");
-      nombre.textContent = lenguaje || t("código");
-      const copiar = document.createElement("button");
-      copiar.type = "button";
-      copiar.textContent = t("Copiar");
-      copiar.addEventListener("click", () => {
-        void navigator.clipboard.writeText(codigo.trimEnd());
-        copiar.textContent = t("Copiado");
-        setTimeout(() => (copiar.textContent = t("Copiar")), 1200);
-      });
-      const terminal = document.createElement("button");
-      terminal.type = "button";
-      terminal.textContent = t("A la terminal");
-      terminal.title = t("Lo escribe en la terminal activa sin ejecutarlo");
-      terminal.addEventListener("click", () => {
-        const panel = this.obtenerPanel();
-        if (!panel) return;
-        panel.ponerEnEditor(codigo.trim());
-        panel.enfocar();
-      });
-      barra.append(nombre, copiar, terminal);
+      const barra = this.barraCodigo(codigo, lenguaje);
       const envoltura = document.createElement("div");
       envoltura.className = "copiloto__codigo";
       pre.replaceWith(envoltura);
       envoltura.append(barra, pre);
     }
+  }
+
+  private barraCodigo(codigo: string, lenguaje: string): HTMLElement {
+    const barra = document.createElement("div");
+    barra.className = "copiloto__codigo-barra";
+    const nombre = document.createElement("span");
+    nombre.textContent = lenguaje || t("código");
+    const copiar = document.createElement("button");
+    copiar.type = "button";
+    copiar.textContent = t("Copiar");
+    copiar.addEventListener("click", () => {
+      void navigator.clipboard.writeText(codigo.trimEnd());
+      copiar.textContent = t("Copiado");
+      setTimeout(() => (copiar.textContent = t("Copiar")), 1200);
+    });
+    const terminal = document.createElement("button");
+    terminal.type = "button";
+    terminal.textContent = t("A la terminal");
+    terminal.title = t("Lo escribe en la terminal activa sin ejecutarlo");
+    terminal.addEventListener("click", () => {
+      const panel = this.obtenerPanel();
+      if (!panel) return;
+      panel.ponerEnEditor(codigo.trim());
+      panel.enfocar();
+    });
+    barra.append(nombre, copiar, terminal);
+    return barra;
+  }
+
+  private bloqueCodigo(codigo: string, lenguaje: string): HTMLElement {
+    const envoltura = document.createElement("div");
+    envoltura.className = "copiloto__codigo";
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    code.textContent = codigo;
+    pre.append(code);
+    envoltura.append(this.barraCodigo(codigo, lenguaje), pre);
+    return envoltura;
   }
 
   private bajar(): void {

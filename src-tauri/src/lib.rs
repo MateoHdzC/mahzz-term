@@ -52,9 +52,12 @@ pub fn iniciar() {
         })
         .invoke_handler(tauri::generate_handler![
             ajustes::abrir_externo,
+            mahzz::mahzz_borrar_key,
             mahzz::mahzz_chat,
+            mahzz::mahzz_config,
             mahzz::mahzz_detener,
             mahzz::mahzz_estado,
+            mahzz::mahzz_guardar_config,
             ajustes::avisar_comando,
             ajustes::borrar_secreto,
             ajustes::borrar_tema,

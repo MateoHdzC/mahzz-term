@@ -1,6 +1,8 @@
-// Mahzz-AI: el copiloto local. Habla con Ollama desde Rust para no pelear con CORS ni la CSP del webview.
+// Mahzz-AI: el copiloto de MahzzTerm. Habla desde Rust para no pelear con CORS ni la CSP del webview.
+// Dos formas de usarlo: el modelo propio instalado en Ollama, o cualquier API compatible con OpenAI con tu key.
 use std::{
-    io::{BufRead, BufReader},
+    fs,
+    io::{BufRead, BufReader, Read},
     path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},
     thread,
@@ -8,18 +10,93 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use tauri::{async_runtime::spawn_blocking, ipc::Channel};
+use tauri::{async_runtime::spawn_blocking, ipc::Channel, AppHandle};
+
+use crate::{ajustes::cifrar, datos::carpeta_datos};
 
 const URL: &str = "http://127.0.0.1:11434";
-const MODELO: &str = "mahzz:latest";
-// Misma base que MahzzAI: se usa con la identidad como instrucción mientras el modelo propio no esté instalado.
-const PROVISORIO: &str = "gpt-oss-libre:latest";
-const IDENTIDAD: &str = "Eres MahzzAI, el asistente de programación creado por MahzzStudio, integrado en la terminal MahzzTerm. \
+// Con la API no está el ajuste propio, así que la identidad va como instrucción de sistema.
+const IDENTIDAD: &str = "Eres Mahzz-AI, el asistente de programación creado por MahzzStudio, integrado en la terminal MahzzTerm. \
 No eres ChatGPT. Hablas en español neutro, claro y directo. Eres experto en PowerShell, Windows, terminal, Python, C#, \
 JavaScript y Git. Cuando muestres comandos, ponlos en bloques de código con el lenguaje indicado.";
 
 // Cada respuesta tiene un número de turno: detener sube el número y la respuesta en curso se corta sola.
 static TURNO: AtomicU64 = AtomicU64::new(0);
+
+// ---------- Configuración (cifrada con el usuario de Windows) ----------
+
+#[derive(Default, Clone)]
+struct Config {
+    usar_api: bool,
+    url: String,
+    modelo: String,
+    key: String,
+}
+
+fn ruta_config(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(carpeta_datos(app)?.join("mahzz-ai.dat"))
+}
+
+fn leer_config(app: &AppHandle) -> Config {
+    let Some(datos) = ruta_config(app)
+        .ok()
+        .and_then(|ruta| fs::read(ruta).ok())
+        .and_then(|cifrado| cifrar(&cifrado, false).ok())
+        .and_then(|plano| serde_json::from_slice::<Value>(&plano).ok())
+    else {
+        return Config::default();
+    };
+    let texto = |clave: &str| datos[clave].as_str().unwrap_or_default().to_string();
+    Config {
+        usar_api: datos["usarApi"].as_bool().unwrap_or(false),
+        url: texto("url"),
+        modelo: texto("modelo"),
+        key: texto("key"),
+    }
+}
+
+fn escribir_config(app: &AppHandle, config: &Config) -> Result<(), String> {
+    let datos = json!({ "usarApi": config.usar_api, "url": config.url, "modelo": config.modelo, "key": config.key });
+    let texto = serde_json::to_vec(&datos).map_err(|error| error.to_string())?;
+    fs::write(ruta_config(app)?, cifrar(&texto, true)?).map_err(|error| error.to_string())
+}
+
+fn api_completa(config: &Config) -> bool {
+    !config.url.is_empty() && !config.modelo.is_empty() && !config.key.is_empty()
+}
+
+// Lo que ve la interfaz: nunca la key, solo si hay una guardada.
+#[tauri::command]
+pub fn mahzz_config(app: AppHandle) -> Value {
+    let config = leer_config(&app);
+    json!({ "usarApi": config.usar_api, "url": config.url, "modelo": config.modelo, "tieneKey": !config.key.is_empty() })
+}
+
+// `key` vacía deja la que ya estaba guardada.
+#[tauri::command]
+pub fn mahzz_guardar_config(app: AppHandle, usar_api: bool, url: String, modelo: String, key: String) -> Result<(), String> {
+    let mut config = leer_config(&app);
+    config.usar_api = usar_api;
+    config.url = url.trim().trim_end_matches('/').to_string();
+    config.modelo = modelo.trim().to_string();
+    if !key.trim().is_empty() {
+        config.key = key.trim().to_string();
+    }
+    if usar_api && !api_completa(&config) {
+        return Err("Para usar una API completá la dirección, el modelo y la key.".into());
+    }
+    escribir_config(&app, &config)
+}
+
+#[tauri::command]
+pub fn mahzz_borrar_key(app: AppHandle) -> Result<(), String> {
+    let mut config = leer_config(&app);
+    config.key.clear();
+    config.usar_api = false;
+    escribir_config(&app, &config)
+}
+
+// ---------- Ollama ----------
 
 fn ollama_prendido() -> bool {
     ureq::get(&format!("{URL}/api/version"))
@@ -58,26 +135,43 @@ fn modelos_instalados() -> Vec<String> {
         .unwrap_or_default()
 }
 
-// Devuelve qué modelo se va a usar y si es el provisorio.
-fn elegir_modelo() -> Result<(String, bool), String> {
+// Vale "mahzz:latest" (el local) y "usuario/mahzz:latest" (el que se baja con ollama pull).
+fn es_mahzz(nombre: &str) -> bool {
+    nombre.rsplit('/').next().is_some_and(|base| base == "mahzz" || base.starts_with("mahzz:"))
+}
+
+// ---------- Elegir con qué responder ----------
+
+enum Motor {
+    Local(String),
+    Api(Config),
+}
+
+// Errores con un código al principio para que la interfaz sepa qué pantalla mostrar.
+fn elegir_motor(app: &AppHandle) -> Result<Motor, String> {
+    let config = leer_config(app);
+    if config.usar_api && api_completa(&config) {
+        return Ok(Motor::Api(config));
+    }
     if !prender_ollama() {
-        return Err("No pude prender Ollama. ¿Está instalado?".into());
+        return Err("sin_ollama|No encontré Ollama prendido en esta PC.".into());
     }
     let instalados = modelos_instalados();
-    if instalados.iter().any(|m| m == MODELO) {
-        Ok((MODELO.into(), false))
-    } else if instalados.iter().any(|m| m == PROVISORIO) {
-        Ok((PROVISORIO.into(), true))
-    } else {
-        Err("No encontré el modelo de Mahzz-AI en Ollama.".into())
+    let elegido = instalados
+        .iter()
+        .find(|m| m.as_str() == "mahzz:latest")
+        .or_else(|| instalados.iter().find(|m| es_mahzz(m)));
+    match elegido {
+        Some(modelo) => Ok(Motor::Local(modelo.clone())),
+        None => Err("sin_modelo|Ollama está prendido, pero el modelo de Mahzz-AI no está instalado.".into()),
     }
 }
 
 #[tauri::command]
-pub async fn mahzz_estado() -> Result<Value, String> {
-    spawn_blocking(|| {
-        let (modelo, provisorio) = elegir_modelo()?;
-        Ok(json!({ "modelo": modelo, "provisorio": provisorio }))
+pub async fn mahzz_estado(app: AppHandle) -> Result<Value, String> {
+    spawn_blocking(move || match elegir_motor(&app)? {
+        Motor::Local(modelo) => Ok(json!({ "proveedor": "local", "modelo": modelo })),
+        Motor::Api(config) => Ok(json!({ "proveedor": "api", "modelo": config.modelo })),
     })
     .await
     .map_err(|error| error.to_string())?
@@ -88,51 +182,102 @@ pub fn mahzz_detener() {
     TURNO.fetch_add(1, Ordering::SeqCst);
 }
 
-// Manda la charla a Ollama y va pasando los trozos por el canal: {"pensando": "..."} o {"texto": "..."}.
+// Manda la charla y va pasando los trozos por el canal: {"pensando": "..."} o {"texto": "..."}.
 #[tauri::command]
-pub async fn mahzz_chat(mensajes: Vec<Value>, canal: Channel<Value>) -> Result<(), String> {
+pub async fn mahzz_chat(app: AppHandle, mensajes: Vec<Value>, canal: Channel<Value>) -> Result<(), String> {
     let turno = TURNO.fetch_add(1, Ordering::SeqCst) + 1;
-    spawn_blocking(move || {
-        let (modelo, provisorio) = elegir_modelo()?;
-        let mut todos = Vec::with_capacity(mensajes.len() + 1);
-        if provisorio {
-            todos.push(json!({ "role": "system", "content": IDENTIDAD }));
-        }
-        todos.extend(mensajes);
-        let cuerpo = json!({ "model": modelo, "messages": todos, "stream": true, "think": "low" });
-
-        let respuesta = ureq::post(&format!("{URL}/api/chat"))
-            .header("Content-Type", "application/json")
-            .send(cuerpo.to_string())
-            .map_err(|error| format!("Ollama no respondió: {error}"))?;
-        let lector = BufReader::new(respuesta.into_body().into_reader());
-        for linea in lector.lines() {
-            if TURNO.load(Ordering::SeqCst) != turno {
-                break;
-            }
-            let linea = linea.map_err(|error| error.to_string())?;
-            if linea.trim().is_empty() {
-                continue;
-            }
-            let Ok(parte) = serde_json::from_str::<Value>(&linea) else { continue };
-            if let Some(error) = parte["error"].as_str() {
-                return Err(error.to_string());
-            }
-            let mensaje = &parte["message"];
-            for clave in ["thinking", "content"] {
-                if let Some(trozo) = mensaje[clave].as_str().filter(|t| !t.is_empty()) {
-                    let tipo = if clave == "thinking" { "pensando" } else { "texto" };
-                    if canal.send(json!({ tipo: trozo })).is_err() {
-                        return Ok(());
-                    }
-                }
-            }
-            if parte["done"].as_bool() == Some(true) {
-                break;
-            }
-        }
-        Ok(())
+    spawn_blocking(move || match elegir_motor(&app)? {
+        Motor::Local(modelo) => chat_ollama(&modelo, mensajes, &canal, turno),
+        Motor::Api(config) => chat_api(&config, mensajes, &canal, turno),
     })
     .await
     .map_err(|error| error.to_string())?
+}
+
+// Devuelve false si la interfaz ya no escucha (se cerró la charla).
+fn mandar(canal: &Channel<Value>, tipo: &str, trozo: Option<&str>) -> bool {
+    match trozo.filter(|t| !t.is_empty()) {
+        Some(trozo) => canal.send(json!({ tipo: trozo })).is_ok(),
+        None => true,
+    }
+}
+
+fn chat_ollama(modelo: &str, mensajes: Vec<Value>, canal: &Channel<Value>, turno: u64) -> Result<(), String> {
+    let cuerpo = json!({ "model": modelo, "messages": mensajes, "stream": true, "think": "low" });
+    let respuesta = ureq::post(&format!("{URL}/api/chat"))
+        .header("Content-Type", "application/json")
+        .send(cuerpo.to_string())
+        .map_err(|error| format!("Ollama no respondió: {error}"))?;
+    let lector = BufReader::new(respuesta.into_body().into_reader());
+    for linea in lector.lines() {
+        if TURNO.load(Ordering::SeqCst) != turno {
+            break;
+        }
+        let linea = linea.map_err(|error| error.to_string())?;
+        if linea.trim().is_empty() {
+            continue;
+        }
+        let Ok(parte) = serde_json::from_str::<Value>(&linea) else { continue };
+        if let Some(error) = parte["error"].as_str() {
+            return Err(error.to_string());
+        }
+        let mensaje = &parte["message"];
+        if !mandar(canal, "pensando", mensaje["thinking"].as_str()) || !mandar(canal, "texto", mensaje["content"].as_str()) {
+            return Ok(());
+        }
+        if parte["done"].as_bool() == Some(true) {
+            break;
+        }
+    }
+    Ok(())
+}
+
+// API compatible con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, LM Studio…), con streaming por SSE.
+fn chat_api(config: &Config, mensajes: Vec<Value>, canal: &Channel<Value>, turno: u64) -> Result<(), String> {
+    let mut todos = Vec::with_capacity(mensajes.len() + 1);
+    todos.push(json!({ "role": "system", "content": IDENTIDAD }));
+    todos.extend(mensajes);
+    let cuerpo = json!({ "model": config.modelo, "messages": todos, "stream": true });
+
+    let respuesta = ureq::post(&format!("{}/chat/completions", config.url))
+        .config()
+        .http_status_as_error(false)
+        .build()
+        .header("Content-Type", "application/json")
+        .header("Authorization", &format!("Bearer {}", config.key))
+        .send(cuerpo.to_string())
+        .map_err(|error| format!("La API no respondió: {error}"))?;
+
+    let estado = respuesta.status().as_u16();
+    if estado >= 400 {
+        let mut texto = String::new();
+        let _ = respuesta.into_body().into_reader().take(4000).read_to_string(&mut texto);
+        let detalle = serde_json::from_str::<Value>(&texto)
+            .ok()
+            .and_then(|datos| datos["error"]["message"].as_str().or(datos["error"].as_str()).map(String::from))
+            .unwrap_or(texto);
+        return Err(format!("La API devolvió {estado}: {}", detalle.trim()));
+    }
+
+    let lector = BufReader::new(respuesta.into_body().into_reader());
+    for linea in lector.lines() {
+        if TURNO.load(Ordering::SeqCst) != turno {
+            break;
+        }
+        let linea = linea.map_err(|error| error.to_string())?;
+        let Some(dato) = linea.strip_prefix("data:").map(str::trim) else { continue };
+        if dato == "[DONE]" {
+            break;
+        }
+        let Ok(parte) = serde_json::from_str::<Value>(dato) else { continue };
+        if let Some(error) = parte["error"]["message"].as_str() {
+            return Err(error.to_string());
+        }
+        let delta = &parte["choices"][0]["delta"];
+        let razonamiento = delta["reasoning_content"].as_str().or(delta["reasoning"].as_str());
+        if !mandar(canal, "pensando", razonamiento) || !mandar(canal, "texto", delta["content"].as_str()) {
+            return Ok(());
+        }
+    }
+    Ok(())
 }

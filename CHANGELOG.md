@@ -2,6 +2,15 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.2] - 2026-11-22
+
+### Agregado
+- **Mahzz-AI ya funciona con su modelo propio.** Si tenés `mahzz` instalado en Ollama, el panel lo usa directo. Si no, te muestra el comando para bajarlo (`ollama pull dkdidmateo/mahzz`) con botones para copiarlo o mandarlo a la terminal.
+- **Mahzz-AI con tu API key.** Desde el botón de ajustes del panel podés usar cualquier API compatible con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, LM Studio…). La key se guarda cifrada con tu usuario de Windows y nunca vuelve a la interfaz.
+
+### Cambiado
+- Mahzz-AI ya no usa un modelo provisorio: solo responde con el modelo propio instalado o con la API que configures.
+
 ## [0.6.1] - 2026-11-22
 
 ### Cambiado

@@ -3438,6 +3438,126 @@ textarea.dialogo__entrada {
   opacity: 0.7;
 }
 
+/* Mahzz-AI sin modelo: pasos para instalarlo y ajustes de API key */
+.copiloto__pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 0 0 0 20px;
+  color: var(--texto);
+  font-size: 12px;
+  text-align: left;
+}
+
+.copiloto__pasos li::marker {
+  color: var(--acento-claro);
+  font-weight: 700;
+}
+
+.copiloto__pasos .copiloto__codigo {
+  margin-top: 6px;
+}
+
+.copiloto__paso--hecho {
+  color: var(--texto-suave);
+  text-decoration: line-through;
+}
+
+.copiloto__enlace {
+  padding: 0;
+  color: var(--acento-claro);
+  font: inherit;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.copiloto__ajustes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: auto 0;
+}
+
+.copiloto__ajustes .copiloto__saludo {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.copiloto__opcion {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--fondo-elevado);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color var(--transicion);
+}
+
+.copiloto__opcion:has(input:checked) {
+  border-color: var(--acento);
+}
+
+.copiloto__opcion input {
+  margin-top: 2px;
+  accent-color: var(--acento);
+}
+
+.copiloto__opcion span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.copiloto__opcion small {
+  color: var(--texto-suave);
+  font-size: 11px;
+}
+
+.copiloto__campos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copiloto__campos[hidden] {
+  display: none;
+}
+
+.copiloto__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--texto-suave);
+  font-size: 11px;
+}
+
+.copiloto__campo input {
+  padding: 7px 10px;
+  color: var(--texto);
+  font: inherit;
+  font-size: 12px;
+  background: var(--fondo-elevado);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  outline: none;
+}
+
+.copiloto__campo input:focus {
+  border-color: var(--acento);
+}
+
+.copiloto__detalle--error {
+  color: var(--peligro);
+  opacity: 1;
+}
+
 /* Mahzz-AI flotante: ventanita que se mueve del encabezado y se agranda desde los bordes */
 .copiloto--flotante {
   position: fixed;

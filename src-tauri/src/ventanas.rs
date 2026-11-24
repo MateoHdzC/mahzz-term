@@ -4,10 +4,15 @@ use std::{
         atomic::{AtomicU32, Ordering},
         Mutex,
     },
+    thread,
+    time::{Duration, Instant},
 };
 
 use serde_json::Value;
-use tauri::{AppHandle, LogicalPosition, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window};
+use tauri::{
+    async_runtime::spawn_blocking, AppHandle, LogicalPosition, Manager, State, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder, Window,
+};
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     ICoreWebView2Settings3, ICoreWebView2_19, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW,
     COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL,
@@ -73,7 +78,7 @@ pub async fn abrir_ventana(
     x: Option<f64>,
     y: Option<f64>,
     traspasos: State<'_, Traspasos>,
-) -> Result<(), String> {
+) -> Result<String, String> {
     let numero = traspasos.ultima_ventana.fetch_add(1, Ordering::Relaxed) + 1;
     let etiqueta = format!("ventana-{numero}");
 
@@ -103,7 +108,38 @@ pub async fn abrir_ventana(
             .map_err(|error| error.to_string())?,
         _ => ventana.center().map_err(|error| error.to_string())?,
     }
-    preparar_webview(&ventana).map_err(|error| error.to_string())
+    preparar_webview(&ventana).map_err(|error| error.to_string())?;
+    Ok(etiqueta)
+}
+
+// La ventana de origen espera a que la nueva tome la pestaña antes de soltarla. Si no la toma a
+// tiempo (tardó o falló al arrancar), se cancela el traspaso, se cierra la ventana nueva y la
+// pestaña vuelve a la de origen: nunca queda en el aire.
+#[tauri::command]
+pub async fn esperar_traspaso(app: AppHandle, etiqueta: String, segundos: u64) -> Result<bool, String> {
+    spawn_blocking(move || {
+        let traspasos = app.state::<Traspasos>();
+        let limite = Instant::now() + Duration::from_secs(segundos);
+        loop {
+            let pendiente = traspasos.pendientes.lock().map_err(|error| error.to_string())?.contains_key(&etiqueta);
+            if !pendiente {
+                return Ok(true);
+            }
+            if Instant::now() >= limite {
+                break;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+        let cancelado = traspasos.pendientes.lock().map_err(|error| error.to_string())?.remove(&etiqueta).is_some();
+        if cancelado {
+            if let Some(ventana) = app.get_webview_window(&etiqueta) {
+                let _ = ventana.destroy();
+            }
+        }
+        Ok(!cancelado)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]

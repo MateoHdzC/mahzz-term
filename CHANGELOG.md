@@ -2,6 +2,15 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.6] - 2026-11-24
+
+### Corregido
+- **Arrastrar una pestaña a otra ventana ya no la pierde.** Antes se borraba de la ventana original antes de que la nueva terminara de abrir: si tardaba o fallaba, la pestaña desaparecía y la ventana quedaba vacía. Ahora se suelta recién cuando la ventana nueva la tomó; si no arranca en 20 segundos, la pestaña vuelve y la ventana vacía se cierra.
+
+### Cambiado
+- Con una sola pestaña, arrastrarla fuera de la ventana mueve la ventana entera, como en Chrome.
+- Mientras arrastrás una pestaña fuera de la ventana, se marca para mostrar que al soltar se abre aparte.
+
 ## [0.6.5] - 2026-11-24
 
 ### Agregado

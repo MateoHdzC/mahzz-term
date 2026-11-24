@@ -147,6 +147,7 @@ pub fn iniciar() {
             tareas::unir_tarea,
             ventanas::abrir_ventana,
             ventanas::definir_memoria_baja,
+            ventanas::esperar_traspaso,
             ventanas::tomar_traspaso,
         ])
         .on_window_event(|ventana, evento| {

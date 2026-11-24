@@ -398,6 +398,19 @@ button {
   transition: none;
 }
 
+/* Arrastrada fuera de la ventana: al soltar se abre en una ventana nueva */
+.pestana--afuera {
+  opacity: 0.6;
+  outline: 1px dashed var(--color-pestana);
+  outline-offset: -1px;
+}
+
+/* Esperando que la ventana nueva la tome */
+.pestana--viajando {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .pestana__punto {
   flex: none;
   width: 7px;

@@ -1,5 +1,6 @@
 import { t } from "./i18n";
 import { invoke } from "@tauri-apps/api/core";
+import { LogicalPosition } from "@tauri-apps/api/dpi";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { PanelAgentes } from "./agentes";
 import { PanelArchivos } from "./archivos";
@@ -615,6 +616,11 @@ export class GestorPestanas {
         this.pestanas = otras;
         this.barra.append(...this.pestanas.map((actual) => actual.elemento));
       }
+      // Fuera de la ventana, la pestaña se ve distinta: al soltar se abre aparte (o mueve la ventana).
+      raiz.classList.toggle(
+        "pestana--afuera",
+        evento.clientX < 0 || evento.clientY < 0 || evento.clientX > innerWidth || evento.clientY > innerHeight,
+      );
       if (vertical) {
         const origen = this.barra.getBoundingClientRect().top + raiz.offsetTop - this.barra.scrollTop;
         raiz.style.transform = `translateY(${evento.clientY - agarre - origen}px)`;
@@ -628,7 +634,7 @@ export class GestorPestanas {
       raiz.removeEventListener("pointermove", mover);
       raiz.removeEventListener("pointerup", soltar);
       raiz.removeEventListener("pointercancel", soltar);
-      raiz.classList.remove("pestana--arrastrando");
+      raiz.classList.remove("pestana--arrastrando", "pestana--afuera");
       raiz.style.transform = "";
       const afuera =
         evento.clientX < 0 ||
@@ -637,6 +643,10 @@ export class GestorPestanas {
         evento.clientY > innerHeight;
       if (evento.type === "pointerup" && arrastrando && afuera && this.pestanas.length > 1) {
         void this.moverAVentana(pestana, evento.screenX - 80, evento.screenY - 16);
+      } else if (evento.type === "pointerup" && arrastrando && afuera) {
+        // Con una sola pestaña no hay nada que separar: se mueve la ventana entera, como en Chrome.
+        void this.ventana.setPosition(new LogicalPosition(evento.screenX - 80, evento.screenY - 16));
+        pestana.activo.enfocar();
       } else {
         pestana.activo.enfocar();
       }
@@ -650,11 +660,21 @@ export class GestorPestanas {
   private async moverAVentana(pestana: Pestana, x: number | null, y: number | null): Promise<void> {
     if (this.pestanas.length < 2) return;
     const traspaso = await pestana.exportar();
+    let etiqueta: string;
     try {
-      await invoke("abrir_ventana", { traspaso, x, y });
+      etiqueta = await invoke<string>("abrir_ventana", { traspaso, x, y });
     } catch (error) {
       console.error("No se pudo mover la pestaña", error);
       await pestana.reanudar();
+      return;
+    }
+    // Se suelta recién cuando la ventana nueva la tomó. Si no arranca a tiempo, la pestaña vuelve.
+    pestana.elemento.classList.add("pestana--viajando");
+    const tomada = await invoke<boolean>("esperar_traspaso", { etiqueta, segundos: 20 }).catch(() => false);
+    pestana.elemento.classList.remove("pestana--viajando");
+    if (!tomada) {
+      await pestana.reanudar();
+      avisar(t("La ventana nueva no arrancó a tiempo: la pestaña sigue acá."));
       return;
     }
     pestana.soltar();

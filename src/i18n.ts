@@ -208,6 +208,7 @@ const INGLES: Record<string, string> = {
   "Atrás": "Back",
   "Siguiente": "Next",
   "Empezar": "Start",
+  "La ventana nueva no arrancó a tiempo: la pestaña sigue acá.": "The new window didn't start in time: the tab is still here.",
   "Mahzz-AI necesita Ollama": "Mahzz-AI needs Ollama",
   "Ollama es gratis y es lo que corre el modelo en tu PC. Instalalo y volvé acá.": "Ollama is free and runs the model on your PC. Install it and come back.",
   "Descargar Ollama": "Download Ollama",

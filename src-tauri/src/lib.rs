@@ -72,6 +72,8 @@ pub fn iniciar() {
             mahzz::mahzz_detener,
             mahzz::mahzz_estado,
             mahzz::mahzz_guardar_config,
+            mahzz::mahzz_instalar,
+            mahzz::mahzz_cancelar_instalacion,
             ajustes::avisar_comando,
             ajustes::borrar_secreto,
             ajustes::borrar_tema,

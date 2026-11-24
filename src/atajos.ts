@@ -2,6 +2,7 @@ import { t } from "./i18n";
 
 export type Accion =
   | "nuevaPestana"
+  | "duplicarPestana"
   | "nuevaVentana"
   | "cerrarPanel"
   | "pestanaSiguiente"
@@ -40,6 +41,7 @@ interface Atajo {
 // Valores de fábrica. Los cambios de la persona se guardan aparte, en los ajustes.
 const ATAJOS: Atajo[] = [
   { accion: "nuevaPestana", tecla: "t", ctrl: true, shift: true },
+  { accion: "duplicarPestana", tecla: "u", ctrl: true, shift: true },
   { accion: "nuevaVentana", tecla: "n", ctrl: true, shift: true },
   { accion: "cerrarPanel", tecla: "w", ctrl: true, shift: true },
   { accion: "pestanaSiguiente", tecla: "tab", ctrl: true },
@@ -74,6 +76,7 @@ let activos: Atajo[] = ATAJOS;
 
 export const ACCIONES_EDITABLES: { accion: Accion; titulo: string }[] = [
   { accion: "nuevaPestana", titulo: t("Nueva pestaña") },
+  { accion: "duplicarPestana", titulo: t("Duplicar pestaña") },
   { accion: "nuevaVentana", titulo: t("Nueva ventana") },
   { accion: "cerrarPanel", titulo: t("Cerrar panel") },
   { accion: "dividirDerecha", titulo: t("Dividir panel a la derecha") },

@@ -21,6 +21,7 @@ export interface Ajustes {
   desplegableAtajo: string;
   integracionWindows: boolean;
   integracionPreguntada: boolean;
+  modeloPreguntado: boolean;
   buscarActualizaciones: boolean;
   atajos: Record<string, string>;
 }
@@ -45,6 +46,7 @@ const VALORES_INICIALES: Ajustes = {
   desplegableAtajo: "Ctrl+Backquote",
   integracionWindows: false,
   integracionPreguntada: false,
+  modeloPreguntado: false,
   buscarActualizaciones: true,
   atajos: {},
 };

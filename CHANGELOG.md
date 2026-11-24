@@ -2,6 +2,16 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.5] - 2026-11-24
+
+### Agregado
+- **Duplicar pestaña:** abre otra terminal en la misma carpeta y con el mismo color. Está en el botón al lado del «+», en el clic derecho de la pestaña y en `Ctrl+Shift+U`.
+- **El color de la pestaña tiñe la ventana:** las carpetas del árbol de archivos, la carpeta y la rama de cada bloque, la ruta del editor y los resaltados toman el color de la pestaña activa, y cada bloque lleva una línea de ese color a la izquierda. Los errores siguen en rojo.
+- **Mahzz-AI se instala solo.** Si falta el modelo, MahzzTerm lo ofrece una vez al iniciar y después en el panel, con **Instalar ahora**: lo baja con barra de progreso y se puede cancelar. Si falta Ollama, ofrece descargarlo.
+
+### Corregido
+- **Shift+Enter dentro de programas interactivos** (Claude Code, Codex, etc.) ahora es un salto de línea en vez de enviar el mensaje: manda `ESC + Enter`, como VS Code y Windows Terminal.
+
 ## [0.6.4] - 2026-11-24
 
 ### Corregido

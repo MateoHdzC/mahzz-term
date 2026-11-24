@@ -4,7 +4,7 @@ use std::{
     fs,
     io::{BufRead, BufReader, Read},
     path::PathBuf,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::atomic::{AtomicBool, AtomicU64, Ordering},
     thread,
     time::Duration,
 };
@@ -22,6 +22,9 @@ JavaScript y Git. Cuando muestres comandos, ponlos en bloques de código con el 
 
 // Cada respuesta tiene un número de turno: detener sube el número y la respuesta en curso se corta sola.
 static TURNO: AtomicU64 = AtomicU64::new(0);
+// El modelo publicado en ollama.com: el que baja "Instalar ahora".
+const MODELO_PUBLICO: &str = "dkdidmateo/mahzz";
+static CANCELAR_DESCARGA: AtomicBool = AtomicBool::new(false);
 
 // ---------- Configuración (cifrada con el usuario de Windows) ----------
 
@@ -175,6 +178,53 @@ pub async fn mahzz_estado(app: AppHandle) -> Result<Value, String> {
     })
     .await
     .map_err(|error| error.to_string())?
+}
+
+// Baja el modelo con la API de Ollama y va pasando el progreso: {"estado", "total", "completado"}.
+// Si se corta o se cancela, lo ya bajado queda en Ollama y la próxima vez sigue desde ahí.
+#[tauri::command]
+pub async fn mahzz_instalar(canal: Channel<Value>) -> Result<(), String> {
+    spawn_blocking(move || {
+        if !prender_ollama() {
+            return Err("sin_ollama|No encontré Ollama en esta PC.".into());
+        }
+        CANCELAR_DESCARGA.store(false, Ordering::SeqCst);
+        let respuesta = ureq::post(&format!("{URL}/api/pull"))
+            .config()
+            .http_status_as_error(false)
+            .build()
+            .header("Content-Type", "application/json")
+            .send(json!({ "model": MODELO_PUBLICO, "stream": true }).to_string())
+            .map_err(|error| format!("Ollama no respondió: {error}"))?;
+        let lector = BufReader::new(respuesta.into_body().into_reader());
+        for linea in lector.lines() {
+            if CANCELAR_DESCARGA.load(Ordering::SeqCst) {
+                return Err("cancelada|Cancelaste la instalación.".into());
+            }
+            let linea = linea.map_err(|error| error.to_string())?;
+            let Ok(parte) = serde_json::from_str::<Value>(&linea) else { continue };
+            if let Some(error) = parte["error"].as_str() {
+                return Err(error.to_string());
+            }
+            let estado = parte["status"].as_str().unwrap_or_default();
+            let _ = canal.send(json!({
+                "estado": estado,
+                "total": parte["total"].as_u64(),
+                "completado": parte["completed"].as_u64(),
+            }));
+            if estado == "success" {
+                return Ok(());
+            }
+        }
+        Err("La descarga se cortó antes de terminar. Probá de nuevo: sigue desde donde quedó.".into())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub fn mahzz_cancelar_instalacion() {
+    CANCELAR_DESCARGA.store(true, Ordering::SeqCst);
 }
 
 #[tauri::command]

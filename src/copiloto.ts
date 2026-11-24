@@ -19,6 +19,12 @@ interface Estado {
   modelo: string;
 }
 
+interface ProgresoDescarga {
+  estado: string;
+  total?: number | null;
+  completado?: number | null;
+}
+
 interface ConfigApi {
   usarApi: boolean;
   url: string;
@@ -119,6 +125,8 @@ export class PanelCopiloto {
   private respondiendo = false;
   private conContexto = true;
   private disponible = true;
+  // Mientras se baja el modelo, el panel muestra el progreso aunque se cierre y se vuelva a abrir.
+  private instalando: HTMLElement | null = null;
   private modo: Modo = leerPreferencia(CLAVE_MODO) === "anclado" ? "anclado" : "flotante";
   private caja: Caja | null = null;
   private readonly botonModo = boton("archivos__boton", ICONO_ANCLAR, "");
@@ -248,7 +256,17 @@ export class PanelCopiloto {
     if (visible) void this.revisarModelo();
   }
 
+  // Lo usa la pregunta del inicio: abre el panel y empieza a bajar el modelo.
+  instalarAhora(): void {
+    if (!this.visible) this.definirVisible(true);
+    void this.instalarModelo();
+  }
+
   private async revisarModelo(): Promise<void> {
+    if (this.instalando) {
+      this.lista.replaceChildren(this.instalando);
+      return;
+    }
     this.modelo.textContent = t("conectando…");
     this.modelo.classList.remove("copiloto__modelo--error");
     this.modelo.title = "";
@@ -289,7 +307,8 @@ export class PanelCopiloto {
     void invoke("abrir_externo", { destino });
   }
 
-  // Sin el modelo: el comando para bajarlo (con "A la terminal") o la opción de usar una API key.
+  // Sin el modelo: se ofrece instalarlo solo (o a mano con el comando), o usar una API key.
+  // Sin Ollama: primero hay que instalar Ollama.
   private mostrarInstalar(codigo: string, motivo: string): void {
     const tarjeta = document.createElement("div");
     tarjeta.className = "copiloto__bienvenida copiloto__instalar";
@@ -297,44 +316,113 @@ export class PanelCopiloto {
     orbe.className = "copiloto__orbe copiloto__orbe--grande";
     const titulo = document.createElement("div");
     titulo.className = "copiloto__saludo";
-    titulo.textContent = t("Instalá Mahzz-AI");
     const texto = document.createElement("div");
     texto.className = "copiloto__subtitulo";
-    texto.textContent = t(
-      "Para usarlo en tu PC, bajá el modelo con Ollama (unos 13 GB). Si preferís, podés usar tu propia API key.",
-    );
-
-    const pasos = document.createElement("ol");
-    pasos.className = "copiloto__pasos";
-    const pasoOllama = document.createElement("li");
-    pasoOllama.append(t("Instalá Ollama (gratis). "));
-    const enlace = document.createElement("button");
-    enlace.type = "button";
-    enlace.className = "copiloto__enlace";
-    enlace.textContent = "ollama.com/download";
-    enlace.addEventListener("click", () => this.abrirWeb("https://ollama.com/download"));
-    pasoOllama.append(enlace);
-    if (codigo === "sin_modelo") pasoOllama.classList.add("copiloto__paso--hecho");
-    const pasoModelo = document.createElement("li");
-    pasoModelo.append(t("Corré este comando en la terminal:"), this.bloqueCodigo(COMANDO_INSTALAR, "powershell"));
-    const pasoListo = document.createElement("li");
-    pasoListo.textContent = t("Cuando termine, tocá «Ya lo instalé».");
-    pasos.append(pasoOllama, pasoModelo, pasoListo);
-
     const acciones = document.createElement("div");
     acciones.className = "copiloto__sugerencias";
-    acciones.append(
-      this.botonAccion(t("Ya lo instalé"), true, () => void this.revisarModelo()),
-      this.botonAccion(t("Usar una API key"), false, () => void this.mostrarAjustes()),
-      this.botonAccion(t("Ver más en mahzzterm.xyz"), false, () =>
-        this.abrirWeb(`https://mahzzterm.xyz/${idiomaWeb()}/mahzz-ai/`),
-      ),
-    );
+    const extra: HTMLElement[] = [];
+
+    if (codigo === "sin_ollama") {
+      titulo.textContent = t("Mahzz-AI necesita Ollama");
+      texto.textContent = t("Ollama es gratis y es lo que corre el modelo en tu PC. Instalalo y volvé acá.");
+      acciones.append(
+        this.botonAccion(t("Descargar Ollama"), true, () => this.abrirWeb("https://ollama.com/download")),
+        this.botonAccion(t("Ya lo instalé"), false, () => void this.revisarModelo()),
+        this.botonAccion(t("Usar una API key"), false, () => void this.mostrarAjustes()),
+      );
+    } else {
+      titulo.textContent = t("¿Instalamos Mahzz-AI?");
+      texto.textContent = t("Hay que bajar su modelo una sola vez (unos 12 GB). Se instala solo y podés seguir usando la terminal mientras tanto.");
+      acciones.append(
+        this.botonAccion(t("Instalar ahora"), true, () => void this.instalarModelo()),
+        this.botonAccion(t("Usar una API key"), false, () => void this.mostrarAjustes()),
+      );
+      const manual = document.createElement("details");
+      manual.className = "copiloto__manual";
+      const resumen = document.createElement("summary");
+      resumen.textContent = t("O instalalo a mano");
+      manual.append(resumen, this.bloqueCodigo(COMANDO_INSTALAR, "powershell"));
+      extra.push(manual);
+    }
+
     const detalle = document.createElement("div");
     detalle.className = "copiloto__detalle";
     detalle.textContent = motivo;
-    tarjeta.append(orbe, titulo, texto, pasos, acciones, detalle);
+    tarjeta.append(orbe, titulo, texto, acciones, ...extra, detalle);
     this.lista.replaceChildren(tarjeta);
+  }
+
+  // Baja el modelo con barra de progreso. Al terminar, el panel queda listo para usar.
+  private async instalarModelo(): Promise<void> {
+    if (this.instalando) {
+      this.lista.replaceChildren(this.instalando);
+      return;
+    }
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "copiloto__bienvenida copiloto__instalar";
+    const orbe = document.createElement("div");
+    orbe.className = "copiloto__orbe copiloto__orbe--grande";
+    const titulo = document.createElement("div");
+    titulo.className = "copiloto__saludo";
+    titulo.textContent = t("Instalando Mahzz-AI");
+    const texto = document.createElement("div");
+    texto.className = "copiloto__subtitulo";
+    texto.textContent = t("Podés cerrar este panel y seguir usando la terminal: la descarga sigue.");
+    const barra = document.createElement("div");
+    barra.className = "copiloto__progreso";
+    const relleno = document.createElement("div");
+    relleno.className = "copiloto__progreso-relleno";
+    barra.append(relleno);
+    const estado = document.createElement("div");
+    estado.className = "copiloto__detalle";
+    estado.textContent = t("Conectando con Ollama…");
+    const acciones = document.createElement("div");
+    acciones.className = "copiloto__sugerencias";
+    acciones.append(this.botonAccion(t("Cancelar"), false, () => void invoke("mahzz_cancelar_instalacion")));
+    tarjeta.append(orbe, titulo, texto, barra, estado, acciones);
+
+    this.instalando = tarjeta;
+    this.lista.replaceChildren(tarjeta);
+    this.modelo.textContent = t("instalando…");
+    this.modelo.classList.remove("copiloto__modelo--error");
+
+    const numero = new Intl.NumberFormat(idiomaWeb(), { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+    const gb = (bytes: number) => `${numero.format(bytes / 1e9)} GB`;
+    let anterior = { momento: Date.now(), bytes: 0 };
+    let velocidad = 0;
+    const canal = new Channel<ProgresoDescarga>();
+    canal.onmessage = (parte) => {
+      if (parte.total && parte.completado != null) {
+        const ahora = Date.now();
+        if (ahora - anterior.momento >= 1000) {
+          velocidad = Math.max(0, (parte.completado - anterior.bytes) / ((ahora - anterior.momento) / 1000));
+          anterior = { momento: ahora, bytes: parte.completado };
+        }
+        relleno.style.width = `${Math.min(100, (parte.completado / parte.total) * 100)}%`;
+        const ritmo = velocidad > 0 ? ` · ${numero.format(velocidad / 1e6)} MB/s` : "";
+        estado.textContent = t("{0} de {1}", gb(parte.completado), gb(parte.total)) + ritmo;
+      } else if (parte.estado.startsWith("verifying")) {
+        estado.textContent = t("Verificando lo que se bajó…");
+      } else if (parte.estado.startsWith("writing") || parte.estado === "success") {
+        estado.textContent = t("Terminando…");
+      } else if (parte.estado.startsWith("pulling manifest")) {
+        estado.textContent = t("Preparando la descarga…");
+      }
+    };
+
+    try {
+      await invoke("mahzz_instalar", { canal });
+      this.instalando = null;
+      this.disponible = false;
+      await this.revisarModelo();
+    } catch (error) {
+      this.instalando = null;
+      const [codigo, motivo] = String(error).includes("|") ? String(error).split("|", 2) : ["", String(error)];
+      if (codigo === "sin_ollama") this.mostrarInstalar("sin_ollama", motivo);
+      else if (codigo === "cancelada") this.mostrarInstalar("sin_modelo", t("Cancelaste la instalación. Lo que ya se bajó se aprovecha la próxima vez."));
+      else this.mostrarInstalar("sin_modelo", motivo);
+      this.modelo.textContent = t("sin instalar");
+    }
   }
 
   // Elegir entre el modelo local y una API compatible con OpenAI. La key se guarda cifrada y nunca vuelve a la interfaz.

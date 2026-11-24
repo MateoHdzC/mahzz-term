@@ -109,6 +109,9 @@ export class GestorPestanas {
     iniciarRegistro();
     if (this.ventana.label === "main") this.prepararControl();
     elemento("nueva-pestana").addEventListener("click", () => void this.nuevaPestana());
+    elemento("duplicar-pestana").addEventListener("click", () => {
+      if (this.activa) void this.duplicarPestana(this.activa);
+    });
     elemento("alternar-archivos").addEventListener("click", () => this.archivos.alternar());
     elemento("alternar-cambios").addEventListener("click", () => this.cambios.alternar());
     elemento("alternar-mahzz").addEventListener("click", () => this.copiloto.alternar());
@@ -176,11 +179,12 @@ export class GestorPestanas {
     const posicion = ajustes().posicionPestanas;
     const lateral = elemento("lateral-pestanas");
     const nueva = elemento("nueva-pestana");
+    const duplicar = elemento("duplicar-pestana");
     const vertical = posicion === "izquierda" || posicion === "derecha";
     if (vertical) {
-      if (this.barra.parentElement !== lateral) lateral.append(this.barra, nueva);
+      if (this.barra.parentElement !== lateral) lateral.append(this.barra, nueva, duplicar);
     } else if (this.barra.parentElement === lateral) {
-      elemento("alternar-cambios").after(this.barra, nueva);
+      elemento("alternar-cambios").after(this.barra, nueva, duplicar);
     }
     lateral.hidden = !vertical;
     lateral.classList.toggle("lateral-pestanas--derecha", posicion === "derecha");
@@ -312,12 +316,23 @@ export class GestorPestanas {
     });
   }
 
+  instalarMahzz(): void {
+    this.copiloto.instalarAhora();
+  }
+
   private datosEnCarpeta(carpeta: string | null, titulo: string | null = null): DatosPestana {
     return {
       tituloManual: titulo,
       color: null,
       nodo: { tipo: "panel", activo: true, datos: { sesion: null, carpeta, contenido: null } },
     };
+  }
+
+  // Una pestaña nueva en la misma carpeta del panel activo, con el mismo color.
+  async duplicarPestana(pestana: Pestana): Promise<void> {
+    const datos = this.datosEnCarpeta(pestana.activo.carpeta);
+    datos.color = pestana.color;
+    await this.nuevaPestana(datos);
   }
 
   async nuevaPestanaEn(carpeta: string): Promise<void> {
@@ -489,6 +504,7 @@ export class GestorPestanas {
     raiz.setAttribute("aria-selected", String(activa));
     raiz.title = pestana.activo.carpeta ?? pestana.titulo;
     raiz.style.setProperty("--color-pestana", pestana.color ?? "var(--acento)");
+    if (activa) this.aplicarColorActiva(pestana.color);
     const titulo = raiz.querySelector(".pestana__titulo");
     if (titulo) titulo.textContent = pestana.titulo;
     if (activa) {
@@ -498,12 +514,28 @@ export class GestorPestanas {
     this.programarGuardadoSesion();
   }
 
+  // El color de la pestaña activa tiñe todo el cuerpo de la ventana: resaltados, carpetas del árbol,
+  // textos de carpeta y rama, y la línea izquierda de los bloques. Sin color, vuelve el acento del tema.
+  private aplicarColorActiva(color: string | null): void {
+    const cuerpo = document.querySelector<HTMLElement>(".cuerpo");
+    if (!cuerpo) return;
+    cuerpo.classList.toggle("cuerpo--color", color !== null);
+    if (color) {
+      cuerpo.style.setProperty("--acento", color);
+      cuerpo.style.setProperty("--acento-claro", `color-mix(in srgb, ${color} 78%, white)`);
+    } else {
+      cuerpo.style.removeProperty("--acento");
+      cuerpo.style.removeProperty("--acento-claro");
+    }
+  }
+
   private abrirMenuPestana(pestana: Pestana, x: number, y: number): void {
     abrirMenu(
       x,
       y,
       {
         opciones: [
+          { texto: t("Duplicar pestaña"), accion: () => void this.duplicarPestana(pestana) },
           { texto: t("Renombrar"), accion: () => this.renombrar(pestana) },
           {
             texto: t("Mover a ventana nueva"),
@@ -758,6 +790,9 @@ export class GestorPestanas {
     switch (accion) {
       case "nuevaPestana":
         void this.nuevaPestana();
+        break;
+      case "duplicarPestana":
+        if (this.activa) void this.duplicarPestana(this.activa);
         break;
       case "nuevaVentana":
         void invoke("abrir_ventana", { traspaso: null, x: null, y: null });

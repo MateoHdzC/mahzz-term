@@ -96,6 +96,30 @@ async function preguntarIntegracion(): Promise<void> {
   await cambiarAjustes({ integracionPreguntada: true, integracionWindows: aceptar });
 }
 
+// Una sola vez: si falta el modelo de Mahzz-AI, se ofrece instalarlo. Si dice que no, el panel lo vuelve
+// a ofrecer cada vez que se abra. Con el modelo instalado o una API key configurada, no pregunta nada.
+async function preguntarModelo(gestor: GestorPestanas | null): Promise<void> {
+  if (!esPrincipal || import.meta.env.DEV || ajustes().modeloPreguntado) return;
+  const error = await invoke("mahzz_estado").then(() => null, (motivo) => String(motivo));
+  await cambiarAjustes({ modeloPreguntado: true });
+  if (!error) return;
+  if (error.startsWith("sin_modelo")) {
+    const instalar = await confirmar(
+      t("¿Instalamos Mahzz-AI?"),
+      t("MahzzTerm trae Mahzz-AI, un copiloto que corre en tu PC. Para usarlo hay que bajar su modelo (unos 12 GB). ¿Lo instalamos ahora? Si no, te lo vuelvo a ofrecer cuando abras Mahzz-AI."),
+      t("Instalar"),
+    );
+    if (instalar) gestor?.instalarMahzz();
+  } else if (error.startsWith("sin_ollama")) {
+    const bajar = await confirmar(
+      t("Mahzz-AI necesita Ollama"),
+      t("Mahzz-AI, el copiloto de MahzzTerm, necesita Ollama (gratis) para correr en tu PC. ¿Querés bajarlo? Después abrí Mahzz-AI y se instala el modelo."),
+      t("Descargar Ollama"),
+    );
+    if (bajar) void invoke("abrir_externo", { destino: "https://ollama.com/download" });
+  }
+}
+
 async function iniciar(): Promise<void> {
   let gestor: GestorPestanas | null = null;
   try {
@@ -148,9 +172,19 @@ async function iniciar(): Promise<void> {
     await ventana.show();
     await ventana.setFocus();
     gestor?.recuperarFoco();
-    if (esPrincipal && !ajustes().primerUsoHecho) mostrarPrimerUso(() => gestor?.recuperarFoco());
-    else if (esPrincipal && !import.meta.env.DEV && !ajustes().integracionPreguntada && !ajustes().integracionWindows)
-      void preguntarIntegracion().then(() => gestor?.recuperarFoco());
+    // Preguntas del inicio, de a una: primer uso (o Explorador para quien ya lo hizo) y después el modelo.
+    if (esPrincipal && !ajustes().primerUsoHecho) {
+      mostrarPrimerUso(() => {
+        gestor?.recuperarFoco();
+        void preguntarModelo(gestor);
+      });
+    } else if (esPrincipal) {
+      void (async () => {
+        if (!import.meta.env.DEV && !ajustes().integracionPreguntada && !ajustes().integracionWindows) await preguntarIntegracion();
+        await preguntarModelo(gestor);
+        gestor?.recuperarFoco();
+      })();
+    }
     // Busca versiones nuevas al abrir y cada 6 horas; avisa con una notificación de Windows.
     if (esPrincipal && !import.meta.env.DEV && ajustes().buscarActualizaciones) iniciarActualizaciones();
   }

@@ -363,6 +363,14 @@ export class Panel {
 
     // Ctrl+C copia si hay selección. Sin selección llega al shell y cancela.
     this.terminal.attachCustomKeyEventHandler((evento) => {
+      // Shift+Enter manda ESC + Enter, como VS Code y Windows Terminal: en Claude Code, Codex y
+      // otros programas interactivos es un salto de línea en vez de enviar el mensaje.
+      if (evento.key === "Enter" && evento.shiftKey && !evento.ctrlKey && !evento.altKey && !evento.metaKey) {
+        if (evento.type === "keydown" && this.sesion !== null) {
+          void invoke("escribir_sesion", { id: this.sesion, datos: "\x1b\r" });
+        }
+        return false;
+      }
       if (evento.type !== "keydown" || !evento.ctrlKey || evento.shiftKey || evento.altKey) {
         return true;
       }

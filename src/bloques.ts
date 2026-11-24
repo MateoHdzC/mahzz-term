@@ -216,7 +216,7 @@ export class ListaBloques {
     const meta = document.createElement("div");
     meta.className = "bloque__meta";
     const partes: { texto: string; clase?: string; titulo?: string }[] = [];
-    if (datos.carpeta) partes.push({ texto: nombreCarpeta(datos.carpeta), titulo: datos.carpeta });
+    if (datos.carpeta) partes.push({ texto: nombreCarpeta(datos.carpeta), clase: "bloque__carpeta", titulo: datos.carpeta });
     if (datos.rama) partes.push({ texto: datos.rama, clase: "bloque__rama" });
     partes.push({ texto: formatoHora(datos.inicio) });
     partes.push({ texto: formatoDuracion(datos.duracion), clase: "bloque__duracion" });

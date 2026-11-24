@@ -2,7 +2,8 @@ import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/700.css";
 import { invoke } from "@tauri-apps/api/core";
 import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
-import { ajustes, alCambiarAjustes, cargarAjustes } from "./ajustes";
+import { ajustes, alCambiarAjustes, cambiarAjustes, cargarAjustes } from "./ajustes";
+import { confirmar } from "./dialogos";
 import { cargarCuenta } from "./cuenta";
 import { definirAtajos } from "./atajos";
 import "./estilos.css";
@@ -84,6 +85,17 @@ function sincronizarIntegracion(): void {
   }).catch((error) => console.warn(error));
 }
 
+// Quien ya usaba MahzzTerm antes de que el primer uso preguntara por el Explorador nunca vio la pregunta:
+// se le hace una sola vez. Sin aceptar, no se toca el registro.
+async function preguntarIntegracion(): Promise<void> {
+  const aceptar = await confirmar(
+    t("¿Sumamos MahzzTerm al Explorador de Windows?"),
+    t("Agrega «Abrir en MahzzTerm» al clic derecho de las carpetas y suma MahzzTerm a «Abrir con» para tus archivos. Lo podés cambiar cuando quieras en Ajustes → General."),
+    t("Sí, sumalo"),
+  );
+  await cambiarAjustes({ integracionPreguntada: true, integracionWindows: aceptar });
+}
+
 async function iniciar(): Promise<void> {
   let gestor: GestorPestanas | null = null;
   try {
@@ -137,6 +149,8 @@ async function iniciar(): Promise<void> {
     await ventana.setFocus();
     gestor?.recuperarFoco();
     if (esPrincipal && !ajustes().primerUsoHecho) mostrarPrimerUso(() => gestor?.recuperarFoco());
+    else if (esPrincipal && !import.meta.env.DEV && !ajustes().integracionPreguntada && !ajustes().integracionWindows)
+      void preguntarIntegracion().then(() => gestor?.recuperarFoco());
     // Busca versiones nuevas al abrir y cada 6 horas; avisa con una notificación de Windows.
     if (esPrincipal && !import.meta.env.DEV && ajustes().buscarActualizaciones) iniciarActualizaciones();
   }

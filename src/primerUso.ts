@@ -107,7 +107,7 @@ export function mostrarPrimerUso(alTerminar: () => void): void {
 
   dialogo.addEventListener("close", () => {
     dialogo.remove();
-    void cambiarAjustes({ primerUsoHecho: true }).then(alTerminar);
+    void cambiarAjustes({ primerUsoHecho: true, integracionPreguntada: true }).then(alTerminar);
   });
   document.body.append(dialogo);
   dialogo.showModal();

@@ -208,6 +208,8 @@ const INGLES: Record<string, string> = {
   "Atrás": "Back",
   "Siguiente": "Next",
   "Empezar": "Start",
+  "Agrega «Abrir en MahzzTerm» al clic derecho de las carpetas y suma MahzzTerm a «Abrir con» para tus archivos. Lo podés cambiar cuando quieras en Ajustes → General.": "Adds “Open in MahzzTerm” to the folder right-click menu and MahzzTerm to “Open with” for your files. You can change it anytime in Settings → General.",
+  "Sí, sumalo": "Yes, add it",
   "¿Sumamos MahzzTerm al Explorador de Windows?": "Add MahzzTerm to Windows File Explorer?",
   "Sí: «Abrir en MahzzTerm» en el clic derecho y MahzzTerm en «Abrir con»": "Yes: “Open in MahzzTerm” on right-click and MahzzTerm in “Open with”",
   "No, gracias": "No, thanks",

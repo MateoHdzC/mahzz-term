@@ -195,7 +195,13 @@ fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
 }
 
 // Borra solo lo que agrega MahzzTerm. Lo usa también el desinstalador (`MahzzTerm.exe --quitar-integracion`).
+// Si lo registró otra copia (otra ruta del .exe, por ejemplo una de prueba), no lo toca.
 pub fn quitar() {
+    if let (Ok(exe), Some(comando)) = (env::current_exe(), leer(&format!(r"{}\{VERBO}\command", MENUS_CARPETA[0]), "")) {
+        if !comando.to_lowercase().contains(&exe.display().to_string().to_lowercase()) {
+            return;
+        }
+    }
     for menu in MENUS_CARPETA {
         borrar_clave(&format!(r"{menu}\{VERBO}"));
     }

@@ -2,6 +2,12 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.4] - 2026-11-24
+
+### Corregido
+- Quien ya usaba MahzzTerm nunca veía la pregunta para sumarlo al Explorador de Windows, porque solo aparecía en el primer uso, y se quedaba sin «Abrir en MahzzTerm» ni «Abrir con». Ahora se pregunta una vez al abrir.
+- Una copia de MahzzTerm instalada en otro lugar (por ejemplo una de prueba) ya no puede borrar la integración con Windows de la copia que está registrada.
+
 ## [0.6.3] - 2026-11-24
 
 ### Corregido

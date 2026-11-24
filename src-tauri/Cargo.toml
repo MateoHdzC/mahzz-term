@@ -1,6 +1,6 @@
 [package]
 name = "mahzzterm"
-version = "0.6.3"
+version = "0.6.4"
 description = "Terminal para Windows con bloques de comandos"
 edition = "2021"
 license = "MIT"

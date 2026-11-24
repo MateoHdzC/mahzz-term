@@ -1,0 +1,160 @@
+# Compila el release de MahzzTerm en GitHub (Windows) y deja un borrador de release para revisar.
+# Si SignPath está configurado (variables SIGNPATH_*), firma el .exe y el instalador con Authenticode.
+# Se corre a mano: Actions → "Release" → Run workflow. Nada se publica solo: el release queda en borrador.
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # crear el borrador del release
+  actions: read # SignPath lee el artefacto subido
+
+jobs:
+  release:
+    runs-on: windows-latest # SignPath exige runners de GitHub para proyectos open source
+    env:
+      FIRMAR: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+      HAY_GOOGLE: ${{ secrets.GOOGLE_CREDENCIALES_JSON != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Versión
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Credenciales de Google (opcional)
+        if: env.HAY_GOOGLE == 'true'
+        shell: pwsh
+        env:
+          GOOGLE_JSON: ${{ secrets.GOOGLE_CREDENCIALES_JSON }}
+        run: |
+          New-Item -ItemType Directory -Force src-tauri/credenciales | Out-Null
+          Set-Content src-tauri/credenciales/google.json $env:GOOGLE_JSON -NoNewline
+
+      - run: pnpm install --frozen-lockfile
+
+      # 1. Compila solo el .exe (sin instalador) para poder firmarlo antes de empaquetarlo.
+      - run: pnpm tauri build --no-bundle
+
+      # 2. Firma el .exe con SignPath. Cada pedido lo tenés que aprobar a mano en signpath.io.
+      - name: Subir .exe sin firmar
+        if: env.FIRMAR == 'true'
+        id: exe-sin-firmar
+        uses: actions/upload-artifact@v4
+        with:
+          name: exe-sin-firmar
+          path: src-tauri/target/release/MahzzTerm.exe
+
+      - name: Firmar .exe
+        if: env.FIRMAR == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: exe
+          github-artifact-id: ${{ steps.exe-sin-firmar.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: firmado/exe
+          parameters: |
+            version: "${{ steps.version.outputs.version }}"
+
+      - name: Usar el .exe firmado
+        if: env.FIRMAR == 'true'
+        shell: pwsh
+        run: Copy-Item firmado/exe/MahzzTerm.exe src-tauri/target/release/MahzzTerm.exe -Force
+
+      # 3. Arma el instalador NSIS con el .exe (firmado si hubo firma) y su firma de actualización.
+      - name: Instalador
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: pnpm tauri bundle --bundles nsis
+
+      # 4. Firma el instalador y rehace la firma de actualización, porque cambiaron sus bytes.
+      - name: Preparar instalador para firmar
+        if: env.FIRMAR == 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force firmar | Out-Null
+          Copy-Item "src-tauri/target/release/bundle/nsis/MahzzTerm_${{ steps.version.outputs.version }}_x64-setup.exe" firmar/MahzzTerm-setup.exe
+
+      - name: Subir instalador sin firmar
+        if: env.FIRMAR == 'true'
+        id: instalador-sin-firmar
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador-sin-firmar
+          path: firmar/MahzzTerm-setup.exe
+
+      - name: Firmar instalador
+        if: env.FIRMAR == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: instalador
+          github-artifact-id: ${{ steps.instalador-sin-firmar.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: firmado/instalador
+          parameters: |
+            version: "${{ steps.version.outputs.version }}"
+
+      - name: Usar el instalador firmado y rehacer la firma de actualización
+        if: env.FIRMAR == 'true'
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          $instalador = "src-tauri/target/release/bundle/nsis/MahzzTerm_${{ steps.version.outputs.version }}_x64-setup.exe"
+          Copy-Item firmado/instalador/MahzzTerm-setup.exe $instalador -Force
+          Remove-Item "$instalador.sig" -ErrorAction SilentlyContinue
+          pnpm tauri signer sign $instalador
+          if ($LASTEXITCODE -ne 0) { throw "No se pudo firmar la actualización" }
+
+      # 5. Mismos archivos que arma publicar.ps1 en tu PC, y un release en borrador.
+      - name: Armar archivos del release
+        shell: pwsh
+        run: ./scripts/publicar.ps1 -SinCompilar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.version.outputs.version }}
+          path: src-tauri/target/release/publicar
+
+      - name: Borrador del release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          $salida = "src-tauri/target/release/publicar"
+          gh release view "v$v" *> $null
+          if ($LASTEXITCODE -eq 0) { Write-Host "Ya existe v$v: no creo otro borrador."; exit 0 }
+          gh release create "v$v" --draft --target "${{ github.sha }}" --title "MahzzTerm $v" --notes-file "$salida/notas.md" `
+            "$salida/MahzzTerm_${v}_x64-setup.exe" "$salida/MahzzTerm-setup.exe" "$salida/latest.json"

@@ -10,7 +10,8 @@ interface Paso {
   elegir: (valor: string) => Partial<Ajustes>;
 }
 
-// Configuración rápida de tres pasos que aparece la primera vez.
+// Configuración rápida que aparece la primera vez. La integración con Windows se pregunta acá:
+// no se toca el sistema sin que la persona lo acepte.
 export function mostrarPrimerUso(alTerminar: () => void): void {
   const pasos: Paso[] = [
     {
@@ -30,6 +31,15 @@ export function mostrarPrimerUso(alTerminar: () => void): void {
       opciones: listaTemas().map((tema) => [tema.id, tema.nombre]),
       valor: () => ajustes().tema,
       elegir: (tema) => ({ tema }),
+    },
+    {
+      titulo: t("¿Sumamos MahzzTerm al Explorador de Windows?"),
+      opciones: [
+        ["si", t("Sí: «Abrir en MahzzTerm» en el clic derecho y MahzzTerm en «Abrir con»")],
+        ["no", t("No, gracias")],
+      ],
+      valor: () => (ajustes().integracionWindows ? "si" : "no"),
+      elegir: (valor) => ({ integracionWindows: valor === "si" }),
     },
   ];
 

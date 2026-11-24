@@ -28,7 +28,7 @@ const CLASES: &str = r"Software\Classes";
 const PROGID: &str = "MahzzTerm.Archivo";
 const VERBO: &str = "MahzzTerm";
 // Subilo cuando cambie lo que se registra: al abrir, la app lo rehace.
-const VERSION: &str = "1";
+const VERSION: &str = "2";
 // Dos cambios de ajustes seguidos no tienen que registrar y borrar a la vez.
 static CANDADO: Mutex<()> = Mutex::new(());
 const MENUS_CARPETA: [&str; 3] = [r"Directory\shell", r"Directory\Background\shell", r"Drive\shell"];
@@ -166,7 +166,8 @@ fn al_dia(exe: &Path, etiqueta: &str) -> bool {
 }
 
 fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
-    let icono = format!("{},0", exe.display());
+    // Entre comillas, como VS Code: así sirve aunque la ruta tenga espacios.
+    let icono = format!("\"{}\",0", exe.display());
     for menu in MENUS_CARPETA {
         let base = format!(r"{menu}\{VERBO}");
         escribir(&base, "", etiqueta)?;

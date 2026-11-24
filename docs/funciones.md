@@ -117,8 +117,8 @@ En el selector, Enter abre la sesión elegida y Supr la borra de la lista. Las p
 - **Abrir con**: MahzzTerm aparece como recomendado para Markdown, texto y código (`.md`, `.json`, `.ps1`, `.py`, `.ts`…) y como opción para cualquier otro archivo. El archivo se abre en el visor y la pestaña nueva, si hace falta, arranca en su carpeta.
 - **Una sola ventana**: si MahzzTerm ya está abierta, la copia que abre el Explorador le pasa la carpeta o el archivo por el mismo canal local del MCP (`127.0.0.1` con clave) y se cierra. La ventana vuelve al frente aunque esté minimizada.
 - **No roba nada**: no cambia el programa por defecto de ninguna extensión. Solo suma a MahzzTerm a la lista de «Abrir con» (`OpenWithProgids`), así que Windows te pregunta con qué abrir y vos elegís.
-- Todo va en `HKCU\Software\Classes`, sin permisos de administrador. La app lo registra al abrirse con la ruta de su `.exe` y el idioma de la interfaz, y lo rehace solo si cambian.
-- Se apaga en Ajustes → General → **Integración con Windows**. Al desinstalar, el instalador corre `MahzzTerm.exe --quitar-integracion`, que borra solo lo que agregó MahzzTerm.
+- Todo va en `HKCU\Software\Classes`, sin permisos de administrador. Viene apagado: se activa en el primer uso o en Ajustes → General → **Integración con Windows**. Con eso, la app lo registra al abrirse con la ruta de su `.exe` y el idioma de la interfaz, y lo rehace solo si cambian.
+- Apagarlo en Ajustes lo borra. Al desinstalar, el instalador corre `MahzzTerm.exe --quitar-integracion`, que borra solo lo que agregó MahzzTerm.
 
 **Código:** [`src-tauri/src/integracion.rs`](../src-tauri/src/integracion.rs) y [`src-tauri/instalador/hooks.nsh`](../src-tauri/instalador/hooks.nsh).
 

@@ -89,6 +89,22 @@ El repositorio no incluye credenciales. Para habilitar la sincronización:
 
 > Si el cliente OAuth está en modo "Prueba", Google vence la sesión a los 7 días. Para que dure, publicá la app en la pantalla de consentimiento.
 
+## Code signing policy
+
+Los instaladores se compilan en GitHub Actions desde este repositorio ([`.github/workflows/release.yml`](.github/workflows/release.yml)) y cada firma se aprueba a mano.
+
+La firma de código gratuita de [SignPath Foundation](https://signpath.org) está en trámite. Mientras tanto, los instaladores no tienen firma Authenticode y Windows puede mostrar un aviso al descargarlos.
+
+**Equipo**
+- Autores y revisores (committers and reviewers): [MateoHdzC](https://github.com/MateoHdzC)
+- Aprobadores (approvers): [MateoHdzC](https://github.com/MateoHdzC)
+
+**Privacidad.** MahzzTerm no manda información a otros sistemas salvo en estos casos, y solo los que pidas o actives:
+- **Actualizaciones:** al abrirse y cada 6 horas consulta `latest.json` en los releases de GitHub. No manda datos tuyos y se apaga en Ajustes → General → **Buscar actualizaciones sola**.
+- **Sincronización con Google:** solo si iniciás sesión. Guarda tus ajustes en la carpeta privada de la app en tu Drive.
+- **Mahzz-AI:** con el modelo local habla con Ollama en `127.0.0.1`. Si configurás una API key, lo que le preguntes va al servicio que elijas.
+- **Control por IA (MCP):** escucha solo en `127.0.0.1` y pide una clave local.
+
 ## Licencia
 
 [MIT](LICENSE)

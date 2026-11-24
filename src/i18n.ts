@@ -208,6 +208,11 @@ const INGLES: Record<string, string> = {
   "Atrás": "Back",
   "Siguiente": "Next",
   "Empezar": "Start",
+  "¿Sumamos MahzzTerm al Explorador de Windows?": "Add MahzzTerm to Windows File Explorer?",
+  "Sí: «Abrir en MahzzTerm» en el clic derecho y MahzzTerm en «Abrir con»": "Yes: “Open in MahzzTerm” on right-click and MahzzTerm in “Open with”",
+  "No, gracias": "No, thanks",
+  "Buscar actualizaciones sola": "Check for updates automatically",
+  "Al abrirse y cada 6 horas consulta GitHub. No manda datos tuyos.": "Checks GitHub on launch and every 6 hours. It sends no personal data.",
   "Podés cambiar todo esto después en Ajustes.": "You can change all of this later in Settings.",
   // Agentes
   "Agentes activos": "Active agents",

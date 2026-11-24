@@ -138,7 +138,7 @@ async function iniciar(): Promise<void> {
     gestor?.recuperarFoco();
     if (esPrincipal && !ajustes().primerUsoHecho) mostrarPrimerUso(() => gestor?.recuperarFoco());
     // Busca versiones nuevas al abrir y cada 6 horas; avisa con una notificación de Windows.
-    if (esPrincipal && !import.meta.env.DEV) iniciarActualizaciones();
+    if (esPrincipal && !import.meta.env.DEV && ajustes().buscarActualizaciones) iniciarActualizaciones();
   }
 }
 

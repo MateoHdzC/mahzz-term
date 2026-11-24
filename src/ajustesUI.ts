@@ -141,6 +141,11 @@ function seccionGeneral(): HTMLElement[] {
     fila(t("Restaurar pestañas al abrir"), interruptor("restaurarPestanas")),
     filaActualizaciones(),
     fila(
+      t("Buscar actualizaciones sola"),
+      interruptor("buscarActualizaciones"),
+      t("Al abrirse y cada 6 horas consulta GitHub. No manda datos tuyos."),
+    ),
+    fila(
       t("Control por IA (MCP)"),
       interruptor("controlIA"),
       t("Deja que Claude Code y otras IAs usen la terminal: leer bloques y logs, ejecutar comandos y manejar pestañas."),

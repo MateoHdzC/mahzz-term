@@ -2,6 +2,18 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.3] - 2026-11-24
+
+### Corregido
+- El icono de «Abrir en MahzzTerm» y de «Abrir con» ahora funciona aunque la carpeta de tu usuario tenga espacios. Las instalaciones que ya tenían la integración la vuelven a registrar solas.
+
+### Cambiado
+- **La integración con el Explorador de Windows se pregunta.** Viene apagada y aparece como paso en el primer uso. También se prende o apaga en Ajustes → General.
+- **Búsqueda de actualizaciones apagable** en Ajustes → General → **Buscar actualizaciones sola**.
+
+### Agregado
+- Release compilado en GitHub Actions, listo para firmarse con SignPath Foundation (ver `docs/firma.md`).
+
 ## [0.6.2] - 2026-11-24
 
 ### Agregado

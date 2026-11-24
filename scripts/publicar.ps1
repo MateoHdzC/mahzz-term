@@ -3,19 +3,23 @@
 #
 #   .\scripts\publicar.ps1             # solo compila y prepara los archivos
 #   .\scripts\publicar.ps1 -Publicar   # compila y publica el release vX.Y.Z
+#   .\scripts\publicar.ps1 -SinCompilar  # solo arma los archivos con un instalador ya hecho
+#                                        # (lo usa GitHub Actions después de firmar con SignPath)
 #
 # Necesita la clave privada de firma en ~\.tauri\mahzzterm.key (nunca va al repo).
 # Si se pierde, las copias instaladas no van a aceptar actualizaciones nuevas.
-param([switch]$Publicar)
+param([switch]$Publicar, [switch]$SinCompilar)
 
 $ErrorActionPreference = "Stop"
 $raiz = Split-Path $PSScriptRoot -Parent
 Set-Location $raiz
 
 $version = (Get-Content "src-tauri\tauri.conf.json" -Raw | ConvertFrom-Json).version
+Write-Host "MahzzTerm $version" -ForegroundColor Magenta
+
+if (-not $SinCompilar) {
 $clave = Join-Path $env:USERPROFILE ".tauri\mahzzterm.key"
 if (-not (Test-Path $clave)) { throw "Falta la clave de firma en $clave" }
-Write-Host "MahzzTerm $version" -ForegroundColor Magenta
 
 # Si el .exe está abierto (la app o el MCP de Claude Code), se renombra sin cerrarlo.
 $exe = Join-Path $raiz "src-tauri\target\release\MahzzTerm.exe"
@@ -32,6 +36,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Falló la compilación" }
 } finally {
     Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY, Env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD -ErrorAction SilentlyContinue
+}
 }
 
 $nsis = "src-tauri\target\release\bundle\nsis"

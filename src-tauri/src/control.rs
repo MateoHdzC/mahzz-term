@@ -129,6 +129,15 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
         return;
     }
 
+    // Desde el Explorador: la ventana vuelve al frente aunque esté minimizada u oculta.
+    if accion == "abrir_desde_windows" {
+        if let Some(ventana) = app.get_webview_window("main") {
+            let _ = ventana.unminimize();
+            let _ = ventana.show();
+            let _ = ventana.set_focus();
+        }
+    }
+
     // Se le pasa el pedido a la interfaz y se espera su respuesta.
     let control = app.state::<Control>();
     let id = control.siguiente.fetch_add(1, Ordering::Relaxed) + 1;

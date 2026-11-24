@@ -14,6 +14,7 @@ use serde_json::{json, Value};
 use windows::Win32::{
     Foundation::{SetHandleInformation, HANDLE_FLAGS, HANDLE_FLAG_INHERIT},
     System::Console::{GetStdHandle, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE},
+    UI::WindowsAndMessaging::AllowSetForegroundWindow,
 };
 
 use crate::control::ruta_control;
@@ -181,6 +182,7 @@ fn herramientas() -> Value {
 struct Conexion {
     puerto: u16,
     clave: String,
+    pid: Option<u32>,
 }
 
 fn leer_conexion() -> Option<Conexion> {
@@ -189,6 +191,7 @@ fn leer_conexion() -> Option<Conexion> {
     Some(Conexion {
         puerto: u16::try_from(datos["puerto"].as_u64()?).ok()?,
         clave: datos["clave"].as_str()?.to_string(),
+        pid: datos["pid"].as_u64().and_then(|pid| u32::try_from(pid).ok()),
     })
 }
 
@@ -227,6 +230,20 @@ fn conectada() -> Option<Conexion> {
     let conexion = leer_conexion()?;
     pedir(&conexion, "ping", &json!({}), Duration::from_secs(3)).ok()?;
     Some(conexion)
+}
+
+// Le pasa un pedido a la MahzzTerm que ya está abierta. Devuelve false si no hay ninguna
+// o si no lo pudo atender (por ejemplo, una versión vieja que no conoce la acción).
+pub(crate) fn pasar_a_abierta(accion: &str, args: &Value) -> bool {
+    let Some(conexion) = conectada() else { return false };
+    // Windows solo deja pasar una ventana al frente si lo permite el proceso que tiene el foco:
+    // este, que acaba de abrir el Explorador.
+    if let Some(pid) = conexion.pid {
+        unsafe {
+            let _ = AllowSetForegroundWindow(pid);
+        }
+    }
+    pedir(&conexion, accion, args, Duration::from_secs(15)).is_ok_and(|respuesta| respuesta["ok"] == true)
 }
 
 // Si MahzzTerm no está abierta, se abre la misma app (sin --mcp) y se espera a que responda.

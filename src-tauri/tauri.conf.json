@@ -55,7 +55,8 @@
           "English"
         ],
         "displayLanguageSelector": false,
-        "startMenuFolder": "MahzzTerm"
+        "startMenuFolder": "MahzzTerm",
+        "installerHooks": "instalador/hooks.nsh"
       }
     },
     "createUpdaterArtifacts": true,

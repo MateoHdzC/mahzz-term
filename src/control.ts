@@ -7,6 +7,12 @@ import type { Pestana } from "./pestana";
 import { buscarRegistros } from "./registros";
 import { listarTareas, type PedidoTarea, type TareaCreada } from "./tareas";
 
+// Lo que pide el Explorador de Windows: "Abrir en MahzzTerm" (carpeta) o "Abrir con" (archivo).
+export interface PedidoWindows {
+  carpeta?: string;
+  archivo?: string;
+}
+
 // Lo que el gestor de pestañas le presta al control por IA.
 export interface ApiControl {
   pestanas(): Pestana[];
@@ -19,6 +25,7 @@ export interface ApiControl {
   renombrar(pestana: Pestana, titulo: string | null): void;
   agentes(): unknown[];
   abrirArchivo(ruta: string): void;
+  abrirDesdeWindows(pedido: PedidoWindows): Promise<void>;
 }
 
 interface Pedido {
@@ -116,6 +123,11 @@ async function ejecutar(api: ApiControl, args: Record<string, unknown>) {
 }
 
 async function atender(api: ApiControl, accion: string, args: Record<string, unknown>): Promise<unknown> {
+  // Lo manda otra copia de MahzzTerm que abrió el Explorador, no una IA: no depende del control por IA.
+  if (accion === "abrir_desde_windows") {
+    await api.abrirDesdeWindows({ carpeta: texto(args.carpeta) ?? undefined, archivo: texto(args.archivo) ?? undefined });
+    return { abierto: true };
+  }
   if (!ajustes().controlIA) throw new Error("El control por IA está desactivado en Ajustes de MahzzTerm.");
 
   switch (accion) {

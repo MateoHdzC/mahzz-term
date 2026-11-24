@@ -19,6 +19,7 @@
 - **Tareas en paralelo**: cada agente trabaja en su propio worktree de git (rama `mahzz/…`), sin pisarse con los demás. Al terminar, unís o descartás con un clic.
 - **Todos los logs, buscables** (`Ctrl+Shift+F`): los comandos y salidas de cualquier pestaña de los últimos 30 días. Al reabrir, cada panel vuelve con sus bloques.
 - **Control por IA (MCP)**: Claude Code y otras IAs pueden leer los bloques y los logs, ejecutar comandos y manejar las pestañas de MahzzTerm.
+- **Integración con Windows**: «Abrir en MahzzTerm» en el clic derecho de carpetas y discos, y MahzzTerm en «Abrir con» para tus archivos, que se abren en el visor.
 - **Productividad**: historial con `Ctrl+R`, paleta de comandos (`Ctrl+Shift+P`), comandos guardados con parámetros y un árbol de archivos.
 - **SSH con bloques**: los hosts de `~/.ssh/config` también tienen bloques dentro del servidor (bash).
 - **Personalización**: temas editables, atajos, español e inglés y secretos cifrados con tu usuario de Windows.

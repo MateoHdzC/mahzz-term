@@ -6,6 +6,7 @@ mod datos;
 mod entorno;
 mod explorador;
 mod google;
+mod integracion;
 mod mahzz;
 mod mcp;
 mod procesos;
@@ -20,6 +21,8 @@ use datos::Historial;
 use entorno::Versiones;
 use google::TokenGoogle;
 use pty::Sesiones;
+use std::sync::Mutex;
+
 use tauri::{Manager, WindowEvent};
 use ventanas::Traspasos;
 
@@ -27,7 +30,17 @@ pub fn correr_mcp() {
     mcp::correr();
 }
 
+pub fn quitar_integracion() {
+    integracion::quitar();
+}
+
 pub fn iniciar() {
+    // Si la abrió el Explorador ("Abrir en MahzzTerm" o "Abrir con") y ya hay una MahzzTerm abierta,
+    // se le pasa la carpeta o el archivo a esa y esta copia se cierra sin abrir otra ventana.
+    let pedido = integracion::leer_pedido(std::env::args());
+    if pedido.as_ref().is_some_and(|pedido| mcp::pasar_a_abierta("abrir_desde_windows", pedido)) {
+        return;
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -41,6 +54,7 @@ pub fn iniciar() {
         .manage(TokenGoogle::default())
         .manage(control::Control::default())
         .manage(registros::Registros::default())
+        .manage(integracion::PedidoInicial(Mutex::new(pedido)))
         .setup(|app| {
             if let Some(ventana) = app.get_webview_window("main") {
                 ventanas::preparar_webview(&ventana)?;
@@ -111,6 +125,8 @@ pub fn iniciar() {
             google::google_configurado,
             google::iniciar_sesion_google,
             google::subir_sincronizacion,
+            integracion::integracion_windows,
+            integracion::tomar_pedido_windows,
             pty::crear_sesion,
             pty::escribir_sesion,
             pty::redimensionar_sesion,

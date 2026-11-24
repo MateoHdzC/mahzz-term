@@ -111,6 +111,17 @@ En el selector, Enter abre la sesión elegida y Supr la borra de la lista. Las p
 
 **Código:** [`src/actualizaciones.ts`](../src/actualizaciones.ts) y [`scripts/publicar.ps1`](../scripts/publicar.ps1).
 
+## Integración con Windows
+
+- **Abrir en MahzzTerm**: aparece en el clic derecho de una carpeta, del fondo de una carpeta y de un disco, y abre una pestaña en esa carpeta. En Windows 11 está en «Mostrar más opciones».
+- **Abrir con**: MahzzTerm aparece como recomendado para Markdown, texto y código (`.md`, `.json`, `.ps1`, `.py`, `.ts`…) y como opción para cualquier otro archivo. El archivo se abre en el visor y la pestaña nueva, si hace falta, arranca en su carpeta.
+- **Una sola ventana**: si MahzzTerm ya está abierta, la copia que abre el Explorador le pasa la carpeta o el archivo por el mismo canal local del MCP (`127.0.0.1` con clave) y se cierra. La ventana vuelve al frente aunque esté minimizada.
+- **No roba nada**: no cambia el programa por defecto de ninguna extensión. Solo suma a MahzzTerm a la lista de «Abrir con» (`OpenWithProgids`), así que Windows te pregunta con qué abrir y vos elegís.
+- Todo va en `HKCU\Software\Classes`, sin permisos de administrador. La app lo registra al abrirse con la ruta de su `.exe` y el idioma de la interfaz, y lo rehace solo si cambian.
+- Se apaga en Ajustes → General → **Integración con Windows**. Al desinstalar, el instalador corre `MahzzTerm.exe --quitar-integracion`, que borra solo lo que agregó MahzzTerm.
+
+**Código:** [`src-tauri/src/integracion.rs`](../src-tauri/src/integracion.rs) y [`src-tauri/instalador/hooks.nsh`](../src-tauri/instalador/hooks.nsh).
+
 ## Control por IA (MCP)
 
 **Para qué sirve:** que Claude Code (u otra IA compatible con MCP) use la terminal como vos. Puede correr comandos y leer su resultado ya separado en bloques, mirar los logs de un servidor que sigue corriendo o coordinar a otros agentes que corren en otras pestañas.

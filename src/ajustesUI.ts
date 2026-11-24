@@ -153,6 +153,11 @@ function seccionGeneral(): HTMLElement[] {
     fila(t("Avisar cuando termina un comando largo"), interruptor("avisarComandos")),
     fila(t("Segundos para avisar"), numero("segundosAviso", 5, 3600)),
     fila(t("Ventana desplegable"), interruptor("desplegableActivo"), t("Baja desde arriba de la pantalla con un atajo global.")),
+    fila(
+      t("Integración con Windows"),
+      interruptor("integracionWindows"),
+      t("Suma «Abrir en MahzzTerm» al clic derecho de las carpetas y ofrece MahzzTerm en «Abrir con» para tus archivos. En Windows 11, el de las carpetas está en «Mostrar más opciones»."),
+    ),
   ];
 }
 

@@ -6,7 +6,8 @@ import { ajustes, alCambiarAjustes, cargarAjustes } from "./ajustes";
 import { cargarCuenta } from "./cuenta";
 import { definirAtajos } from "./atajos";
 import "./estilos.css";
-import { GestorPestanas } from "./gestor";
+import type { PedidoWindows } from "./control";
+import { carpetaDe, GestorPestanas } from "./gestor";
 import { cargarHistorial } from "./historial";
 import { t, traducirPagina } from "./i18n";
 import type { DatosPestana } from "./pestana";
@@ -73,6 +74,16 @@ function sincronizarDesplegable(): void {
   void invoke("definir_desplegable", { activo, atajo }).catch((error) => console.warn(error));
 }
 
+// "Abrir en MahzzTerm" y "Abrir con" se registran con el idioma y la ruta de esta copia.
+// En modo desarrollo no, para no pisar la de la app instalada.
+function sincronizarIntegracion(): void {
+  if (!esPrincipal || import.meta.env.DEV) return;
+  void invoke("integracion_windows", {
+    activar: ajustes().integracionWindows,
+    etiqueta: t("Abrir en MahzzTerm"),
+  }).catch((error) => console.warn(error));
+}
+
 async function iniciar(): Promise<void> {
   let gestor: GestorPestanas | null = null;
   try {
@@ -96,8 +107,10 @@ async function iniciar(): Promise<void> {
       definirAtajos(ajustes().atajos);
       creado.aplicarAjustes();
       sincronizarDesplegable();
+      sincronizarIntegracion();
     });
     sincronizarDesplegable();
+    sincronizarIntegracion();
     await cargarCuenta();
 
     await ventana.onCloseRequested(async (evento) => {
@@ -108,8 +121,14 @@ async function iniciar(): Promise<void> {
     await actualizarIconoMaximizar();
 
     const traspaso = await invoke<DatosPestana | null>("tomar_traspaso");
+    // Abierta desde el Explorador: una carpeta ("Abrir en MahzzTerm") o un archivo ("Abrir con").
+    const pedido = esPrincipal && !traspaso ? await invoke<PedidoWindows | null>("tomar_pedido_windows") : null;
     const restaurada = !traspaso && esPrincipal && ajustes().restaurarPestanas && (await creado.restaurarSesion());
-    if (!restaurada) await creado.nuevaPestana(traspaso ?? undefined);
+    if (!restaurada && !pedido?.carpeta) {
+      if (pedido?.archivo) await creado.nuevaPestanaEn(carpetaDe(pedido.archivo));
+      else await creado.nuevaPestana(traspaso ?? undefined);
+    }
+    if (pedido) await creado.abrirDesdeWindows(pedido);
   } catch (error) {
     boton("contenido").textContent = `No se pudo iniciar la terminal: ${String(error)}`;
   } finally {

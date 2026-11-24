@@ -16,7 +16,7 @@ import { Pestana, type DatosPestana, type Sentido } from "./pestana";
 import { PanelCambios } from "./cambios";
 import { PanelCopiloto } from "./copiloto";
 import { PanelVisor } from "./visor";
-import { iniciarControl } from "./control";
+import { iniciarControl, type PedidoWindows } from "./control";
 import { abrirBuscadorRegistros, iniciarRegistro } from "./registros";
 import {
   comandoAgente,
@@ -47,6 +47,12 @@ function elemento<T extends HTMLElement>(id: string): T {
   const encontrado = document.getElementById(id);
   if (!encontrado) throw new Error(`Falta el elemento #${id}`);
   return encontrado as T;
+}
+
+// La carpeta de un archivo. La raíz de un disco queda como "C:\".
+export function carpetaDe(ruta: string): string {
+  const carpeta = ruta.replace(/[\\/][^\\/]*$/, "");
+  return /^[A-Za-z]:$/.test(carpeta) ? `${carpeta}\\` : carpeta;
 }
 
 export class GestorPestanas {
@@ -289,15 +295,7 @@ export class GestorPestanas {
       activa: () => this.activa,
       activar: (pestana) => this.activar(pestana),
       nuevaPestana: async (carpeta, titulo) => {
-        await this.nuevaPestana({
-          tituloManual: titulo,
-          color: null,
-          nodo: {
-            tipo: "panel",
-            activo: true,
-            datos: { sesion: null, carpeta: carpeta ?? this.activa?.activo.carpeta ?? null, contenido: null },
-          },
-        });
+        await this.nuevaPestana(this.datosEnCarpeta(carpeta ?? this.activa?.activo.carpeta ?? null, titulo));
         if (!this.activa) throw new Error("No se pudo abrir la pestaña");
         return this.activa;
       },
@@ -310,7 +308,27 @@ export class GestorPestanas {
       },
       agentes: () => this.agentes.listar(),
       abrirArchivo: (ruta) => void this.visor.abrir(ruta),
+      abrirDesdeWindows: (pedido) => this.abrirDesdeWindows(pedido),
     });
+  }
+
+  private datosEnCarpeta(carpeta: string | null, titulo: string | null = null): DatosPestana {
+    return {
+      tituloManual: titulo,
+      color: null,
+      nodo: { tipo: "panel", activo: true, datos: { sesion: null, carpeta, contenido: null } },
+    };
+  }
+
+  async nuevaPestanaEn(carpeta: string): Promise<void> {
+    await this.nuevaPestana(this.datosEnCarpeta(carpeta));
+  }
+
+  // "Abrir en MahzzTerm" abre una pestaña en esa carpeta; "Abrir con" muestra el archivo en el visor.
+  async abrirDesdeWindows(pedido: PedidoWindows): Promise<void> {
+    if (pedido.carpeta) await this.nuevaPestanaEn(pedido.carpeta);
+    if (pedido.archivo) await this.visor.abrir(pedido.archivo);
+    requestAnimationFrame(() => this.recuperarFoco());
   }
 
   aplicarAjustes(): void {

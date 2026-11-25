@@ -48,7 +48,7 @@ fn ids_guardados(carpeta: &PathBuf) -> Vec<(u128, PathBuf)> {
         })
         .collect();
     // Las más nuevas primero.
-    ids.sort_by(|a, b| b.0.cmp(&a.0));
+    ids.sort_by_key(|sesion| std::cmp::Reverse(sesion.0));
     ids
 }
 

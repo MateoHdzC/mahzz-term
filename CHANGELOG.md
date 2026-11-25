@@ -2,7 +2,7 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
-## [Sin publicar]
+## [0.7.1] - 2026-11-25
 
 ### Corregido
 - **El logo elegido no aparecía en la barra de tareas si MahzzTerm estaba anclada.** Windows dibuja el botón anclado con el icono del acceso directo, no con el de la ventana. Ahora MahzzTerm también cambia el icono de sus accesos directos (el anclado, el del menú Inicio y el del escritorio) y, como Windows guarda en caché el botón anclado, ofrece reiniciar el Explorador para verlo al momento.

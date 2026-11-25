@@ -1,0 +1,64 @@
+# Revisa cada push y cada pull request: si algo no compila, no tiene formato o rompe un test,
+# GitHub lo marca en rojo antes de que llegue a un release.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Si llegan dos pushes seguidos a la misma rama, el viejo se cancela.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: Rust (formato, clippy y tests)
+    # La app usa APIs de Windows: en Linux no compila.
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Formato
+        run: cargo fmt --check
+
+      # Las advertencias cuentan como error: el código tiene que quedar limpio.
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Tests
+        run: cargo test --locked
+
+  frontend:
+    name: Frontend (tipos y build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # tsc revisa los tipos y Vite arma el frontend.
+      - run: pnpm build

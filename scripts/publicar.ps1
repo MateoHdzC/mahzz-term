@@ -22,10 +22,16 @@ $clave = Join-Path $env:USERPROFILE ".tauri\mahzzterm.key"
 if (-not (Test-Path $clave)) { throw "Falta la clave de firma en $clave" }
 
 # Si el .exe está abierto (la app o el MCP de Claude Code), se renombra sin cerrarlo.
+# Se prueba abriéndolo en exclusiva en vez de comparar rutas: con la carpeta enlazada desde otro
+# disco, el proceso puede haberlo abierto por otra ruta.
 $exe = Join-Path $raiz "src-tauri\target\release\MahzzTerm.exe"
-if ((Test-Path $exe) -and (Get-Process | Where-Object { $_.Path -eq $exe })) {
-    Move-Item -LiteralPath $exe -Destination ($exe -replace '\.exe$', "-en-uso-$(Get-Date -Format HHmmss).exe")
-    Write-Host "El .exe estaba abierto: lo renombré sin cerrarlo."
+if (Test-Path $exe) {
+    try {
+        [IO.File]::Open($exe, 'Open', 'ReadWrite', 'None').Close()
+    } catch {
+        Move-Item -LiteralPath $exe -Destination ($exe -replace '\.exe$', "-en-uso-$(Get-Date -Format HHmmss).exe")
+        Write-Host "El .exe estaba abierto: lo renombré sin cerrarlo."
+    }
 }
 
 $env:TAURI_SIGNING_PRIVATE_KEY = [IO.File]::ReadAllText($clave)

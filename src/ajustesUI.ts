@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { actualizacionPendiente, buscarActualizacion, instalarActualizacion } from "./actualizaciones";
-import { ajustes, cambiarAjustes, type Ajustes } from "./ajustes";
+import { ajustes, cambiarAjustes, LOGOS, type Ajustes } from "./ajustes";
 import { ACCIONES_EDITABLES, combinacionActual, combinacionDeEvento, textoAtajo } from "./atajos";
 import { abrirMenu, avisar, confirmar } from "./dialogos";
 import { t } from "./i18n";
+import { nombreLogo, rutaLogo } from "./logos";
 import { borrarSecreto, listarSecretos } from "./secretos";
 import {
   aplicarTema,
@@ -197,8 +198,37 @@ function seccionGeneral(): HTMLElement[] {
   ];
 }
 
+// Una miniatura por logo: se elige con un clic y queda marcada la actual.
+function selectorLogo(): HTMLElement {
+  const grupo = document.createElement("div");
+  grupo.className = "logos";
+  grupo.setAttribute("role", "radiogroup");
+  const botones = LOGOS.map((logo) => {
+    const opcion = document.createElement("button");
+    opcion.type = "button";
+    opcion.className = "logos__opcion";
+    opcion.setAttribute("role", "radio");
+    opcion.title = nombreLogo(logo);
+    opcion.setAttribute("aria-label", nombreLogo(logo));
+    const imagen = document.createElement("img");
+    imagen.src = rutaLogo(logo);
+    imagen.alt = "";
+    imagen.draggable = false;
+    opcion.append(imagen);
+    opcion.addEventListener("click", () => {
+      for (const [indice, boton] of botones.entries()) boton.setAttribute("aria-checked", String(LOGOS[indice] === logo));
+      void cambiarAjustes({ logo });
+    });
+    opcion.setAttribute("aria-checked", String(ajustes().logo === logo));
+    return opcion;
+  });
+  grupo.append(...botones);
+  return grupo;
+}
+
 function seccionApariencia(): HTMLElement[] {
   return [
+    fila(t("Logo"), selectorLogo(), t("Se ve en la barra de la app, la barra de tareas y Alt+Tab.")),
     fila(
       t("Fuente"),
       lista(FUENTES.map((fuente) => [fuente, fuente]), ajustes().fuente, (fuente) => void cambiarAjustes({ fuente })),

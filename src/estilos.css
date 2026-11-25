@@ -3764,3 +3764,46 @@ textarea.dialogo__entrada {
   bottom: 0;
   cursor: nwse-resize;
 }
+
+/* ---------- Selector de logo (Ajustes → Apariencia) ---------- */
+.logos {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  max-width: 260px;
+}
+
+.logos__opcion {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 3px;
+  background: var(--fondo-barra);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color var(--transicion), background var(--transicion);
+}
+
+.logos__opcion:hover {
+  background: var(--fondo-hover);
+}
+
+.logos__opcion:focus-visible {
+  outline: 2px solid var(--acento-claro);
+  outline-offset: 1px;
+}
+
+.logos__opcion[aria-checked="true"] {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 1px var(--acento);
+}
+
+.logos__opcion img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

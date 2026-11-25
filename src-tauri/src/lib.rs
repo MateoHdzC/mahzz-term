@@ -7,6 +7,7 @@ mod entorno;
 mod explorador;
 mod google;
 mod integracion;
+mod logo;
 mod mahzz;
 mod mcp;
 mod procesos;
@@ -148,6 +149,7 @@ pub fn iniciar() {
             tareas::descartar_tarea,
             tareas::listar_tareas,
             tareas::unir_tarea,
+            logo::aplicar_logo,
             ventanas::abrir_ventana,
             ventanas::definir_memoria_baja,
             ventanas::esperar_traspaso,

@@ -1,6 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { guardarIdioma } from "./i18n";
 
+// Logos elegibles en Ajustes → Apariencia. "clasico" es el de siempre y el que viene por defecto.
+export const LOGOS = ["clasico", "azul", "oceano", "esmeralda", "hielo", "aurora"] as const;
+export type Logo = (typeof LOGOS)[number];
+
 export interface Ajustes {
   idioma: "auto" | "es" | "en";
   primerUsoHecho: boolean;
@@ -9,6 +13,8 @@ export interface Ajustes {
   tamanoFuente: number;
   cursor: "bar" | "block" | "underline";
   parpadeo: boolean;
+  // Logo de la app: el de la barra y el icono de las ventanas en la barra de tareas.
+  logo: Logo;
   scrollback: number;
   restaurarPestanas: boolean;
   posicionPestanas: "arriba" | "izquierda" | "derecha";
@@ -34,6 +40,7 @@ const VALORES_INICIALES: Ajustes = {
   tamanoFuente: 14,
   cursor: "bar",
   parpadeo: true,
+  logo: "clasico",
   scrollback: 10_000,
   restaurarPestanas: true,
   posicionPestanas: "arriba",
@@ -62,7 +69,9 @@ function combinar(leidos: Record<string, unknown>): Ajustes {
   for (const [clave, inicial] of Object.entries(VALORES_INICIALES)) {
     if (typeof leidos[clave] === typeof inicial) resultado[clave] = leidos[clave];
   }
-  return resultado as unknown as Ajustes;
+  const combinados = resultado as unknown as Ajustes;
+  if (!(LOGOS as readonly string[]).includes(combinados.logo)) combinados.logo = "clasico";
+  return combinados;
 }
 
 export function ajustes(): Ajustes {

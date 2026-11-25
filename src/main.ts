@@ -14,6 +14,7 @@ import { t, traducirPagina } from "./i18n";
 import type { DatosPestana } from "./pestana";
 import { mostrarPrimerUso } from "./primerUso";
 import { iniciarActualizaciones } from "./actualizaciones";
+import { aplicarLogo } from "./logos";
 import { aplicarTema, cargarTemas } from "./temas";
 
 const ICONO_MAXIMIZAR = "M0.5 0.5h9v9h-9z";
@@ -126,6 +127,7 @@ async function iniciar(): Promise<void> {
     await cargarAjustes();
     await cargarTemas();
     aplicarTema();
+    aplicarLogo();
     definirAtajos(ajustes().atajos);
     traducirPagina();
 
@@ -140,6 +142,7 @@ async function iniciar(): Promise<void> {
     gestor = creado;
     alCambiarAjustes(() => {
       aplicarTema();
+      aplicarLogo();
       definirAtajos(ajustes().atajos);
       creado.aplicarAjustes();
       sincronizarDesplegable();

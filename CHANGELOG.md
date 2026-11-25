@@ -2,6 +2,11 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [Sin publicar]
+
+### Agregado
+- **El panel de agentes reconoce los agentes instalados con npm.** Claude Code, Codex, Gemini CLI, Qwen Code, Copilot CLI, Amp, Crush y opencode instalados con `npm i -g` (o corridos con `npx`) corren como `node`, y antes no aparecían en el panel ✦ ni avisaban al terminar. Ahora MahzzTerm mira qué paquete está corriendo y los muestra con su nombre.
+
 ## [0.6.7] - 2026-11-25
 
 ### Corregido

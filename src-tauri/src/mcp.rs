@@ -191,11 +191,18 @@ fn leer_conexion() -> Option<Conexion> {
     Some(Conexion {
         puerto: u16::try_from(datos["puerto"].as_u64()?).ok()?,
         clave: datos["clave"].as_str()?.to_string(),
-        pid: datos["pid"].as_u64().and_then(|pid| u32::try_from(pid).ok()),
+        pid: datos["pid"]
+            .as_u64()
+            .and_then(|pid| u32::try_from(pid).ok()),
     })
 }
 
-fn pedir(conexion: &Conexion, accion: &str, args: &Value, espera: Duration) -> Result<Value, String> {
+fn pedir(
+    conexion: &Conexion,
+    accion: &str,
+    args: &Value,
+    espera: Duration,
+) -> Result<Value, String> {
     let agente: ureq::Agent = ureq::Agent::config_builder()
         .timeout_global(Some(espera))
         .http_status_as_error(false)
@@ -208,7 +215,12 @@ fn pedir(conexion: &Conexion, accion: &str, args: &Value, espera: Duration) -> R
         .header("Content-Type", "application/json")
         .send(cuerpo)
         .map_err(|error| error.to_string())?;
-    let texto = respuesta.body_mut().with_config().limit(64 * 1024 * 1024).read_to_string().map_err(|error| error.to_string())?;
+    let texto = respuesta
+        .body_mut()
+        .with_config()
+        .limit(64 * 1024 * 1024)
+        .read_to_string()
+        .map_err(|error| error.to_string())?;
     serde_json::from_str(&texto).map_err(|error| error.to_string())
 }
 
@@ -235,7 +247,9 @@ fn conectada() -> Option<Conexion> {
 // Le pasa un pedido a la MahzzTerm que ya está abierta. Devuelve false si no hay ninguna
 // o si no lo pudo atender (por ejemplo, una versión vieja que no conoce la acción).
 pub(crate) fn pasar_a_abierta(accion: &str, args: &Value) -> bool {
-    let Some(conexion) = conectada() else { return false };
+    let Some(conexion) = conectada() else {
+        return false;
+    };
     // Windows solo deja pasar una ventana al frente si lo permite el proceso que tiene el foco:
     // este, que acaba de abrir el Explorador.
     if let Some(pid) = conexion.pid {
@@ -243,7 +257,8 @@ pub(crate) fn pasar_a_abierta(accion: &str, args: &Value) -> bool {
             let _ = AllowSetForegroundWindow(pid);
         }
     }
-    pedir(&conexion, accion, args, Duration::from_secs(15)).is_ok_and(|respuesta| respuesta["ok"] == true)
+    pedir(&conexion, accion, args, Duration::from_secs(15))
+        .is_ok_and(|respuesta| respuesta["ok"] == true)
 }
 
 // Si MahzzTerm no está abierta, se abre la misma app (sin --mcp) y se espera a que responda.
@@ -273,7 +288,9 @@ fn conectar() -> Result<Conexion, String> {
 }
 
 fn llamar_herramienta(nombre: &str, args: &Value) -> Value {
-    let conocida = herramientas().as_array().is_some_and(|lista| lista.iter().any(|h| h["name"] == nombre));
+    let conocida = herramientas()
+        .as_array()
+        .is_some_and(|lista| lista.iter().any(|h| h["name"] == nombre));
     if !conocida {
         return json!({ "content": [{ "type": "text", "text": format!("Herramienta desconocida: {nombre}") }], "isError": true });
     }
@@ -282,7 +299,10 @@ fn llamar_herramienta(nombre: &str, args: &Value) -> Value {
     match resultado {
         Ok(respuesta) if respuesta["ok"] == true => {
             let datos = &respuesta["datos"];
-            let texto = datos.as_str().map(str::to_string).unwrap_or_else(|| serde_json::to_string_pretty(datos).unwrap_or_default());
+            let texto = datos
+                .as_str()
+                .map(str::to_string)
+                .unwrap_or_else(|| serde_json::to_string_pretty(datos).unwrap_or_default());
             json!({ "content": [{ "type": "text", "text": texto }], "structuredContent": if datos.is_object() { datos.clone() } else { json!({ "resultado": datos }) } })
         }
         Ok(respuesta) => {
@@ -296,7 +316,9 @@ fn llamar_herramienta(nombre: &str, args: &Value) -> Value {
 fn responder(salida: &mut impl Write, id: &Value, resultado: Result<Value, (i64, String)>) {
     let mensaje = match resultado {
         Ok(valor) => json!({ "jsonrpc": "2.0", "id": id, "result": valor }),
-        Err((codigo, texto)) => json!({ "jsonrpc": "2.0", "id": id, "error": { "code": codigo, "message": texto } }),
+        Err((codigo, texto)) => {
+            json!({ "jsonrpc": "2.0", "id": id, "error": { "code": codigo, "message": texto } })
+        }
     };
     let _ = writeln!(salida, "{mensaje}");
     let _ = salida.flush();
@@ -311,11 +333,17 @@ pub fn correr() {
             continue;
         }
         let Ok(mensaje) = serde_json::from_str::<Value>(&linea) else {
-            responder(&mut salida, &Value::Null, Err((-32700, "JSON inválido".to_string())));
+            responder(
+                &mut salida,
+                &Value::Null,
+                Err((-32700, "JSON inválido".to_string())),
+            );
             continue;
         };
         // Las notificaciones no tienen id y no llevan respuesta.
-        let Some(id) = mensaje.get("id").cloned() else { continue };
+        let Some(id) = mensaje.get("id").cloned() else {
+            continue;
+        };
         let metodo = mensaje["method"].as_str().unwrap_or("");
         let parametros = &mensaje["params"];
         let resultado = match metodo {
@@ -329,7 +357,10 @@ pub fn correr() {
             "tools/list" => Ok(json!({ "tools": herramientas() })),
             "tools/call" => {
                 let nombre = parametros["name"].as_str().unwrap_or("");
-                let args = parametros.get("arguments").cloned().unwrap_or_else(|| json!({}));
+                let args = parametros
+                    .get("arguments")
+                    .cloned()
+                    .unwrap_or_else(|| json!({}));
                 Ok(llamar_herramienta(nombre, &args))
             }
             _ => Err((-32601, format!("Método no soportado: {metodo}"))),

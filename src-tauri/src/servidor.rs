@@ -58,7 +58,9 @@ fn raiz_git(carpeta: &Path) -> Option<PathBuf> {
         .creation_flags(SIN_VENTANA)
         .output()
         .ok()?;
-    let texto = String::from_utf8_lossy(&salida.stdout).trim().replace('/', "\\");
+    let texto = String::from_utf8_lossy(&salida.stdout)
+        .trim()
+        .replace('/', "\\");
     (salida.status.success() && !texto.is_empty()).then(|| PathBuf::from(texto))
 }
 
@@ -78,7 +80,11 @@ fn raiz_del_proyecto(html: &Path) -> PathBuf {
 }
 
 fn tipo_mime(ruta: &Path) -> &'static str {
-    let extension = ruta.extension().and_then(|valor| valor.to_str()).unwrap_or("").to_ascii_lowercase();
+    let extension = ruta
+        .extension()
+        .and_then(|valor| valor.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
     match extension.as_str() {
         "html" | "htm" => "text/html; charset=utf-8",
         "css" => "text/css; charset=utf-8",
@@ -156,7 +162,13 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
         .collect();
     let cabeza = metodo == "HEAD";
     if metodo != "GET" && !cabeza {
-        responder(&mut conexion, "405 Method Not Allowed", "text/plain", b"", false);
+        responder(
+            &mut conexion,
+            "405 Method Not Allowed",
+            "text/plain",
+            b"",
+            false,
+        );
         return;
     }
 
@@ -172,7 +184,9 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
     };
     // La primera carga trae la clave; lo demás lo pide la misma página. Una web cualquiera
     // del navegador no tiene la clave y sus pedidos llegan marcados como de otro sitio.
-    let con_clave = url.query_pairs().any(|(nombre, valor)| nombre == "mahzz" && valor == servidor.clave);
+    let con_clave = url
+        .query_pairs()
+        .any(|(nombre, valor)| nombre == "mahzz" && valor == servidor.clave);
     let mismo_sitio = encabezados.get("sec-fetch-site").map(String::as_str) == Some("same-origin");
     if !con_clave && !mismo_sitio {
         responder(&mut conexion, "403 Forbidden", "text/plain", b"", cabeza);
@@ -185,9 +199,19 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
             .find(|(nombre, _)| nombre == "desde")
             .and_then(|(_, valor)| valor.parse().ok())
             .unwrap_or(u64::MAX);
-        let servidos = servidor.servidos.lock().map(|mapa| mapa.keys().cloned().collect::<Vec<_>>()).unwrap_or_default();
+        let servidos = servidor
+            .servidos
+            .lock()
+            .map(|mapa| mapa.keys().cloned().collect::<Vec<_>>())
+            .unwrap_or_default();
         let cambio = servidos.iter().any(|ruta| fecha_de(ruta) > desde);
-        responder(&mut conexion, "200 OK", "text/plain", if cambio { b"1" } else { b"0" }, cabeza);
+        responder(
+            &mut conexion,
+            "200 OK",
+            "text/plain",
+            if cambio { b"1" } else { b"0" },
+            cabeza,
+        );
         return;
     }
 
@@ -200,7 +224,13 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
     }
     let Ok(mut contenido) = fs::read(&ruta) else {
         let pagina = format!("<h1>404</h1><p>No existe {}</p>", url.path());
-        responder(&mut conexion, "404 Not Found", "text/html; charset=utf-8", pagina.as_bytes(), cabeza);
+        responder(
+            &mut conexion,
+            "404 Not Found",
+            "text/html; charset=utf-8",
+            pagina.as_bytes(),
+            cabeza,
+        );
         return;
     };
     if let Ok(mut servidos) = servidor.servidos.lock() {
@@ -220,7 +250,10 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
 
 fn iniciar(raiz: PathBuf) -> Result<Arc<Servidor>, String> {
     let escucha = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| error.to_string())?;
-    let puerto = escucha.local_addr().map_err(|error| error.to_string())?.port();
+    let puerto = escucha
+        .local_addr()
+        .map_err(|error| error.to_string())?
+        .port();
     let mut bytes = [0u8; 18];
     getrandom::fill(&mut bytes).map_err(|error| error.to_string())?;
     let servidor = Arc::new(Servidor {
@@ -259,12 +292,19 @@ pub async fn servir_html(ruta: String) -> Result<String, String> {
                 }
             }
         };
-        let relativa = html.strip_prefix(&servidor.raiz).map_err(|_| "El HTML está fuera del proyecto".to_string())?;
-        let mut url = Url::parse(&format!("http://127.0.0.1:{}/", servidor.puerto)).map_err(|error| error.to_string())?;
+        let relativa = html
+            .strip_prefix(&servidor.raiz)
+            .map_err(|_| "El HTML está fuera del proyecto".to_string())?;
+        let mut url = Url::parse(&format!("http://127.0.0.1:{}/", servidor.puerto))
+            .map_err(|error| error.to_string())?;
         url.path_segments_mut()
             .map_err(|_| "Dirección inválida".to_string())?
             .pop_if_empty()
-            .extend(relativa.components().map(|parte| parte.as_os_str().to_string_lossy().into_owned()));
+            .extend(
+                relativa
+                    .components()
+                    .map(|parte| parte.as_os_str().to_string_lossy().into_owned()),
+            );
         url.query_pairs_mut().append_pair("mahzz", &servidor.clave);
         Ok(url.to_string())
     })
@@ -279,8 +319,14 @@ mod pruebas {
     #[test]
     fn no_deja_salir_de_la_raiz() {
         let raiz = Path::new("C:\\proyecto");
-        assert_eq!(ruta_local(raiz, "/css/estilos.css"), Some(raiz.join("css").join("estilos.css")));
-        assert_eq!(ruta_local(raiz, "/mis%20fotos/a.png"), Some(raiz.join("mis fotos").join("a.png")));
+        assert_eq!(
+            ruta_local(raiz, "/css/estilos.css"),
+            Some(raiz.join("css").join("estilos.css"))
+        );
+        assert_eq!(
+            ruta_local(raiz, "/mis%20fotos/a.png"),
+            Some(raiz.join("mis fotos").join("a.png"))
+        );
         assert_eq!(ruta_local(raiz, "/../secreto.txt"), None);
         assert_eq!(ruta_local(raiz, "/%2e%2e/secreto.txt"), None);
         assert_eq!(ruta_local(raiz, "/a%5C..%5Cb"), None);

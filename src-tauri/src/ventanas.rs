@@ -10,8 +10,8 @@ use std::{
 
 use serde_json::Value;
 use tauri::{
-    async_runtime::spawn_blocking, AppHandle, LogicalPosition, Manager, State, WebviewUrl, WebviewWindow,
-    WebviewWindowBuilder, Window,
+    async_runtime::spawn_blocking, AppHandle, LogicalPosition, Manager, State, WebviewUrl,
+    WebviewWindow, WebviewWindowBuilder, Window,
 };
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     ICoreWebView2Settings3, ICoreWebView2_19, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW,
@@ -90,16 +90,17 @@ pub async fn abrir_ventana(
             .insert(etiqueta.clone(), datos);
     }
 
-    let constructor = WebviewWindowBuilder::new(&app, &etiqueta, WebviewUrl::App("index.html".into()))
-        .title("MahzzTerm")
-        .inner_size(1100.0, 700.0)
-        .min_inner_size(520.0, 320.0)
-        .decorations(false)
-        .visible(false)
-        .transparent(true)
-        .shadow(false)
-        .additional_browser_args(ARGUMENTOS_NAVEGADOR)
-        .disable_drag_drop_handler();
+    let constructor =
+        WebviewWindowBuilder::new(&app, &etiqueta, WebviewUrl::App("index.html".into()))
+            .title("MahzzTerm")
+            .inner_size(1100.0, 700.0)
+            .min_inner_size(520.0, 320.0)
+            .decorations(false)
+            .visible(false)
+            .transparent(true)
+            .shadow(false)
+            .additional_browser_args(ARGUMENTOS_NAVEGADOR)
+            .disable_drag_drop_handler();
 
     let ventana = constructor.build().map_err(|error| error.to_string())?;
     match (x, y) {
@@ -116,12 +117,20 @@ pub async fn abrir_ventana(
 // tiempo (tardó o falló al arrancar), se cancela el traspaso, se cierra la ventana nueva y la
 // pestaña vuelve a la de origen: nunca queda en el aire.
 #[tauri::command]
-pub async fn esperar_traspaso(app: AppHandle, etiqueta: String, segundos: u64) -> Result<bool, String> {
+pub async fn esperar_traspaso(
+    app: AppHandle,
+    etiqueta: String,
+    segundos: u64,
+) -> Result<bool, String> {
     spawn_blocking(move || {
         let traspasos = app.state::<Traspasos>();
         let limite = Instant::now() + Duration::from_secs(segundos);
         loop {
-            let pendiente = traspasos.pendientes.lock().map_err(|error| error.to_string())?.contains_key(&etiqueta);
+            let pendiente = traspasos
+                .pendientes
+                .lock()
+                .map_err(|error| error.to_string())?
+                .contains_key(&etiqueta);
             if !pendiente {
                 return Ok(true);
             }
@@ -130,7 +139,12 @@ pub async fn esperar_traspaso(app: AppHandle, etiqueta: String, segundos: u64) -
             }
             thread::sleep(Duration::from_millis(100));
         }
-        let cancelado = traspasos.pendientes.lock().map_err(|error| error.to_string())?.remove(&etiqueta).is_some();
+        let cancelado = traspasos
+            .pendientes
+            .lock()
+            .map_err(|error| error.to_string())?
+            .remove(&etiqueta)
+            .is_some();
         if cancelado {
             if let Some(ventana) = app.get_webview_window(&etiqueta) {
                 let _ = ventana.destroy();

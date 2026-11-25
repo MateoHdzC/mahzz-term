@@ -66,7 +66,10 @@ pub fn listar_sesiones(app: AppHandle) -> Result<Vec<Value>, String> {
         .filter_map(|(_, ruta)| {
             let texto = fs::read_to_string(ruta).ok()?;
             let sesion: Value = serde_json::from_str(&texto).ok()?;
-            let tiene_pestanas = sesion.get("pestanas")?.as_array().is_some_and(|lista| !lista.is_empty());
+            let tiene_pestanas = sesion
+                .get("pestanas")?
+                .as_array()
+                .is_some_and(|lista| !lista.is_empty());
             tiene_pestanas.then_some(sesion)
         })
         .collect())

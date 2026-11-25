@@ -58,7 +58,10 @@ fn raiz_de(carpeta: &str) -> Option<PathBuf> {
 
 // git status -z separa con \0. En renombres, después de la ruta nueva viene la vieja.
 fn leer_estado(raiz: &Path) -> Result<Vec<Value>, String> {
-    let salida = git(raiz, &["status", "--porcelain=v1", "-z", "--untracked-files=all"])?;
+    let salida = git(
+        raiz,
+        &["status", "--porcelain=v1", "-z", "--untracked-files=all"],
+    )?;
     let mut partes = salida.split('\0').filter(|parte| !parte.is_empty());
     let mut archivos = Vec::new();
     while let Some(entrada) = partes.next() {
@@ -68,7 +71,11 @@ fn leer_estado(raiz: &Path) -> Result<Vec<Value>, String> {
         let indice = &entrada[0..1];
         let trabajo = &entrada[1..2];
         let ruta = &entrada[3..];
-        let origen = if indice == "R" || indice == "C" { partes.next() } else { None };
+        let origen = if indice == "R" || indice == "C" {
+            partes.next()
+        } else {
+            None
+        };
         archivos.push(json!({
             "ruta": ruta,
             "origen": origen,
@@ -95,7 +102,9 @@ pub async fn listar_cambios(carpeta: String) -> Result<Option<Value>, String> {
 // Un archivo que git todavía no conoce se muestra entero como agregado.
 fn diff_de_nuevo(raiz: &Path, relativa: &str) -> Result<Value, String> {
     let ruta = ruta_segura(raiz, relativa)?;
-    let tamano = fs::metadata(&ruta).map_err(|error| error.to_string())?.len();
+    let tamano = fs::metadata(&ruta)
+        .map_err(|error| error.to_string())?
+        .len();
     if tamano > MAXIMO_BYTES_NUEVO {
         return Ok(json!({ "texto": "", "binario": false, "grande": true }));
     }
@@ -115,10 +124,16 @@ fn diff_de_nuevo(raiz: &Path, relativa: &str) -> Result<Value, String> {
 }
 
 fn recortar(texto: String) -> Value {
-    let binario = texto.lines().any(|linea| linea.starts_with("Binary files "));
+    let binario = texto
+        .lines()
+        .any(|linea| linea.starts_with("Binary files "));
     let total = texto.lines().count();
     let texto = if total > MAXIMO_LINEAS_DIFF {
-        texto.lines().take(MAXIMO_LINEAS_DIFF).collect::<Vec<_>>().join("\n")
+        texto
+            .lines()
+            .take(MAXIMO_LINEAS_DIFF)
+            .collect::<Vec<_>>()
+            .join("\n")
     } else {
         texto
     };
@@ -126,7 +141,12 @@ fn recortar(texto: String) -> Value {
 }
 
 #[tauri::command]
-pub async fn diff_cambio(raiz: String, ruta: String, origen: Option<String>, nuevo: bool) -> Result<Value, String> {
+pub async fn diff_cambio(
+    raiz: String,
+    ruta: String,
+    origen: Option<String>,
+    nuevo: bool,
+) -> Result<Value, String> {
     spawn_blocking(move || {
         let raiz = PathBuf::from(raiz);
         if nuevo {
@@ -151,7 +171,11 @@ pub async fn diff_cambio(raiz: String, ruta: String, origen: Option<String>, nue
 }
 
 #[tauri::command]
-pub async fn aceptar_cambio(raiz: String, ruta: String, origen: Option<String>) -> Result<(), String> {
+pub async fn aceptar_cambio(
+    raiz: String,
+    ruta: String,
+    origen: Option<String>,
+) -> Result<(), String> {
     spawn_blocking(move || {
         let raiz = PathBuf::from(raiz);
         ruta_segura(&raiz, &ruta)?;
@@ -188,10 +212,31 @@ pub async fn revertir_cambio(
         if let Some(origen) = &origen {
             ruta_segura(&raiz, origen)?;
             git(&raiz, &["rm", "-f", "-q", "--", &literal(&ruta)])?;
-            return git(&raiz, &["restore", "--source=HEAD", "--staged", "--worktree", "--", &literal(origen)])
-                .map(|_| ());
+            return git(
+                &raiz,
+                &[
+                    "restore",
+                    "--source=HEAD",
+                    "--staged",
+                    "--worktree",
+                    "--",
+                    &literal(origen),
+                ],
+            )
+            .map(|_| ());
         }
-        git(&raiz, &["restore", "--source=HEAD", "--staged", "--worktree", "--", &literal(&ruta)]).map(|_| ())
+        git(
+            &raiz,
+            &[
+                "restore",
+                "--source=HEAD",
+                "--staged",
+                "--worktree",
+                "--",
+                &literal(&ruta),
+            ],
+        )
+        .map(|_| ())
     })
     .await
     .map_err(|error| error.to_string())?

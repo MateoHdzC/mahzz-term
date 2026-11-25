@@ -77,7 +77,13 @@ pub fn mahzz_config(app: AppHandle) -> Value {
 
 // `key` vacía deja la que ya estaba guardada.
 #[tauri::command]
-pub fn mahzz_guardar_config(app: AppHandle, usar_api: bool, url: String, modelo: String, key: String) -> Result<(), String> {
+pub fn mahzz_guardar_config(
+    app: AppHandle,
+    usar_api: bool,
+    url: String,
+    modelo: String,
+    key: String,
+) -> Result<(), String> {
     let mut config = leer_config(&app);
     config.usar_api = usar_api;
     config.url = url.trim().trim_end_matches('/').to_string();
@@ -114,8 +120,13 @@ fn prender_ollama() -> bool {
     if ollama_prendido() {
         return true;
     }
-    let Some(local) = std::env::var_os("LOCALAPPDATA") else { return false };
-    let programa = PathBuf::from(local).join("Programs").join("Ollama").join("ollama app.exe");
+    let Some(local) = std::env::var_os("LOCALAPPDATA") else {
+        return false;
+    };
+    let programa = PathBuf::from(local)
+        .join("Programs")
+        .join("Ollama")
+        .join("ollama app.exe");
     if std::process::Command::new(programa).spawn().is_err() {
         return false;
     }
@@ -129,18 +140,32 @@ fn prender_ollama() -> bool {
 }
 
 fn modelos_instalados() -> Vec<String> {
-    let Ok(mut respuesta) = ureq::get(&format!("{URL}/api/tags")).call() else { return Vec::new() };
-    let Ok(texto) = respuesta.body_mut().read_to_string() else { return Vec::new() };
-    let Ok(datos) = serde_json::from_str::<Value>(&texto) else { return Vec::new() };
+    let Ok(mut respuesta) = ureq::get(&format!("{URL}/api/tags")).call() else {
+        return Vec::new();
+    };
+    let Ok(texto) = respuesta.body_mut().read_to_string() else {
+        return Vec::new();
+    };
+    let Ok(datos) = serde_json::from_str::<Value>(&texto) else {
+        return Vec::new();
+    };
     datos["models"]
         .as_array()
-        .map(|lista| lista.iter().filter_map(|m| m["name"].as_str().map(String::from)).collect())
+        .map(|lista| {
+            lista
+                .iter()
+                .filter_map(|m| m["name"].as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 // Vale "mahzz:latest" (el local) y "usuario/mahzz:latest" (el que se baja con ollama pull).
 fn es_mahzz(nombre: &str) -> bool {
-    nombre.rsplit('/').next().is_some_and(|base| base == "mahzz" || base.starts_with("mahzz:"))
+    nombre
+        .rsplit('/')
+        .next()
+        .is_some_and(|base| base == "mahzz" || base.starts_with("mahzz:"))
 }
 
 // ---------- Elegir con qué responder ----------
@@ -166,7 +191,9 @@ fn elegir_motor(app: &AppHandle) -> Result<Motor, String> {
         .or_else(|| instalados.iter().find(|m| es_mahzz(m)));
     match elegido {
         Some(modelo) => Ok(Motor::Local(modelo.clone())),
-        None => Err("sin_modelo|Ollama está prendido, pero el modelo de Mahzz-AI no está instalado.".into()),
+        None => Err(
+            "sin_modelo|Ollama está prendido, pero el modelo de Mahzz-AI no está instalado.".into(),
+        ),
     }
 }
 
@@ -202,7 +229,9 @@ pub async fn mahzz_instalar(canal: Channel<Value>) -> Result<(), String> {
                 return Err("cancelada|Cancelaste la instalación.".into());
             }
             let linea = linea.map_err(|error| error.to_string())?;
-            let Ok(parte) = serde_json::from_str::<Value>(&linea) else { continue };
+            let Ok(parte) = serde_json::from_str::<Value>(&linea) else {
+                continue;
+            };
             if let Some(error) = parte["error"].as_str() {
                 return Err(error.to_string());
             }
@@ -216,7 +245,10 @@ pub async fn mahzz_instalar(canal: Channel<Value>) -> Result<(), String> {
                 return Ok(());
             }
         }
-        Err("La descarga se cortó antes de terminar. Probá de nuevo: sigue desde donde quedó.".into())
+        Err(
+            "La descarga se cortó antes de terminar. Probá de nuevo: sigue desde donde quedó."
+                .into(),
+        )
     })
     .await
     .map_err(|error| error.to_string())?
@@ -234,7 +266,11 @@ pub fn mahzz_detener() {
 
 // Manda la charla y va pasando los trozos por el canal: {"pensando": "..."} o {"texto": "..."}.
 #[tauri::command]
-pub async fn mahzz_chat(app: AppHandle, mensajes: Vec<Value>, canal: Channel<Value>) -> Result<(), String> {
+pub async fn mahzz_chat(
+    app: AppHandle,
+    mensajes: Vec<Value>,
+    canal: Channel<Value>,
+) -> Result<(), String> {
     let turno = TURNO.fetch_add(1, Ordering::SeqCst) + 1;
     spawn_blocking(move || match elegir_motor(&app)? {
         Motor::Local(modelo) => chat_ollama(&modelo, mensajes, &canal, turno),
@@ -252,7 +288,12 @@ fn mandar(canal: &Channel<Value>, tipo: &str, trozo: Option<&str>) -> bool {
     }
 }
 
-fn chat_ollama(modelo: &str, mensajes: Vec<Value>, canal: &Channel<Value>, turno: u64) -> Result<(), String> {
+fn chat_ollama(
+    modelo: &str,
+    mensajes: Vec<Value>,
+    canal: &Channel<Value>,
+    turno: u64,
+) -> Result<(), String> {
     let cuerpo = json!({ "model": modelo, "messages": mensajes, "stream": true, "think": "low" });
     let respuesta = ureq::post(&format!("{URL}/api/chat"))
         .header("Content-Type", "application/json")
@@ -267,12 +308,16 @@ fn chat_ollama(modelo: &str, mensajes: Vec<Value>, canal: &Channel<Value>, turno
         if linea.trim().is_empty() {
             continue;
         }
-        let Ok(parte) = serde_json::from_str::<Value>(&linea) else { continue };
+        let Ok(parte) = serde_json::from_str::<Value>(&linea) else {
+            continue;
+        };
         if let Some(error) = parte["error"].as_str() {
             return Err(error.to_string());
         }
         let mensaje = &parte["message"];
-        if !mandar(canal, "pensando", mensaje["thinking"].as_str()) || !mandar(canal, "texto", mensaje["content"].as_str()) {
+        if !mandar(canal, "pensando", mensaje["thinking"].as_str())
+            || !mandar(canal, "texto", mensaje["content"].as_str())
+        {
             return Ok(());
         }
         if parte["done"].as_bool() == Some(true) {
@@ -283,7 +328,12 @@ fn chat_ollama(modelo: &str, mensajes: Vec<Value>, canal: &Channel<Value>, turno
 }
 
 // API compatible con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, LM Studio…), con streaming por SSE.
-fn chat_api(config: &Config, mensajes: Vec<Value>, canal: &Channel<Value>, turno: u64) -> Result<(), String> {
+fn chat_api(
+    config: &Config,
+    mensajes: Vec<Value>,
+    canal: &Channel<Value>,
+    turno: u64,
+) -> Result<(), String> {
     let mut todos = Vec::with_capacity(mensajes.len() + 1);
     todos.push(json!({ "role": "system", "content": IDENTIDAD }));
     todos.extend(mensajes);
@@ -301,10 +351,19 @@ fn chat_api(config: &Config, mensajes: Vec<Value>, canal: &Channel<Value>, turno
     let estado = respuesta.status().as_u16();
     if estado >= 400 {
         let mut texto = String::new();
-        let _ = respuesta.into_body().into_reader().take(4000).read_to_string(&mut texto);
+        let _ = respuesta
+            .into_body()
+            .into_reader()
+            .take(4000)
+            .read_to_string(&mut texto);
         let detalle = serde_json::from_str::<Value>(&texto)
             .ok()
-            .and_then(|datos| datos["error"]["message"].as_str().or(datos["error"].as_str()).map(String::from))
+            .and_then(|datos| {
+                datos["error"]["message"]
+                    .as_str()
+                    .or(datos["error"].as_str())
+                    .map(String::from)
+            })
             .unwrap_or(texto);
         return Err(format!("La API devolvió {estado}: {}", detalle.trim()));
     }
@@ -315,17 +374,25 @@ fn chat_api(config: &Config, mensajes: Vec<Value>, canal: &Channel<Value>, turno
             break;
         }
         let linea = linea.map_err(|error| error.to_string())?;
-        let Some(dato) = linea.strip_prefix("data:").map(str::trim) else { continue };
+        let Some(dato) = linea.strip_prefix("data:").map(str::trim) else {
+            continue;
+        };
         if dato == "[DONE]" {
             break;
         }
-        let Ok(parte) = serde_json::from_str::<Value>(dato) else { continue };
+        let Ok(parte) = serde_json::from_str::<Value>(dato) else {
+            continue;
+        };
         if let Some(error) = parte["error"]["message"].as_str() {
             return Err(error.to_string());
         }
         let delta = &parte["choices"][0]["delta"];
-        let razonamiento = delta["reasoning_content"].as_str().or(delta["reasoning"].as_str());
-        if !mandar(canal, "pensando", razonamiento) || !mandar(canal, "texto", delta["content"].as_str()) {
+        let razonamiento = delta["reasoning_content"]
+            .as_str()
+            .or(delta["reasoning"].as_str());
+        if !mandar(canal, "pensando", razonamiento)
+            || !mandar(canal, "texto", delta["content"].as_str())
+        {
             return Ok(());
         }
     }

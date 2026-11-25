@@ -89,7 +89,11 @@ pub async fn guardar_texto(
             return Err("CAMBIADO_AFUERA".to_string());
         }
         let normalizado = texto.replace("\r\n", "\n");
-        let contenido = if crlf { normalizado.replace('\n', "\r\n") } else { normalizado };
+        let contenido = if crlf {
+            normalizado.replace('\n', "\r\n")
+        } else {
+            normalizado
+        };
         let mut bytes = Vec::with_capacity(contenido.len() + 3);
         if bom {
             bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
@@ -133,7 +137,13 @@ pub fn crear_archivo(carpeta: String, nombre: String) -> Result<String, String> 
         .write(true)
         .create_new(true)
         .open(&ruta)
-        .map_err(|error| if error.kind() == std::io::ErrorKind::AlreadyExists { "Ya existe".to_string() } else { error.to_string() })?;
+        .map_err(|error| {
+            if error.kind() == std::io::ErrorKind::AlreadyExists {
+                "Ya existe".to_string()
+            } else {
+                error.to_string()
+            }
+        })?;
     Ok(ruta.to_string_lossy().into_owned())
 }
 
@@ -173,7 +183,11 @@ fn nombre_libre(carpeta: &Path, nombre: &str) -> PathBuf {
     };
     (1..)
         .map(|numero| {
-            let sufijo = if numero == 1 { " - copia".to_string() } else { format!(" - copia {numero}") };
+            let sufijo = if numero == 1 {
+                " - copia".to_string()
+            } else {
+                format!(" - copia {numero}")
+            };
             carpeta.join(format!("{base}{sufijo}{extension}"))
         })
         .find(|ruta| !ruta.exists())
@@ -201,7 +215,11 @@ fn dentro_de(ruta: &Path, carpeta: &Path) -> bool {
 
 // Mueve o copia varias rutas a una carpeta. Devuelve los pares [vieja, nueva].
 #[tauri::command]
-pub async fn mover_rutas(rutas: Vec<String>, destino: String, copiar: bool) -> Result<Vec<(String, String)>, String> {
+pub async fn mover_rutas(
+    rutas: Vec<String>,
+    destino: String,
+    copiar: bool,
+) -> Result<Vec<(String, String)>, String> {
     spawn_blocking(move || {
         let carpeta = PathBuf::from(&destino);
         if !carpeta.is_dir() {
@@ -210,11 +228,17 @@ pub async fn mover_rutas(rutas: Vec<String>, destino: String, copiar: bool) -> R
         let mut hechos = Vec::new();
         for ruta in rutas {
             let origen = PathBuf::from(&ruta);
-            let nombre = origen.file_name().ok_or("Ruta inválida")?.to_string_lossy().into_owned();
+            let nombre = origen
+                .file_name()
+                .ok_or("Ruta inválida")?
+                .to_string_lossy()
+                .into_owned();
             if origen.is_dir() && dentro_de(&carpeta, &origen) {
                 return Err(format!("No se puede poner \"{nombre}\" dentro de sí misma"));
             }
-            let mismo_lugar = origen.parent().is_some_and(|padre| dentro_de(padre, &carpeta) && dentro_de(&carpeta, padre));
+            let mismo_lugar = origen
+                .parent()
+                .is_some_and(|padre| dentro_de(padre, &carpeta) && dentro_de(&carpeta, padre));
             if copiar {
                 let nueva = nombre_libre(&carpeta, &nombre);
                 copiar_recursivo(&origen, &nueva).map_err(texto_error)?;
@@ -231,7 +255,12 @@ pub async fn mover_rutas(rutas: Vec<String>, destino: String, copiar: bool) -> R
             // Entre discos distintos rename falla: se copia y después se borra el original.
             if fs::rename(&origen, &nueva).is_err() {
                 copiar_recursivo(&origen, &nueva).map_err(texto_error)?;
-                if origen.is_dir() { fs::remove_dir_all(&origen) } else { fs::remove_file(&origen) }.map_err(texto_error)?;
+                if origen.is_dir() {
+                    fs::remove_dir_all(&origen)
+                } else {
+                    fs::remove_file(&origen)
+                }
+                .map_err(texto_error)?;
             }
             hechos.push((ruta, nueva.to_string_lossy().into_owned()));
         }
@@ -258,12 +287,15 @@ pub async fn enviar_papelera(rutas: Vec<String>) -> Result<(), String> {
         let mut operacion = SHFILEOPSTRUCTW {
             wFunc: FO_DELETE,
             pFrom: PCWSTR(lista.as_ptr()),
-            fFlags: (FOF_ALLOWUNDO.0 | FOF_NOCONFIRMATION.0 | FOF_SILENT.0 | FOF_NOERRORUI.0) as u16,
+            fFlags: (FOF_ALLOWUNDO.0 | FOF_NOCONFIRMATION.0 | FOF_SILENT.0 | FOF_NOERRORUI.0)
+                as u16,
             ..Default::default()
         };
         let codigo = unsafe { SHFileOperationW(&mut operacion) };
         if codigo != 0 || operacion.fAnyOperationsAborted.as_bool() {
-            Err(format!("Windows no pudo mandarlo a la papelera (código {codigo})"))
+            Err(format!(
+                "Windows no pudo mandarlo a la papelera (código {codigo})"
+            ))
         } else {
             Ok(())
         }
@@ -290,9 +322,15 @@ mod pruebas {
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
         fs::write(base.join("a.txt"), "").unwrap();
-        assert_eq!(nombre_libre(&base, "a.txt").file_name().unwrap(), "a - copia.txt");
+        assert_eq!(
+            nombre_libre(&base, "a.txt").file_name().unwrap(),
+            "a - copia.txt"
+        );
         fs::write(base.join("a - copia.txt"), "").unwrap();
-        assert_eq!(nombre_libre(&base, "a.txt").file_name().unwrap(), "a - copia 2.txt");
+        assert_eq!(
+            nombre_libre(&base, "a.txt").file_name().unwrap(),
+            "a - copia 2.txt"
+        );
         assert!(dentro_de(&base.join("x"), &base));
         let _ = fs::remove_dir_all(&base);
     }

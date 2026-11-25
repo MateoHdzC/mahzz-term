@@ -35,13 +35,22 @@ pub fn ruta_control() -> Option<PathBuf> {
     let carpeta = env::var_os("MAHZZTERM_DATOS")
         .filter(|valor| !valor.is_empty())
         .map(PathBuf::from)
-        .or_else(|| env::var_os("LOCALAPPDATA").map(|base| PathBuf::from(base).join("com.mahzz.mahzzterm").join("datos")))?;
+        .or_else(|| {
+            env::var_os("LOCALAPPDATA").map(|base| {
+                PathBuf::from(base)
+                    .join("com.mahzz.mahzzterm")
+                    .join("datos")
+            })
+        })?;
     Some(carpeta.join("control.json"))
 }
 
 pub fn iniciar(app: AppHandle) -> Result<(), String> {
     let escucha = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| error.to_string())?;
-    let puerto = escucha.local_addr().map_err(|error| error.to_string())?.port();
+    let puerto = escucha
+        .local_addr()
+        .map_err(|error| error.to_string())?
+        .port();
     let mut bytes = [0u8; 24];
     getrandom::fill(&mut bytes).map_err(|error| error.to_string())?;
     let clave = URL_SAFE_NO_PAD.encode(bytes);
@@ -100,15 +109,30 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
         .collect();
 
     let host_esperado = format!("127.0.0.1:{puerto}");
-    let autorizado = encabezados.get("authorization").map(String::as_str) == Some(&format!("Bearer {clave}"));
-    if !primera.starts_with("POST /accion ") || encabezados.get("host") != Some(&host_esperado) || !autorizado {
-        responder(&mut conexion, "403 Forbidden", &json!({ "ok": false, "error": "No autorizado" }));
+    let autorizado =
+        encabezados.get("authorization").map(String::as_str) == Some(&format!("Bearer {clave}"));
+    if !primera.starts_with("POST /accion ")
+        || encabezados.get("host") != Some(&host_esperado)
+        || !autorizado
+    {
+        responder(
+            &mut conexion,
+            "403 Forbidden",
+            &json!({ "ok": false, "error": "No autorizado" }),
+        );
         return;
     }
 
-    let largo: usize = encabezados.get("content-length").and_then(|valor| valor.parse().ok()).unwrap_or(0);
+    let largo: usize = encabezados
+        .get("content-length")
+        .and_then(|valor| valor.parse().ok())
+        .unwrap_or(0);
     if largo > MAXIMO_CUERPO {
-        responder(&mut conexion, "413 Payload Too Large", &json!({ "ok": false, "error": "Pedido demasiado grande" }));
+        responder(
+            &mut conexion,
+            "413 Payload Too Large",
+            &json!({ "ok": false, "error": "Pedido demasiado grande" }),
+        );
         return;
     }
     let mut cuerpo = bufer[fin_encabezado..].to_vec();
@@ -119,13 +143,21 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
         }
     }
     let Ok(pedido) = serde_json::from_slice::<Value>(&cuerpo) else {
-        responder(&mut conexion, "400 Bad Request", &json!({ "ok": false, "error": "JSON inválido" }));
+        responder(
+            &mut conexion,
+            "400 Bad Request",
+            &json!({ "ok": false, "error": "JSON inválido" }),
+        );
         return;
     };
     let accion = pedido["accion"].as_str().unwrap_or("").to_string();
     let args = pedido.get("args").cloned().unwrap_or_else(|| json!({}));
     if accion == "ping" {
-        responder(&mut conexion, "200 OK", &json!({ "ok": true, "datos": "pong" }));
+        responder(
+            &mut conexion,
+            "200 OK",
+            &json!({ "ok": true, "datos": "pong" }),
+        );
         return;
     }
 
@@ -145,8 +177,19 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
     if let Ok(mut pendientes) = control.pendientes.lock() {
         pendientes.insert(id, enviar);
     }
-    let espera = args["timeout_s"].as_u64().unwrap_or(ESPERA_POR_DEFECTO).min(ESPERA_MAXIMA) + 10;
-    let resultado = if app.emit_to("main", "mahzz:control", json!({ "id": id, "accion": accion, "args": args })).is_err() {
+    let espera = args["timeout_s"]
+        .as_u64()
+        .unwrap_or(ESPERA_POR_DEFECTO)
+        .min(ESPERA_MAXIMA)
+        + 10;
+    let resultado = if app
+        .emit_to(
+            "main",
+            "mahzz:control",
+            json!({ "id": id, "accion": accion, "args": args }),
+        )
+        .is_err()
+    {
         json!({ "ok": false, "error": "La ventana principal de MahzzTerm no está abierta" })
     } else {
         recibir
@@ -161,7 +204,11 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
 
 #[tauri::command]
 pub fn responder_control(control: State<'_, Control>, id: u64, resultado: Value) {
-    let enviar = control.pendientes.lock().ok().and_then(|mut pendientes| pendientes.remove(&id));
+    let enviar = control
+        .pendientes
+        .lock()
+        .ok()
+        .and_then(|mut pendientes| pendientes.remove(&id));
     if let Some(enviar) = enviar {
         let _ = enviar.send(resultado);
     }
@@ -169,5 +216,7 @@ pub fn responder_control(control: State<'_, Control>, id: u64, resultado: Value)
 
 #[tauri::command]
 pub fn ruta_ejecutable() -> Option<String> {
-    env::current_exe().ok().map(|ruta| ruta.to_string_lossy().into_owned())
+    env::current_exe()
+        .ok()
+        .map(|ruta| ruta.to_string_lossy().into_owned())
 }

@@ -63,7 +63,9 @@ fn perfil_publico(cuenta: &Value) -> Value {
     json!({ "nombre": cuenta["nombre"], "correo": cuenta["correo"], "foto": cuenta["foto"] })
 }
 
-fn leer_json(respuesta: Result<ureq::http::Response<ureq::Body>, ureq::Error>) -> Result<Value, String> {
+fn leer_json(
+    respuesta: Result<ureq::http::Response<ureq::Body>, ureq::Error>,
+) -> Result<Value, String> {
     let mut respuesta = respuesta.map_err(|error| error.to_string())?;
     let texto = respuesta
         .body_mut()
@@ -90,7 +92,9 @@ fn responder(conexion: &mut TcpStream, estado: &str, cuerpo: &str) {
 
 // Espera la vuelta del navegador en una dirección que solo existe dentro de esta PC.
 fn esperar_codigo(servidor: &TcpListener, estado: &str) -> Result<String, String> {
-    servidor.set_nonblocking(true).map_err(|error| error.to_string())?;
+    servidor
+        .set_nonblocking(true)
+        .map_err(|error| error.to_string())?;
     let inicio = Instant::now();
     while inicio.elapsed() < LIMITE_LOGIN {
         let mut conexion = match servidor.accept() {
@@ -149,7 +153,10 @@ fn descargar_foto(direccion: &str) -> Option<String> {
 fn completar_login(app: &AppHandle) -> Result<Value, String> {
     let (cliente, clave) = credenciales()?;
     let servidor = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| error.to_string())?;
-    let puerto = servidor.local_addr().map_err(|error| error.to_string())?.port();
+    let puerto = servidor
+        .local_addr()
+        .map_err(|error| error.to_string())?
+        .port();
     let redireccion = format!("http://127.0.0.1:{puerto}");
     let estado = aleatorio()?;
     let verificador = aleatorio()?;
@@ -181,9 +188,17 @@ fn completar_login(app: &AppHandle) -> Result<Value, String> {
         ("grant_type", "authorization_code"),
         ("redirect_uri", redireccion.as_str()),
     ]))?;
-    let acceso = tokens["access_token"].as_str().ok_or("Google no devolvió acceso")?;
-    let renovacion = tokens["refresh_token"].as_str().ok_or("Google no devolvió la sesión")?;
-    let datos = leer_json(ureq::get(PERFIL).header("Authorization", format!("Bearer {acceso}")).call())?;
+    let acceso = tokens["access_token"]
+        .as_str()
+        .ok_or("Google no devolvió acceso")?;
+    let renovacion = tokens["refresh_token"]
+        .as_str()
+        .ok_or("Google no devolvió la sesión")?;
+    let datos = leer_json(
+        ureq::get(PERFIL)
+            .header("Authorization", format!("Bearer {acceso}"))
+            .call(),
+    )?;
 
     let cuenta = json!({
         "renovacion": renovacion,
@@ -207,17 +222,28 @@ fn token_acceso(app: &AppHandle) -> Result<String, String> {
     }
     let (cliente, clave) = credenciales()?;
     let cuenta = leer_cuenta(app).ok_or("No hay una sesión iniciada")?;
-    let renovacion = cuenta["renovacion"].as_str().ok_or("La sesión no es válida")?;
+    let renovacion = cuenta["renovacion"]
+        .as_str()
+        .ok_or("La sesión no es válida")?;
     let tokens = leer_json(ureq::post(TOKEN).send_form([
         ("client_id", cliente),
         ("client_secret", clave),
         ("refresh_token", renovacion),
         ("grant_type", "refresh_token"),
     ]))?;
-    let token = tokens["access_token"].as_str().ok_or("Google no renovó la sesión")?.to_string();
-    let duracion = tokens["expires_in"].as_u64().unwrap_or(3600).saturating_sub(60);
+    let token = tokens["access_token"]
+        .as_str()
+        .ok_or("Google no renovó la sesión")?
+        .to_string();
+    let duracion = tokens["expires_in"]
+        .as_u64()
+        .unwrap_or(3600)
+        .saturating_sub(60);
     if let Ok(mut guardado) = memoria.0.lock() {
-        *guardado = Some((token.clone(), Instant::now() + Duration::from_secs(duracion)));
+        *guardado = Some((
+            token.clone(),
+            Instant::now() + Duration::from_secs(duracion),
+        ));
     }
     Ok(token)
 }
@@ -226,10 +252,18 @@ fn buscar_archivo(token: &str) -> Result<Option<String>, String> {
     let consulta = format!("name='{ARCHIVO_SYNC}'");
     let url = Url::parse_with_params(
         ARCHIVOS,
-        [("spaces", "appDataFolder"), ("q", consulta.as_str()), ("fields", "files(id)")],
+        [
+            ("spaces", "appDataFolder"),
+            ("q", consulta.as_str()),
+            ("fields", "files(id)"),
+        ],
     )
     .map_err(|error| error.to_string())?;
-    let lista = leer_json(ureq::get(url.as_str()).header("Authorization", format!("Bearer {token}")).call())?;
+    let lista = leer_json(
+        ureq::get(url.as_str())
+            .header("Authorization", format!("Bearer {token}"))
+            .call(),
+    )?;
     Ok(lista["files"][0]["id"].as_str().map(str::to_string))
 }
 
@@ -253,7 +287,9 @@ pub fn cuenta_google(app: AppHandle) -> Option<Value> {
 #[tauri::command]
 pub async fn cerrar_sesion_google(app: AppHandle) -> Result<(), String> {
     spawn_blocking(move || {
-        if let Some(renovacion) = leer_cuenta(&app).and_then(|cuenta| cuenta["renovacion"].as_str().map(str::to_string)) {
+        if let Some(renovacion) =
+            leer_cuenta(&app).and_then(|cuenta| cuenta["renovacion"].as_str().map(str::to_string))
+        {
             let _ = ureq::post(REVOCAR).send_form([("token", renovacion.as_str())]);
         }
         if let Ok(mut guardado) = app.state::<TokenGoogle>().0.lock() {
@@ -276,7 +312,12 @@ pub async fn bajar_sincronizacion(app: AppHandle) -> Result<Option<Value>, Strin
             return Ok(None);
         };
         let url = format!("{ARCHIVOS}/{id}?alt=media");
-        leer_json(ureq::get(&url).header("Authorization", format!("Bearer {token}")).call()).map(Some)
+        leer_json(
+            ureq::get(&url)
+                .header("Authorization", format!("Bearer {token}"))
+                .call(),
+        )
+        .map(Some)
     })
     .await
     .map_err(|error| error.to_string())?
@@ -290,14 +331,18 @@ pub async fn subir_sincronizacion(app: AppHandle, contenido: Value) -> Result<()
         let id = match buscar_archivo(&token)? {
             Some(id) => id,
             None => {
-                let datos = json!({ "name": ARCHIVO_SYNC, "parents": ["appDataFolder"] }).to_string();
+                let datos =
+                    json!({ "name": ARCHIVO_SYNC, "parents": ["appDataFolder"] }).to_string();
                 let creado = leer_json(
                     ureq::post(ARCHIVOS)
                         .header("Authorization", &autorizacion)
                         .header("Content-Type", "application/json")
                         .send(datos),
                 )?;
-                creado["id"].as_str().ok_or("Drive no creó el archivo")?.to_string()
+                creado["id"]
+                    .as_str()
+                    .ok_or("Drive no creó el archivo")?
+                    .to_string()
             }
         };
         let url = format!("{SUBIDA}/{id}?uploadType=media");

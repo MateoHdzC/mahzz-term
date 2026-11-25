@@ -8,7 +8,10 @@ fn main() {
         .and_then(|texto| serde_json::from_str::<serde_json::Value>(&texto).ok())
     {
         let instalada = &datos["installed"];
-        if let (Some(cliente), Some(clave)) = (instalada["client_id"].as_str(), instalada["client_secret"].as_str()) {
+        if let (Some(cliente), Some(clave)) = (
+            instalada["client_id"].as_str(),
+            instalada["client_secret"].as_str(),
+        ) {
             println!("cargo:rustc-env=MAZZ_GOOGLE_ID={cliente}");
             println!("cargo:rustc-env=MAZZ_GOOGLE_SECRET={clave}");
         }

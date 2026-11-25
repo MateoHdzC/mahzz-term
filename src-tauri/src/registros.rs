@@ -32,9 +32,14 @@ fn carpeta_logs(app: &AppHandle) -> Result<PathBuf, String> {
 
 fn podar(carpeta: &PathBuf) {
     let limite = SystemTime::now() - Duration::from_secs(DIAS_GUARDADOS * 24 * 60 * 60);
-    let Ok(entradas) = fs::read_dir(carpeta) else { return };
+    let Ok(entradas) = fs::read_dir(carpeta) else {
+        return;
+    };
     for entrada in entradas.flatten() {
-        let viejo = entrada.metadata().and_then(|datos| datos.modified()).is_ok_and(|fecha| fecha < limite);
+        let viejo = entrada
+            .metadata()
+            .and_then(|datos| datos.modified())
+            .is_ok_and(|fecha| fecha < limite);
         if viejo {
             let _ = fs::remove_file(entrada.path());
         }
@@ -53,8 +58,17 @@ fn recortar_texto(texto: &str) -> String {
 }
 
 #[tauri::command]
-pub fn guardar_registro(app: AppHandle, registros: State<'_, Registros>, entrada: Value, dia: String) -> Result<(), String> {
-    if dia.len() != 10 || !dia.chars().all(|caracter| caracter.is_ascii_digit() || caracter == '-') {
+pub fn guardar_registro(
+    app: AppHandle,
+    registros: State<'_, Registros>,
+    entrada: Value,
+    dia: String,
+) -> Result<(), String> {
+    if dia.len() != 10
+        || !dia
+            .chars()
+            .all(|caracter| caracter.is_ascii_digit() || caracter == '-')
+    {
         return Err("Día inválido".to_string());
     }
     let carpeta = carpeta_logs(&app)?;
@@ -68,7 +82,10 @@ pub fn guardar_registro(app: AppHandle, registros: State<'_, Registros>, entrada
     if let Some(texto) = entrada["texto"].as_str() {
         entrada["texto"] = json!(recortar_texto(texto));
     }
-    let _cerrojo = registros.escritura.lock().map_err(|error| error.to_string())?;
+    let _cerrojo = registros
+        .escritura
+        .lock()
+        .map_err(|error| error.to_string())?;
     let mut archivo = OpenOptions::new()
         .create(true)
         .append(true)
@@ -114,16 +131,23 @@ pub async fn buscar_registros(
             .map_err(|error| error.to_string())?
             .flatten()
             .map(|entrada| entrada.path())
-            .filter(|ruta| ruta.extension().is_some_and(|extension| extension == "jsonl"))
+            .filter(|ruta| {
+                ruta.extension()
+                    .is_some_and(|extension| extension == "jsonl")
+            })
             .collect();
         archivos.sort();
         archivos.reverse();
 
         let mut resultados = Vec::new();
         for archivo in archivos {
-            let Ok(contenido) = fs::read_to_string(&archivo) else { continue };
+            let Ok(contenido) = fs::read_to_string(&archivo) else {
+                continue;
+            };
             for linea in contenido.lines().rev() {
-                let Ok(mut entrada) = serde_json::from_str::<Value>(linea) else { continue };
+                let Ok(mut entrada) = serde_json::from_str::<Value>(linea) else {
+                    continue;
+                };
                 if solo_errores == Some(true) && entrada["codigo"].as_i64().unwrap_or(0) == 0 {
                     continue;
                 }

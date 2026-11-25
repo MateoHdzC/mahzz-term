@@ -52,7 +52,10 @@ impl Sesiones {
     // Cierra solo las sesiones de esa ventana: las demás ventanas siguen trabajando.
     pub fn cerrar_de_ventana(&self, etiqueta: &str) {
         if let Ok(mut mapa) = self.mapa.lock() {
-            for sesion in mapa.values_mut().filter(|sesion| sesion.ventana == etiqueta) {
+            for sesion in mapa
+                .values_mut()
+                .filter(|sesion| sesion.ventana == etiqueta)
+            {
                 let _ = sesion.terminador.kill();
             }
         }
@@ -201,10 +204,7 @@ pub fn crear_sesion(
     // Al cerrar la pseudoconsola se termina la lectura y no se pierde el final de la salida.
     let registro = sesiones.inner().clone();
     thread::spawn(move || {
-        let codigo = proceso
-            .wait()
-            .map(|estado| estado.exit_code())
-            .unwrap_or(1);
+        let codigo = proceso.wait().map(|estado| estado.exit_code()).unwrap_or(1);
         drop(registro.quitar(id));
         let _ = hilo_lector.join();
         if let Ok(mut destinos) = destinos.lock() {
@@ -218,7 +218,11 @@ pub fn crear_sesion(
 }
 
 #[tauri::command]
-pub fn escribir_sesion(id: u32, datos: String, sesiones: State<'_, Sesiones>) -> Result<(), String> {
+pub fn escribir_sesion(
+    id: u32,
+    datos: String,
+    sesiones: State<'_, Sesiones>,
+) -> Result<(), String> {
     let mut mapa = sesiones.mapa.lock().map_err(|error| error.to_string())?;
     let sesion = mapa.get_mut(&id).ok_or("La sesión ya no existe")?;
     sesion

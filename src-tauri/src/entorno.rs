@@ -31,7 +31,12 @@ pub struct Versiones {
 }
 
 // Ejecuta un programa sin mostrar ventana y lo corta si tarda demasiado.
-fn ejecutar(programa: &OsStr, argumentos: &[&str], carpeta: Option<&Path>, limite: Duration) -> Option<String> {
+fn ejecutar(
+    programa: &OsStr,
+    argumentos: &[&str],
+    carpeta: Option<&Path>,
+    limite: Duration,
+) -> Option<String> {
     let mut comando = Command::new(programa);
     comando
         .args(argumentos)
@@ -71,7 +76,11 @@ fn ejecutar(programa: &OsStr, argumentos: &[&str], carpeta: Option<&Path>, limit
     }
     let texto = lector_salida.join().ok()?;
     let error = lector_errores.join().ok()?;
-    Some(if texto.trim().is_empty() { error } else { texto })
+    Some(if texto.trim().is_empty() {
+        error
+    } else {
+        texto
+    })
 }
 
 fn extensiones_ejecutables() -> Vec<String> {
@@ -94,7 +103,12 @@ fn existe_con_extension(ruta: &Path, extensiones: &[String]) -> bool {
     })
 }
 
-fn existe_comando(nombre: &str, carpeta: Option<&Path>, rutas: &[PathBuf], extensiones: &[String]) -> bool {
+fn existe_comando(
+    nombre: &str,
+    carpeta: Option<&Path>,
+    rutas: &[PathBuf],
+    extensiones: &[String],
+) -> bool {
     if nombre.contains('\\') || nombre.contains('/') {
         let ruta = Path::new(nombre);
         let completa = match carpeta {
@@ -133,7 +147,10 @@ pub fn existen_comandos(
 // La lista tarda en generarse, por eso se guarda en disco y se renueva cada semana.
 #[tauri::command]
 pub async fn comandos_powershell(app: AppHandle) -> Result<Vec<String>, String> {
-    let cache = app.path().app_cache_dir().map_err(|error| error.to_string())?;
+    let cache = app
+        .path()
+        .app_cache_dir()
+        .map_err(|error| error.to_string())?;
     spawn_blocking(move || {
         let archivo = cache.join("comandos-powershell.txt");
         let vigente = fs::metadata(&archivo)
@@ -179,7 +196,11 @@ fn numero_tras(texto: &str, marca: &str) -> u32 {
     texto
         .split(marca)
         .nth(1)
-        .and_then(|resto| resto.split(|caracter: char| !caracter.is_ascii_digit()).next())
+        .and_then(|resto| {
+            resto
+                .split(|caracter: char| !caracter.is_ascii_digit())
+                .next()
+        })
         .and_then(|numero| numero.parse().ok())
         .unwrap_or(0)
 }
@@ -253,8 +274,11 @@ fn detectar_tipo(carpeta: &Path) -> Option<&'static str> {
     if extensiones.iter().any(|extension| extension == "uproject") {
         return Some("unreal");
     }
-    tipo_por_marcadores(carpeta)
-        .or_else(|| extensiones.iter().find_map(|extension| tipo_por_extension(extension)))
+    tipo_por_marcadores(carpeta).or_else(|| {
+        extensiones
+            .iter()
+            .find_map(|extension| tipo_por_extension(extension))
+    })
 }
 
 fn comando_version(tipo: &str) -> Option<(&'static str, &'static [&'static str])> {
@@ -276,7 +300,11 @@ fn extraer_version(texto: &str) -> Option<String> {
         .split(|caracter: char| caracter.is_whitespace() || caracter == '"')
         .map(|palabra| palabra.trim_start_matches(['v', 'g', 'o']))
         .find(|palabra| {
-            palabra.contains('.') && palabra.chars().next().is_some_and(|inicial| inicial.is_ascii_digit())
+            palabra.contains('.')
+                && palabra
+                    .chars()
+                    .next()
+                    .is_some_and(|inicial| inicial.is_ascii_digit())
         })
         .map(str::to_string)
 }
@@ -286,7 +314,12 @@ fn version_de(tipo: &str, versiones: &Versiones) -> Option<String> {
         return conocida.clone();
     }
     let version = comando_version(tipo).and_then(|(programa, argumentos)| {
-        let salida = ejecutar(OsStr::new(programa), argumentos, None, Duration::from_secs(4))?;
+        let salida = ejecutar(
+            OsStr::new(programa),
+            argumentos,
+            None,
+            Duration::from_secs(4),
+        )?;
         extraer_version(&salida)
     });
     versiones
@@ -341,7 +374,10 @@ pub fn listar_rutas(parcial: String, carpeta: Option<String>) -> Vec<Value> {
                 .then(|| (entrada.path().is_dir(), nombre))
         })
         .collect();
-    rutas.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.to_lowercase().cmp(&b.1.to_lowercase())));
+    rutas.sort_by(|a, b| {
+        b.0.cmp(&a.0)
+            .then_with(|| a.1.to_lowercase().cmp(&b.1.to_lowercase()))
+    });
     rutas
         .into_iter()
         .take(MAXIMO_RUTAS)
@@ -355,7 +391,8 @@ pub fn hosts_ssh() -> Vec<String> {
     let Some(casa) = env::var_os("USERPROFILE") else {
         return Vec::new();
     };
-    let texto = fs::read_to_string(PathBuf::from(casa).join(".ssh").join("config")).unwrap_or_default();
+    let texto =
+        fs::read_to_string(PathBuf::from(casa).join(".ssh").join("config")).unwrap_or_default();
     let mut hosts = Vec::new();
     let mut actuales: Vec<String> = Vec::new();
     let mut solo_git = false;
@@ -400,7 +437,10 @@ pub fn listar_carpeta(ruta: String) -> Result<Vec<Value>, String> {
             })
         })
         .collect();
-    entradas.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.to_lowercase().cmp(&b.1.to_lowercase())));
+    entradas.sort_by(|a, b| {
+        b.0.cmp(&a.0)
+            .then_with(|| a.1.to_lowercase().cmp(&b.1.to_lowercase()))
+    });
     Ok(entradas
         .into_iter()
         .map(|(directorio, nombre, ruta)| json!({ "nombre": nombre, "ruta": ruta, "directorio": directorio }))
@@ -475,19 +515,34 @@ pub async fn datos_proyecto(carpeta: String) -> Result<Value, String> {
 #[tauri::command]
 pub async fn parametros_cmdlet(app: AppHandle, nombre: String) -> Result<Vec<String>, String> {
     // Solo se aceptan nombres simples porque el valor se usa dentro de un comando.
-    if nombre.is_empty() || !nombre.chars().all(|caracter| caracter.is_alphanumeric() || caracter == '-') {
+    if nombre.is_empty()
+        || !nombre
+            .chars()
+            .all(|caracter| caracter.is_alphanumeric() || caracter == '-')
+    {
         return Ok(Vec::new());
     }
     spawn_blocking(move || {
         let versiones = app.state::<Versiones>();
         let clave = nombre.to_lowercase();
-        if let Some(conocidos) = versiones.parametros.lock().ok().and_then(|mapa| mapa.get(&clave).cloned()) {
+        if let Some(conocidos) = versiones
+            .parametros
+            .lock()
+            .ok()
+            .and_then(|mapa| mapa.get(&clave).cloned())
+        {
             return conocidos;
         }
         let consulta = format!("(Get-Command -Name {nombre} -ErrorAction Ignore).Parameters.Keys");
         let parametros: Vec<String> = ejecutar(
             ruta_shell().as_os_str(),
-            &["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", &consulta],
+            &[
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                &consulta,
+            ],
             None,
             Duration::from_secs(8),
         )

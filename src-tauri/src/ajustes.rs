@@ -52,7 +52,12 @@ pub fn leer_temas(app: AppHandle) -> Result<Vec<Value>, String> {
     };
     Ok(archivos
         .flatten()
-        .filter(|archivo| archivo.path().extension().is_some_and(|extension| extension == "json"))
+        .filter(|archivo| {
+            archivo
+                .path()
+                .extension()
+                .is_some_and(|extension| extension == "json")
+        })
         .filter_map(|archivo| fs::read_to_string(archivo.path()).ok())
         .filter_map(|texto| serde_json::from_str(&texto).ok())
         .collect())
@@ -97,9 +102,25 @@ pub(crate) fn cifrar(datos: &[u8], proteger: bool) -> Result<Vec<u8>, String> {
     let mut salida = CRYPT_INTEGER_BLOB::default();
     unsafe {
         if proteger {
-            CryptProtectData(&entrada, PCWSTR::null(), None, None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut salida)
+            CryptProtectData(
+                &entrada,
+                PCWSTR::null(),
+                None,
+                None,
+                None,
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut salida,
+            )
         } else {
-            CryptUnprotectData(&entrada, None, None, None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut salida)
+            CryptUnprotectData(
+                &entrada,
+                None,
+                None,
+                None,
+                None,
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut salida,
+            )
         }
         .map_err(|error| error.to_string())?;
         let resultado = slice::from_raw_parts(salida.pbData, salida.cbData as usize).to_vec();
@@ -131,7 +152,12 @@ pub fn listar_secretos(app: AppHandle) -> Result<Vec<Value>, String> {
 }
 
 #[tauri::command]
-pub fn guardar_secreto(app: AppHandle, id: String, nombre: String, valor: String) -> Result<(), String> {
+pub fn guardar_secreto(
+    app: AppHandle,
+    id: String,
+    nombre: String,
+    valor: String,
+) -> Result<(), String> {
     let mut baul = leer_baul(&app)?;
     baul.retain(|secreto| secreto["id"] != id.as_str());
     baul.push(json!({ "id": id, "nombre": nombre, "valor": valor }));
@@ -161,7 +187,14 @@ pub fn abrir_externo(destino: String) -> Result<(), String> {
         return Err("El archivo ya no existe".to_string());
     }
     let resultado = unsafe {
-        ShellExecuteW(None, w!("open"), &HSTRING::from(destino), None, None, SW_SHOWNORMAL)
+        ShellExecuteW(
+            None,
+            w!("open"),
+            &HSTRING::from(destino),
+            None,
+            None,
+            SW_SHOWNORMAL,
+        )
     };
     if resultado.0 as isize > 32 {
         Ok(())

@@ -37,8 +37,11 @@ fn ruta_windows(texto: &str) -> PathBuf {
 
 // El repositorio principal, aunque se pregunte desde adentro de un worktree.
 fn repo_principal(carpeta: &Path) -> Result<PathBuf, String> {
-    let comun = git(carpeta, &["rev-parse", "--path-format=absolute", "--git-common-dir"])
-        .map_err(|_| "Esta carpeta no es un repositorio de git".to_string())?;
+    let comun = git(
+        carpeta,
+        &["rev-parse", "--path-format=absolute", "--git-common-dir"],
+    )
+    .map_err(|_| "Esta carpeta no es un repositorio de git".to_string())?;
     let comun = ruta_windows(&comun);
     Ok(comun.parent().map(Path::to_path_buf).unwrap_or(comun))
 }
@@ -67,7 +70,16 @@ fn convertir_nombre(nombre: &str) -> String {
 }
 
 fn rama_existe(repo: &Path, rama: &str) -> bool {
-    git(repo, &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{rama}")]).is_ok()
+    git(
+        repo,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("refs/heads/{rama}"),
+        ],
+    )
+    .is_ok()
 }
 
 #[tauri::command]
@@ -150,7 +162,9 @@ pub async fn unir_tarea(carpeta: String, mensaje: Option<String>) -> Result<Valu
         let nombre = rama.trim_start_matches(PREFIJO_RAMA).to_string();
         if !git(&carpeta, &["status", "--porcelain"])?.is_empty() {
             git(&carpeta, &["add", "-A"])?;
-            let mensaje = mensaje.filter(|texto| !texto.trim().is_empty()).unwrap_or_else(|| format!("Tarea {nombre}"));
+            let mensaje = mensaje
+                .filter(|texto| !texto.trim().is_empty())
+                .unwrap_or_else(|| format!("Tarea {nombre}"));
             git(&carpeta, &["commit", "-m", &mensaje])?;
         }
         let base = git(&repo, &["branch", "--show-current"])?;
@@ -159,9 +173,14 @@ pub async fn unir_tarea(carpeta: String, mensaje: Option<String>) -> Result<Valu
         }
         if let Err(error) = git(&repo, &["merge", "--no-ff", "--no-edit", &rama]) {
             let _ = git(&repo, &["merge", "--abort"]);
-            return Err(format!("No se pudo unir sin conflictos, así que no cambié nada. Detalle: {error}"));
+            return Err(format!(
+                "No se pudo unir sin conflictos, así que no cambié nada. Detalle: {error}"
+            ));
         }
-        git(&repo, &["worktree", "remove", "--force", &carpeta.to_string_lossy()])?;
+        git(
+            &repo,
+            &["worktree", "remove", "--force", &carpeta.to_string_lossy()],
+        )?;
         let _ = git(&repo, &["branch", "-d", &rama]);
         Ok(json!({ "unida": nombre, "en": base }))
     })
@@ -175,7 +194,10 @@ pub async fn descartar_tarea(carpeta: String) -> Result<Value, String> {
     spawn_blocking(move || {
         let carpeta = PathBuf::from(carpeta);
         let (repo, rama) = datos_tarea(&carpeta)?;
-        git(&repo, &["worktree", "remove", "--force", &carpeta.to_string_lossy()])?;
+        git(
+            &repo,
+            &["worktree", "remove", "--force", &carpeta.to_string_lossy()],
+        )?;
         let _ = git(&repo, &["branch", "-D", &rama]);
         Ok(json!({ "descartada": rama.trim_start_matches(PREFIJO_RAMA) }))
     })

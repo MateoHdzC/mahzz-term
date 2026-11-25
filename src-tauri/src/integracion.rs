@@ -17,8 +17,9 @@ use windows::{
     Win32::{
         Foundation::ERROR_SUCCESS,
         System::Registry::{
-            RegCloseKey, RegDeleteKeyValueW, RegDeleteKeyW, RegDeleteTreeW, RegGetValueW, RegOpenKeyExW,
-            RegQueryInfoKeyW, RegSetKeyValueW, HKEY, HKEY_CURRENT_USER, KEY_READ, REG_NONE, REG_SZ, RRF_RT_REG_SZ,
+            RegCloseKey, RegDeleteKeyValueW, RegDeleteKeyW, RegDeleteTreeW, RegGetValueW,
+            RegOpenKeyExW, RegQueryInfoKeyW, RegSetKeyValueW, HKEY, HKEY_CURRENT_USER, KEY_READ,
+            REG_NONE, REG_SZ, RRF_RT_REG_SZ,
         },
         UI::Shell::{SHChangeNotify, SHCNE_ASSOCCHANGED, SHCNF_IDLIST},
     },
@@ -31,13 +32,74 @@ const VERBO: &str = "MahzzTerm";
 const VERSION: &str = "2";
 // Dos cambios de ajustes seguidos no tienen que registrar y borrar a la vez.
 static CANDADO: Mutex<()> = Mutex::new(());
-const MENUS_CARPETA: [&str; 3] = [r"Directory\shell", r"Directory\Background\shell", r"Drive\shell"];
+const MENUS_CARPETA: [&str; 3] = [
+    r"Directory\shell",
+    r"Directory\Background\shell",
+    r"Drive\shell",
+];
 // En estos MahzzTerm aparece como recomendado en "Abrir con". El resto lo cubre *\OpenWithList.
 const EXTENSIONES: &[&str] = &[
-    "md", "markdown", "mdx", "txt", "log", "json", "jsonc", "yml", "yaml", "toml", "ini", "cfg", "conf", "env", "xml",
-    "csv", "tsv", "html", "htm", "css", "scss", "sass", "less", "js", "mjs", "cjs", "jsx", "ts", "tsx", "vue", "svelte",
-    "astro", "py", "rb", "php", "java", "kt", "cs", "fs", "vb", "c", "h", "cpp", "hpp", "cc", "rs", "go", "swift", "lua",
-    "sh", "bash", "ps1", "psm1", "psd1", "bat", "cmd", "sql", "graphql", "gitignore", "gitattributes", "editorconfig",
+    "md",
+    "markdown",
+    "mdx",
+    "txt",
+    "log",
+    "json",
+    "jsonc",
+    "yml",
+    "yaml",
+    "toml",
+    "ini",
+    "cfg",
+    "conf",
+    "env",
+    "xml",
+    "csv",
+    "tsv",
+    "html",
+    "htm",
+    "css",
+    "scss",
+    "sass",
+    "less",
+    "js",
+    "mjs",
+    "cjs",
+    "jsx",
+    "ts",
+    "tsx",
+    "vue",
+    "svelte",
+    "astro",
+    "py",
+    "rb",
+    "php",
+    "java",
+    "kt",
+    "cs",
+    "fs",
+    "vb",
+    "c",
+    "h",
+    "cpp",
+    "hpp",
+    "cc",
+    "rs",
+    "go",
+    "swift",
+    "lua",
+    "sh",
+    "bash",
+    "ps1",
+    "psm1",
+    "psd1",
+    "bat",
+    "cmd",
+    "sql",
+    "graphql",
+    "gitignore",
+    "gitattributes",
+    "editorconfig",
     "svg",
 ];
 
@@ -62,17 +124,32 @@ fn escribir(ruta: &str, nombre: &str, valor: &str) -> Result<(), String> {
     if estado == ERROR_SUCCESS {
         Ok(())
     } else {
-        Err(format!(r"No se pudo escribir HKCU\{CLASES}\{ruta}: {}", estado.0))
+        Err(format!(
+            r"No se pudo escribir HKCU\{CLASES}\{ruta}: {}",
+            estado.0
+        ))
     }
 }
 
 // OpenWithProgids lleva valores vacíos: lo que importa es el nombre.
 fn escribir_vacio(ruta: &str, nombre: &str) -> Result<(), String> {
-    let estado = unsafe { RegSetKeyValueW(HKEY_CURRENT_USER, &clave(ruta), &HSTRING::from(nombre), REG_NONE.0, None, 0) };
+    let estado = unsafe {
+        RegSetKeyValueW(
+            HKEY_CURRENT_USER,
+            &clave(ruta),
+            &HSTRING::from(nombre),
+            REG_NONE.0,
+            None,
+            0,
+        )
+    };
     if estado == ERROR_SUCCESS {
         Ok(())
     } else {
-        Err(format!(r"No se pudo escribir HKCU\{CLASES}\{ruta}: {}", estado.0))
+        Err(format!(
+            r"No se pudo escribir HKCU\{CLASES}\{ruta}: {}",
+            estado.0
+        ))
     }
 }
 
@@ -80,15 +157,36 @@ fn leer(ruta: &str, nombre: &str) -> Option<String> {
     let (ruta, nombre) = (clave(ruta), HSTRING::from(nombre));
     let mut largo = 0u32;
     unsafe {
-        if RegGetValueW(HKEY_CURRENT_USER, &ruta, &nombre, RRF_RT_REG_SZ, None, None, Some(&mut largo)) != ERROR_SUCCESS {
+        if RegGetValueW(
+            HKEY_CURRENT_USER,
+            &ruta,
+            &nombre,
+            RRF_RT_REG_SZ,
+            None,
+            None,
+            Some(&mut largo),
+        ) != ERROR_SUCCESS
+        {
             return None;
         }
         let mut bufer = vec![0u16; (largo as usize).div_ceil(2)];
         let puntero = bufer.as_mut_ptr().cast();
-        if RegGetValueW(HKEY_CURRENT_USER, &ruta, &nombre, RRF_RT_REG_SZ, None, Some(puntero), Some(&mut largo)) != ERROR_SUCCESS {
+        if RegGetValueW(
+            HKEY_CURRENT_USER,
+            &ruta,
+            &nombre,
+            RRF_RT_REG_SZ,
+            None,
+            Some(puntero),
+            Some(&mut largo),
+        ) != ERROR_SUCCESS
+        {
             return None;
         }
-        let fin = bufer.iter().position(|letra| *letra == 0).unwrap_or(bufer.len());
+        let fin = bufer
+            .iter()
+            .position(|letra| *letra == 0)
+            .unwrap_or(bufer.len());
         Some(String::from_utf16_lossy(&bufer[..fin]))
     }
 }
@@ -109,7 +207,14 @@ fn borrar_valor(ruta: &str, nombre: &str) {
 fn borrar_si_vacia(ruta: &str) {
     let mut manija = HKEY::default();
     unsafe {
-        if RegOpenKeyExW(HKEY_CURRENT_USER, &clave(ruta), Some(0), KEY_READ, &mut manija) != ERROR_SUCCESS {
+        if RegOpenKeyExW(
+            HKEY_CURRENT_USER,
+            &clave(ruta),
+            Some(0),
+            KEY_READ,
+            &mut manija,
+        ) != ERROR_SUCCESS
+        {
             return;
         }
         let (mut subclaves, mut valores) = (0u32, 0u32);
@@ -142,7 +247,9 @@ fn avisar_explorador() {
 // ---------- Qué se registra ----------
 
 fn nombre_exe(exe: &Path) -> String {
-    exe.file_name().map(|nombre| nombre.to_string_lossy().into_owned()).unwrap_or_else(|| "MahzzTerm.exe".into())
+    exe.file_name()
+        .map(|nombre| nombre.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "MahzzTerm.exe".into())
 }
 
 fn comando_carpeta(exe: &Path) -> String {
@@ -154,7 +261,8 @@ fn comando_archivo(exe: &Path) -> String {
 }
 
 fn registrada() -> bool {
-    leer(PROGID, "IntegracionVersion").is_some() || leer(&format!(r"{}\{VERBO}", MENUS_CARPETA[0]), "").is_some()
+    leer(PROGID, "IntegracionVersion").is_some()
+        || leer(&format!(r"{}\{VERBO}", MENUS_CARPETA[0]), "").is_some()
 }
 
 // Ya está todo como lo dejaría esta copia: misma ruta, mismo texto y misma versión.
@@ -178,7 +286,11 @@ fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
     escribir(PROGID, "", "MahzzTerm")?;
     escribir(PROGID, "IntegracionVersion", VERSION)?;
     escribir(&format!(r"{PROGID}\DefaultIcon"), "", &icono)?;
-    escribir(&format!(r"{PROGID}\shell\open\command"), "", &comando_archivo(exe))?;
+    escribir(
+        &format!(r"{PROGID}\shell\open\command"),
+        "",
+        &comando_archivo(exe),
+    )?;
     for extension in EXTENSIONES {
         escribir_vacio(&format!(r".{extension}\OpenWithProgids"), PROGID)?;
     }
@@ -187,7 +299,11 @@ fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
     let aplicacion = format!(r"Applications\{}", nombre_exe(exe));
     escribir(&aplicacion, "FriendlyAppName", "MahzzTerm")?;
     escribir(&format!(r"{aplicacion}\DefaultIcon"), "", &icono)?;
-    escribir(&format!(r"{aplicacion}\shell\open\command"), "", &comando_archivo(exe))?;
+    escribir(
+        &format!(r"{aplicacion}\shell\open\command"),
+        "",
+        &comando_archivo(exe),
+    )?;
     escribir(&format!(r"*\OpenWithList\{}", nombre_exe(exe)), "", "")?;
 
     avisar_explorador();
@@ -197,8 +313,14 @@ fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
 // Borra solo lo que agrega MahzzTerm. Lo usa también el desinstalador (`MahzzTerm.exe --quitar-integracion`).
 // Si lo registró otra copia (otra ruta del .exe, por ejemplo una de prueba), no lo toca.
 pub fn quitar() {
-    if let (Ok(exe), Some(comando)) = (env::current_exe(), leer(&format!(r"{}\{VERBO}\command", MENUS_CARPETA[0]), "")) {
-        if !comando.to_lowercase().contains(&exe.display().to_string().to_lowercase()) {
+    if let (Ok(exe), Some(comando)) = (
+        env::current_exe(),
+        leer(&format!(r"{}\{VERBO}\command", MENUS_CARPETA[0]), ""),
+    ) {
+        if !comando
+            .to_lowercase()
+            .contains(&exe.display().to_string().to_lowercase())
+        {
             return;
         }
     }
@@ -211,7 +333,9 @@ pub fn quitar() {
         borrar_si_vacia(&format!(r".{extension}\OpenWithProgids"));
         borrar_si_vacia(&format!(".{extension}"));
     }
-    let nombre = env::current_exe().map(|exe| nombre_exe(&exe)).unwrap_or_else(|_| "MahzzTerm.exe".into());
+    let nombre = env::current_exe()
+        .map(|exe| nombre_exe(&exe))
+        .unwrap_or_else(|_| "MahzzTerm.exe".into());
     borrar_clave(&format!(r"Applications\{nombre}"));
     borrar_clave(&format!(r"*\OpenWithList\{nombre}"));
     borrar_si_vacia(r"*\OpenWithList");
@@ -222,7 +346,9 @@ pub fn quitar() {
 #[tauri::command]
 pub async fn integracion_windows(activar: bool, etiqueta: String) -> Result<bool, String> {
     spawn_blocking(move || {
-        let _turno = CANDADO.lock().unwrap_or_else(|envenenado| envenenado.into_inner());
+        let _turno = CANDADO
+            .lock()
+            .unwrap_or_else(|envenenado| envenenado.into_inner());
         let exe = env::current_exe().map_err(|error| error.to_string())?;
         if !activar {
             let habia = registrada();
@@ -254,7 +380,11 @@ fn normalizar(ruta: &str) -> Option<PathBuf> {
         texto.push('\\');
     }
     let ruta = PathBuf::from(texto);
-    let ruta = if ruta.is_absolute() { ruta } else { env::current_dir().ok()?.join(ruta) };
+    let ruta = if ruta.is_absolute() {
+        ruta
+    } else {
+        env::current_dir().ok()?.join(ruta)
+    };
     ruta.exists().then_some(ruta)
 }
 
@@ -269,7 +399,11 @@ pub fn leer_pedido(argumentos: impl IntoIterator<Item = String>) -> Option<Value
         };
         let ruta = normalizar(&ruta)?;
         let texto = ruta.to_string_lossy().into_owned();
-        return Some(if ruta.is_dir() { json!({ "carpeta": texto }) } else { json!({ "archivo": texto }) });
+        return Some(if ruta.is_dir() {
+            json!({ "carpeta": texto })
+        } else {
+            json!({ "archivo": texto })
+        });
     }
     None
 }
@@ -277,7 +411,11 @@ pub fn leer_pedido(argumentos: impl IntoIterator<Item = String>) -> Option<Value
 // La interfaz lo pide una sola vez, después de restaurar las pestañas.
 #[tauri::command]
 pub fn tomar_pedido_windows(pedido: State<'_, PedidoInicial>) -> Option<Value> {
-    pedido.0.lock().ok().and_then(|mut guardado| guardado.take())
+    pedido
+        .0
+        .lock()
+        .ok()
+        .and_then(|mut guardado| guardado.take())
 }
 
 #[cfg(test)]
@@ -296,11 +434,23 @@ mod pruebas {
         let texto_carpeta = carpeta.to_string_lossy().into_owned();
         let texto_archivo = archivo.to_string_lossy().into_owned();
 
-        assert_eq!(pedir(&["exe", "--carpeta", &texto_carpeta]).unwrap()["carpeta"], texto_carpeta.as_str());
-        assert_eq!(pedir(&["exe", "--abrir", &texto_archivo]).unwrap()["archivo"], texto_archivo.as_str());
-        assert_eq!(pedir(&["exe", &texto_archivo]).unwrap()["archivo"], texto_archivo.as_str());
+        assert_eq!(
+            pedir(&["exe", "--carpeta", &texto_carpeta]).unwrap()["carpeta"],
+            texto_carpeta.as_str()
+        );
+        assert_eq!(
+            pedir(&["exe", "--abrir", &texto_archivo]).unwrap()["archivo"],
+            texto_archivo.as_str()
+        );
+        assert_eq!(
+            pedir(&["exe", &texto_archivo]).unwrap()["archivo"],
+            texto_archivo.as_str()
+        );
         // Así llega la raíz de un disco por culpa de la comilla escapada.
-        assert_eq!(pedir(&["exe", "--carpeta", "C:\""]).unwrap()["carpeta"], "C:\\");
+        assert_eq!(
+            pedir(&["exe", "--carpeta", "C:\""]).unwrap()["carpeta"],
+            "C:\\"
+        );
         assert!(pedir(&["exe", "--carpeta", r"C:\no\existe\nada"]).is_none());
         assert!(pedir(&["exe"]).is_none());
         assert!(pedir(&["exe", "--algo"]).is_none());

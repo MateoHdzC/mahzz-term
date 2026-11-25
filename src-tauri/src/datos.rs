@@ -41,7 +41,10 @@ pub(crate) fn carpeta_datos(app: &AppHandle) -> Result<PathBuf, String> {
 // Las versiones anteriores guardaban todo en `datos` junto al .exe. Se copia lo que falte,
 // sin pisar nada, y se deja una marca para no revisar en cada lectura.
 fn migrar_desde_ejecutable(destino: &PathBuf) {
-    let Some(vieja) = env::current_exe().ok().and_then(|exe| Some(exe.parent()?.join("datos"))) else {
+    let Some(vieja) = env::current_exe()
+        .ok()
+        .and_then(|exe| Some(exe.parent()?.join("datos")))
+    else {
         return;
     };
     if vieja == *destino || !vieja.is_dir() {
@@ -72,7 +75,10 @@ fn copiar_faltantes(origen: &PathBuf, destino: &PathBuf) -> std::io::Result<()> 
 }
 
 fn reescribir(ruta: &PathBuf, entradas: &[Value]) -> Result<(), String> {
-    let contenido: String = entradas.iter().map(|entrada| format!("{entrada}\n")).collect();
+    let contenido: String = entradas
+        .iter()
+        .map(|entrada| format!("{entrada}\n"))
+        .collect();
     escribir_seguro(ruta, &contenido)
 }
 
@@ -97,10 +103,18 @@ fn cargar_historial(ruta: &PathBuf) -> Vec<Value> {
 }
 
 #[tauri::command]
-pub fn leer_historial(app: AppHandle, historial: State<'_, Historial>) -> Result<Vec<Value>, String> {
+pub fn leer_historial(
+    app: AppHandle,
+    historial: State<'_, Historial>,
+) -> Result<Vec<Value>, String> {
     let ruta = carpeta_datos(&app)?.join("historial.jsonl");
-    let mut entradas = historial.entradas.lock().map_err(|error| error.to_string())?;
-    Ok(entradas.get_or_insert_with(|| cargar_historial(&ruta)).clone())
+    let mut entradas = historial
+        .entradas
+        .lock()
+        .map_err(|error| error.to_string())?;
+    Ok(entradas
+        .get_or_insert_with(|| cargar_historial(&ruta))
+        .clone())
 }
 
 #[tauri::command]
@@ -110,7 +124,10 @@ pub fn agregar_historial(
     historial: State<'_, Historial>,
 ) -> Result<(), String> {
     let ruta = carpeta_datos(&app)?.join("historial.jsonl");
-    let mut bloqueo = historial.entradas.lock().map_err(|error| error.to_string())?;
+    let mut bloqueo = historial
+        .entradas
+        .lock()
+        .map_err(|error| error.to_string())?;
     let entradas = bloqueo.get_or_insert_with(|| cargar_historial(&ruta));
 
     let mut archivo = OpenOptions::new()
@@ -137,7 +154,10 @@ pub fn fusionar_historial(
     historial: State<'_, Historial>,
 ) -> Result<(), String> {
     let ruta = carpeta_datos(&app)?.join("historial.jsonl");
-    let mut bloqueo = historial.entradas.lock().map_err(|error| error.to_string())?;
+    let mut bloqueo = historial
+        .entradas
+        .lock()
+        .map_err(|error| error.to_string())?;
     let actuales = bloqueo.get_or_insert_with(|| cargar_historial(&ruta));
     let clave = |entrada: &Value| (entrada["comando"].to_string(), entrada["fecha"].to_string());
     let mut vistas: std::collections::HashSet<_> = actuales.iter().map(clave).collect();
@@ -183,7 +203,12 @@ pub fn leer_specs_usuario(app: AppHandle) -> Result<Vec<Value>, String> {
     };
     Ok(archivos
         .flatten()
-        .filter(|archivo| archivo.path().extension().is_some_and(|extension| extension == "json"))
+        .filter(|archivo| {
+            archivo
+                .path()
+                .extension()
+                .is_some_and(|extension| extension == "json")
+        })
         .filter_map(|archivo| fs::read_to_string(archivo.path()).ok())
         .filter_map(|texto| serde_json::from_str(&texto).ok())
         .collect())
@@ -210,8 +235,14 @@ mod pruebas {
 
         copiar_faltantes(&vieja, &nueva).unwrap();
 
-        assert_eq!(fs::read_to_string(nueva.join("cuenta.dat")).unwrap(), "sesion");
-        assert_eq!(fs::read_to_string(nueva.join("config.toml")).unwrap(), "nuevo");
+        assert_eq!(
+            fs::read_to_string(nueva.join("cuenta.dat")).unwrap(),
+            "sesion"
+        );
+        assert_eq!(
+            fs::read_to_string(nueva.join("config.toml")).unwrap(),
+            "nuevo"
+        );
         assert!(!nueva.join("sesion.tmp").exists());
         assert!(nueva.join("temas").join("violeta.json").exists());
         let _ = fs::remove_dir_all(&base);

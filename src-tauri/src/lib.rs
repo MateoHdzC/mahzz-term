@@ -38,7 +38,10 @@ pub fn iniciar() {
     // Si la abrió el Explorador ("Abrir en MahzzTerm" o "Abrir con") y ya hay una MahzzTerm abierta,
     // se le pasa la carpeta o el archivo a esa y esta copia se cierra sin abrir otra ventana.
     let pedido = integracion::leer_pedido(std::env::args());
-    if pedido.as_ref().is_some_and(|pedido| mcp::pasar_a_abierta("abrir_desde_windows", pedido)) {
+    if pedido
+        .as_ref()
+        .is_some_and(|pedido| mcp::pasar_a_abierta("abrir_desde_windows", pedido))
+    {
         return;
     }
     tauri::Builder::default()
@@ -152,7 +155,9 @@ pub fn iniciar() {
         ])
         .on_window_event(|ventana, evento| {
             if matches!(evento, WindowEvent::Destroyed) {
-                ventana.state::<Sesiones>().cerrar_de_ventana(ventana.label());
+                ventana
+                    .state::<Sesiones>()
+                    .cerrar_de_ventana(ventana.label());
             }
         })
         .run(tauri::generate_context!())

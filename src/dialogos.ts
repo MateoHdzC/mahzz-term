@@ -4,6 +4,8 @@ export interface OpcionMenu {
   accion: () => void;
   peligro?: boolean;
   desactivada?: boolean;
+  // Para menús que eligen un valor (los desplegables de Ajustes): marca la opción actual.
+  marcada?: boolean;
 }
 
 export interface ColorMenu {
@@ -13,6 +15,8 @@ export interface ColorMenu {
 
 export interface ContenidoMenu {
   opciones: OpcionMenu[];
+  // Ancho fijo (el del botón que lo abre). Con ancho, la lista tiene scroll si es larga.
+  ancho?: number;
   colores?: ColorMenu[];
   colorActual?: string | null;
   alElegirColor?: (color: string | null) => void;
@@ -189,7 +193,9 @@ export function abrirMenu(x: number, y: number, contenido: ContenidoMenu, alCerr
     const boton = document.createElement("button");
     boton.type = "button";
     boton.className = opcion.peligro ? "menu__opcion menu__opcion--peligro" : "menu__opcion";
-    boton.setAttribute("role", "menuitem");
+    boton.setAttribute("role", opcion.marcada === undefined ? "menuitem" : "menuitemradio");
+    if (opcion.marcada !== undefined) boton.setAttribute("aria-checked", String(opcion.marcada));
+    if (opcion.marcada) boton.classList.add("menu__opcion--marcada");
     boton.textContent = opcion.texto;
     boton.disabled = Boolean(opcion.desactivada);
     boton.addEventListener("click", () => {
@@ -221,11 +227,16 @@ export function abrirMenu(x: number, y: number, contenido: ContenidoMenu, alCerr
     menu.append(colores);
   }
 
-  document.body.append(menu);
+  if (contenido.ancho) {
+    menu.classList.add("menu--desplegable");
+    menu.style.width = `${contenido.ancho}px`;
+  }
+  // Dentro de un diálogo modal (Ajustes), el menú tiene que estar en el diálogo para verse encima.
+  (document.querySelector("dialog[open]") ?? document.body).append(menu);
   const caja = menu.getBoundingClientRect();
   menu.style.left = `${Math.max(4, Math.min(x, innerWidth - caja.width - 4))}px`;
   menu.style.top = `${Math.max(4, Math.min(y, innerHeight - caja.height - 4))}px`;
-  menu.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  (menu.querySelector<HTMLButtonElement>(".menu__opcion--marcada") ?? menu.querySelector<HTMLButtonElement>("button:not(:disabled)"))?.focus();
 
   window.addEventListener("pointerdown", alTocarAfuera, true);
   window.addEventListener("keydown", alPresionar, true);

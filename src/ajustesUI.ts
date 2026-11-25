@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { actualizacionPendiente, buscarActualizacion, instalarActualizacion } from "./actualizaciones";
 import { ajustes, cambiarAjustes, type Ajustes } from "./ajustes";
 import { ACCIONES_EDITABLES, combinacionActual, combinacionDeEvento, textoAtajo } from "./atajos";
-import { avisar, confirmar } from "./dialogos";
+import { abrirMenu, avisar, confirmar } from "./dialogos";
 import { t } from "./i18n";
 import { borrarSecreto, listarSecretos } from "./secretos";
 import {
@@ -60,12 +60,43 @@ function fila(etiqueta: string, control: HTMLElement, ayuda?: string): HTMLEleme
   return contenedor;
 }
 
-function lista(opciones: [string, string][], valor: string, alCambiar: (valor: string) => void): HTMLSelectElement {
-  const selector = document.createElement("select");
-  selector.className = "ajuste__control";
-  for (const [clave, texto] of opciones) selector.add(new Option(texto, clave, false, clave === valor));
-  selector.addEventListener("change", () => alCambiar(selector.value));
-  return selector;
+// Desplegable propio. La lista nativa de <select> se abre transparente (invisible) porque las ventanas
+// de MahzzTerm son transparentes para tener las esquinas redondeadas.
+function lista(opciones: [string, string][], valor: string, alCambiar: (valor: string) => void): HTMLButtonElement {
+  let actual = valor;
+  const desplegable = document.createElement("button");
+  desplegable.type = "button";
+  desplegable.className = "ajuste__control ajuste__desplegable";
+  desplegable.setAttribute("aria-haspopup", "menu");
+  const texto = document.createElement("span");
+  const pintar = () => {
+    texto.textContent = opciones.find(([clave]) => clave === actual)?.[1] ?? actual;
+  };
+  pintar();
+  desplegable.append(texto);
+  desplegable.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>');
+  desplegable.addEventListener("click", () => {
+    const caja = desplegable.getBoundingClientRect();
+    abrirMenu(
+      caja.left,
+      caja.bottom + 4,
+      {
+        ancho: caja.width,
+        opciones: opciones.map(([clave, nombre]) => ({
+          texto: nombre,
+          marcada: clave === actual,
+          accion: () => {
+            if (clave === actual) return;
+            actual = clave;
+            pintar();
+            alCambiar(clave);
+          },
+        })),
+      },
+      () => desplegable.focus(),
+    );
+  });
+  return desplegable;
 }
 
 function interruptor(clave: keyof Ajustes): HTMLInputElement {

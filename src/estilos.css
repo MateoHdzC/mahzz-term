@@ -1609,6 +1609,44 @@ textarea.dialogo__entrada {
   outline: none;
 }
 
+.ajuste__desplegable {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ajuste__desplegable span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ajuste__desplegable svg {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: var(--texto-suave);
+  stroke-width: 1.4;
+}
+
+.ajuste__desplegable:hover {
+  border-color: color-mix(in srgb, var(--acento) 50%, var(--borde));
+}
+
+.menu--desplegable {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.menu__opcion--marcada {
+  color: var(--acento-claro);
+  font-weight: 600;
+}
+
 .ajuste__interruptor {
   flex: none;
   width: 18px;

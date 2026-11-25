@@ -2,6 +2,11 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [0.6.7] - 2026-11-25
+
+### Corregido
+- **Los desplegables de Ajustes no mostraban sus opciones** (idioma, fuente, cursor, posición de las pestañas y tema): la lista se abría transparente por las ventanas sin borde de la app. Ahora usan un menú propio que se ve encima de Ajustes, marca la opción actual y funciona con el teclado.
+
 ## [0.6.6] - 2026-11-24
 
 ### Corregido

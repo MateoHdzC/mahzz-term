@@ -150,6 +150,7 @@ pub fn iniciar() {
             tareas::listar_tareas,
             tareas::unir_tarea,
             logo::aplicar_logo,
+            logo::reiniciar_explorador,
             ventanas::abrir_ventana,
             ventanas::definir_memoria_baja,
             ventanas::esperar_traspaso,

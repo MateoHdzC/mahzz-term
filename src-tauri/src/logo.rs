@@ -1,8 +1,32 @@
 // Logo elegible de MahzzTerm (Ajustes → Apariencia → Logo). Cambia el icono de todas las
-// ventanas, que es el que muestran la barra de tareas y Alt+Tab. El logo de adentro de la app
-// lo cambia la interfaz con los mismos archivos de public/logos.
+// ventanas (Alt+Tab y la barra de tareas) y el de los accesos directos de MahzzTerm: si la app
+// está anclada a la barra de tareas, Windows dibuja el botón con el icono del acceso directo
+// anclado y no con el de la ventana. El logo de adentro de la app lo cambia la interfaz con los
+// mismos archivos de public/logos.
 
-use tauri::{image::Image, AppHandle, Manager};
+use std::{
+    env, fs,
+    os::windows::process::CommandExt,
+    path::{Path, PathBuf},
+    process::Command,
+    thread,
+    time::Duration,
+};
+
+use tauri::{async_runtime::spawn_blocking, image::Image, AppHandle, Manager};
+use windows::{
+    core::{Interface, HSTRING},
+    Win32::{
+        Storage::FileSystem::WIN32_FIND_DATAW,
+        System::Com::{
+            CoCreateInstance, CoInitializeEx, IPersistFile, CLSCTX_INPROC_SERVER,
+            COINIT_APARTMENTTHREADED, STGM_READWRITE,
+        },
+        UI::Shell::{IShellLinkW, SHChangeNotify, ShellLink, SHCNE_ASSOCCHANGED, SHCNF_IDLIST},
+    },
+};
+
+use crate::datos::carpeta_datos;
 
 // Los PNG van dentro del ejecutable: no dependen de archivos sueltos.
 fn bytes_del_logo(logo: &str) -> &'static [u8] {
@@ -17,15 +41,178 @@ fn bytes_del_logo(logo: &str) -> &'static [u8] {
     }
 }
 
+// Un .ico con una sola imagen PNG de 256 px adentro (Windows lo acepta desde Vista y achica
+// la imagen solo para los tamaños chicos).
+fn crear_ico(png: &[u8]) -> Vec<u8> {
+    let mut ico = Vec::with_capacity(22 + png.len());
+    ico.extend_from_slice(&[0, 0, 1, 0, 1, 0]); // reservado, tipo icono, una imagen
+    ico.extend_from_slice(&[0, 0, 0, 0]); // ancho y alto 0 = 256, sin paleta, reservado
+    ico.extend_from_slice(&1u16.to_le_bytes()); // planos
+    ico.extend_from_slice(&32u16.to_le_bytes()); // bits por píxel
+    ico.extend_from_slice(&(png.len() as u32).to_le_bytes());
+    ico.extend_from_slice(&22u32.to_le_bytes()); // la imagen empieza después de la cabecera
+    ico.extend_from_slice(png);
+    ico
+}
+
+// Donde Windows guarda los accesos directos anclados a la barra de tareas.
+fn carpeta_anclados() -> Option<PathBuf> {
+    env::var_os("APPDATA").map(|datos| {
+        PathBuf::from(datos).join(r"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar")
+    })
+}
+
+// Carpetas donde Windows guarda los accesos directos del usuario a MahzzTerm.
+fn carpetas_de_accesos(app: &AppHandle) -> Vec<PathBuf> {
+    let mut carpetas: Vec<PathBuf> = carpeta_anclados().into_iter().collect();
+    if let Some(datos) = env::var_os("APPDATA").map(PathBuf::from) {
+        let programas = datos.join(r"Microsoft\Windows\Start Menu\Programs");
+        // El instalador puede dejar el acceso suelto o dentro de una carpeta propia.
+        if let Ok(entradas) = fs::read_dir(&programas) {
+            carpetas.extend(entradas.flatten().map(|e| e.path()).filter(|r| r.is_dir()));
+        }
+        carpetas.push(programas);
+    }
+    if let Ok(escritorio) = app.path().desktop_dir() {
+        carpetas.push(escritorio);
+    }
+    carpetas
+}
+
+fn mismo_archivo(a: &Path, b: &Path) -> bool {
+    match (fs::canonicalize(a), fs::canonicalize(b)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => a.as_os_str().eq_ignore_ascii_case(b.as_os_str()),
+    }
+}
+
+// Cambia el icono de los accesos directos (.lnk) de `carpetas` que abren `exe`. Devuelve
+// los que cambió. Los que ya tienen ese icono no se vuelven a escribir.
+fn actualizar_accesos(carpetas: &[PathBuf], exe: &Path, icono: &Path) -> Vec<PathBuf> {
+    let mut cambiados = Vec::new();
+    unsafe {
+        // Si el hilo ya tenía COM iniciado, sigue funcionando igual.
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+        for carpeta in carpetas {
+            let Ok(entradas) = fs::read_dir(carpeta) else {
+                continue;
+            };
+            for ruta in entradas.flatten().map(|entrada| entrada.path()) {
+                let es_acceso = ruta
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("lnk"));
+                if es_acceso && actualizar_acceso(&ruta, exe, icono).unwrap_or(false) {
+                    cambiados.push(ruta);
+                }
+            }
+        }
+    }
+    cambiados
+}
+
+unsafe fn actualizar_acceso(ruta: &Path, exe: &Path, icono: &Path) -> windows::core::Result<bool> {
+    let acceso: IShellLinkW = CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER)?;
+    let archivo: IPersistFile = acceso.cast()?;
+    let ruta_w = HSTRING::from(ruta.as_os_str());
+    archivo.Load(&ruta_w, STGM_READWRITE)?;
+
+    let mut destino = [0u16; 1024];
+    acceso.GetPath(&mut destino, std::ptr::null_mut::<WIN32_FIND_DATAW>(), 0)?;
+    let largo = destino
+        .iter()
+        .position(|c| *c == 0)
+        .unwrap_or(destino.len());
+    let destino = PathBuf::from(String::from_utf16_lossy(&destino[..largo]));
+    if !mismo_archivo(&destino, exe) {
+        return Ok(false);
+    }
+
+    let mut actual = [0u16; 1024];
+    let mut indice = 0;
+    acceso.GetIconLocation(&mut actual, &mut indice)?;
+    let largo = actual.iter().position(|c| *c == 0).unwrap_or(actual.len());
+    if String::from_utf16_lossy(&actual[..largo]).eq_ignore_ascii_case(&icono.to_string_lossy())
+        && indice == 0
+    {
+        return Ok(false);
+    }
+
+    acceso.SetIconLocation(&HSTRING::from(icono.as_os_str()), 0)?;
+    archivo.Save(&ruta_w, true)?;
+    Ok(true)
+}
+
+// Deja el .ico del logo en la carpeta de datos y apunta los accesos directos a él. Con el
+// Clásico vuelven al icono del propio .exe. Devuelve si cambió el acceso anclado a la barra de
+// tareas: el botón anclado no se redibuja hasta que se reinicia el Explorador de Windows.
+fn actualizar_icono_de_accesos(app: &AppHandle, logo: &str) -> Result<bool, String> {
+    let exe = env::current_exe().map_err(|error| error.to_string())?;
+    let icono = if logo == "clasico" || bytes_del_logo(logo) == bytes_del_logo("clasico") {
+        exe.clone()
+    } else {
+        let carpeta = carpeta_datos(app)?.join("logos");
+        fs::create_dir_all(&carpeta).map_err(|error| error.to_string())?;
+        let icono = carpeta.join(format!("{logo}.ico"));
+        fs::write(&icono, crear_ico(bytes_del_logo(logo))).map_err(|error| error.to_string())?;
+        icono
+    };
+    let cambiados = actualizar_accesos(&carpetas_de_accesos(app), &exe, &icono);
+    if !cambiados.is_empty() {
+        // Para que el menú Inicio y el escritorio redibujen los iconos.
+        unsafe { SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None) };
+    }
+    let anclados = carpeta_anclados();
+    Ok(cambiados.iter().any(|ruta| {
+        anclados
+            .as_ref()
+            .is_some_and(|carpeta| ruta.starts_with(carpeta))
+    }))
+}
+
+// Cambia el icono de las ventanas y de los accesos directos. Devuelve true si cambió el acceso
+// anclado a la barra de tareas, para que la interfaz ofrezca reiniciar el Explorador.
 #[tauri::command]
-pub fn aplicar_logo(app: AppHandle, logo: String) -> Result<(), String> {
+pub async fn aplicar_logo(app: AppHandle, logo: String) -> Result<bool, String> {
     for ventana in app.webview_windows().values() {
         let imagen = Image::from_bytes(bytes_del_logo(&logo)).map_err(|error| error.to_string())?;
         ventana
             .set_icon(imagen)
             .map_err(|error| error.to_string())?;
     }
-    Ok(())
+    // Leer y guardar .lnk se hace en otro hilo para no trabar la ventana.
+    spawn_blocking(move || actualizar_icono_de_accesos(&app, &logo))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+// Reinicia el Explorador de Windows para que la barra de tareas vuelva a leer los iconos
+// anclados. Las ventanas abiertas no se cierran: la barra desaparece un segundo y vuelve.
+#[tauri::command]
+pub async fn reiniciar_explorador() -> Result<(), String> {
+    const SIN_CONSOLA: u32 = 0x0800_0000;
+    spawn_blocking(|| {
+        Command::new("taskkill")
+            .args(["/f", "/im", "explorer.exe"])
+            .creation_flags(SIN_CONSOLA)
+            .status()
+            .map_err(|error| error.to_string())?;
+        // Windows suele volver a abrirlo solo; si a los dos segundos no está, se abre a mano.
+        thread::sleep(Duration::from_secs(2));
+        let corriendo = Command::new("tasklist")
+            .args(["/fi", "IMAGENAME eq explorer.exe", "/nh"])
+            .creation_flags(SIN_CONSOLA)
+            .output()
+            .map(|salida| String::from_utf8_lossy(&salida.stdout).contains("explorer.exe"))
+            .unwrap_or(false);
+        if !corriendo {
+            Command::new("explorer.exe")
+                .spawn()
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[cfg(test)]
@@ -43,5 +230,67 @@ mod tests {
     #[test]
     fn un_logo_desconocido_usa_el_clasico() {
         assert_eq!(bytes_del_logo("no existe"), bytes_del_logo("clasico"));
+    }
+
+    #[test]
+    fn el_ico_lleva_el_png_entero_despues_de_la_cabecera() {
+        let png = bytes_del_logo("aurora");
+        let ico = crear_ico(png);
+        assert_eq!(&ico[..6], &[0, 0, 1, 0, 1, 0]);
+        assert_eq!(
+            u32::from_le_bytes(ico[14..18].try_into().unwrap()) as usize,
+            png.len()
+        );
+        assert_eq!(&ico[22..], png);
+    }
+
+    // Crea un acceso directo de prueba al propio ejecutable de los tests y comprueba que se le
+    // cambia el icono, que uno a otro programa no se toca y que la segunda vez no reescribe.
+    #[test]
+    fn cambia_solo_los_accesos_a_mahzzterm() {
+        let carpeta = env::temp_dir().join(format!("mahzz-accesos-{}", std::process::id()));
+        fs::create_dir_all(&carpeta).unwrap();
+        let exe = env::current_exe().unwrap();
+        let otro = PathBuf::from(r"C:\Windows\notepad.exe");
+        let icono = carpeta.join("aurora.ico");
+        fs::write(&icono, crear_ico(bytes_del_logo("aurora"))).unwrap();
+
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            for (nombre, destino) in [("MahzzTerm.lnk", &exe), ("Bloc.lnk", &otro)] {
+                let acceso: IShellLinkW =
+                    CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER).unwrap();
+                acceso.SetPath(&HSTRING::from(destino.as_os_str())).unwrap();
+                let archivo: IPersistFile = acceso.cast().unwrap();
+                archivo
+                    .Save(&HSTRING::from(carpeta.join(nombre).as_os_str()), true)
+                    .unwrap();
+            }
+        }
+
+        let carpetas = [carpeta.clone()];
+        assert_eq!(actualizar_accesos(&carpetas, &exe, &icono).len(), 1);
+        assert!(actualizar_accesos(&carpetas, &exe, &icono).is_empty());
+
+        let icono_de = |nombre: &str| unsafe {
+            let acceso: IShellLinkW =
+                CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER).unwrap();
+            let archivo: IPersistFile = acceso.cast().unwrap();
+            archivo
+                .Load(
+                    &HSTRING::from(carpeta.join(nombre).as_os_str()),
+                    STGM_READWRITE,
+                )
+                .unwrap();
+            let mut ruta = [0u16; 1024];
+            let mut indice = 0;
+            acceso.GetIconLocation(&mut ruta, &mut indice).unwrap();
+            let largo = ruta.iter().position(|c| *c == 0).unwrap_or(ruta.len());
+            String::from_utf16_lossy(&ruta[..largo])
+        };
+        assert_eq!(icono_de("MahzzTerm.lnk"), icono.to_string_lossy());
+        assert_eq!(icono_de("Bloc.lnk"), "");
+
+        let _ = fs::remove_dir_all(&carpeta);
     }
 }

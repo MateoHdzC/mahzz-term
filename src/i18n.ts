@@ -175,6 +175,10 @@ const INGLES: Record<string, string> = {
   "Se ve en la barra de la app, la barra de tareas y Alt+Tab. Con el tema MahzzTerm, los colores de la app siguen al logo.":
     "Shown in the app bar, the taskbar and Alt+Tab. With the MahzzTerm theme, the app colors follow the logo.",
   "Clásico": "Classic",
+  "¿Actualizar el icono anclado?": "Update the pinned icon?",
+  "MahzzTerm está anclada a la barra de tareas y Windows muestra el logo nuevo ahí recién cuando se reinicia el Explorador. La barra de tareas desaparece un segundo y vuelve; tus ventanas siguen abiertas.":
+    "MahzzTerm is pinned to the taskbar, and Windows only shows the new logo there after File Explorer restarts. The taskbar disappears for a second and comes back; your windows stay open.",
+  "Reiniciar el Explorador": "Restart File Explorer",
   "Océano": "Ocean",
   "Esmeralda": "Emerald",
   "Hielo": "Ice",

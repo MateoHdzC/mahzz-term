@@ -7,6 +7,7 @@ Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 ### Agregado
 - **El panel de agentes reconoce los agentes instalados con npm.** Claude Code, Codex, Gemini CLI, Qwen Code, Copilot CLI, Amp, Crush y opencode instalados con `npm i -g` (o corridos con `npx`) corren como `node`, y antes no aparecían en el panel ✦ ni avisaban al terminar. Ahora MahzzTerm mira qué paquete está corriendo y los muestra con su nombre.
 - **Elegí el logo de MahzzTerm.** En Ajustes → Apariencia → **Logo** hay cinco logos nuevos (Azul, Océano, Esmeralda, Hielo y Aurora) además del Clásico. Cambia el de la barra de la app y el icono de la ventana en la barra de tareas y en Alt+Tab.
+- **Los colores siguen al logo.** Con el tema MahzzTerm, el acento de la app (botones, bordes, selección y resaltados) y el tinte de los paneles toman el color del logo elegido en vez de ser siempre violetas. Los temas propios mantienen sus colores.
 
 ## [0.6.7] - 2026-11-25
 

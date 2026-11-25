@@ -228,7 +228,7 @@ function selectorLogo(): HTMLElement {
 
 function seccionApariencia(): HTMLElement[] {
   return [
-    fila(t("Logo"), selectorLogo(), t("Se ve en la barra de la app, la barra de tareas y Alt+Tab.")),
+    fila(t("Logo"), selectorLogo(), t("Se ve en la barra de la app, la barra de tareas y Alt+Tab. Con el tema MahzzTerm, los colores de la app siguen al logo.")),
     fila(
       t("Fuente"),
       lista(FUENTES.map((fuente) => [fuente, fuente]), ajustes().fuente, (fuente) => void cambiarAjustes({ fuente })),

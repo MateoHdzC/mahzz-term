@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { ITheme } from "@xterm/xterm";
-import { ajustes } from "./ajustes";
+import { ajustes, type Logo } from "./ajustes";
 
 const avisarCambio = () => window.dispatchEvent(new Event("mahzz:datos-cambiados"));
 
@@ -79,7 +79,46 @@ export function temaActual(): Tema {
   return temas.find((tema) => tema.id === ajustes().tema) ?? TEMA_MAHZZ;
 }
 
-export function aplicarTema(tema: Tema = temaActual()): void {
+// Colores de cada logo, medidos sobre sus imágenes: el acento para botones, bordes y la
+// selección, y el claro para textos resaltados. El Clásico usa el violeta del tema.
+const COLORES_LOGO: Record<Exclude<Logo, "clasico">, { acento: string; acentoClaro: string }> = {
+  azul: { acento: "#1a8fe3", acentoClaro: "#7fe3f5" },
+  oceano: { acento: "#2f6fe8", acentoClaro: "#6fe0c8" },
+  esmeralda: { acento: "#17b885", acentoClaro: "#8bf0cf" },
+  hielo: { acento: "#5b8fd6", acentoClaro: "#cfe6ff" },
+  aurora: { acento: "#25b4c4", acentoClaro: "#b7a4ff" },
+};
+
+// Mezcla dos colores #rrggbb: cantidad 0 deja el primero y 1 da el segundo.
+function mezclar(base: string, color: string, cantidad: number): string {
+  const canal = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return `#${[0, 1, 2]
+    .map((i) => Math.round(canal(base, i) + (canal(color, i) - canal(base, i)) * cantidad))
+    .map((valor) => valor.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+// El tema MahzzTerm toma el color del logo elegido: el acento cambia y las superficies y los
+// bordes reciben un tinte leve del mismo color, como el violeta del Clásico. Los temas propios
+// no se tocan: quien eligió sus colores los mantiene.
+function conColoresDelLogo(tema: Tema): Tema {
+  const logo = ajustes().logo;
+  if (tema.id !== TEMA_MAHZZ.id || logo === "clasico") return tema;
+  const { acento, acentoClaro } = COLORES_LOGO[logo];
+  return {
+    ...tema,
+    colores: {
+      ...tema.colores,
+      acento,
+      acentoClaro,
+      elevado: mezclar("#0d0d10", acento, 0.06),
+      borde: mezclar("#18181d", acento, 0.14),
+    },
+  };
+}
+
+export function aplicarTema(base: Tema = temaActual()): void {
+  const tema = conColoresDelLogo(base);
   const raiz = document.documentElement.style;
   for (const clave of CLAVES_COLOR) raiz.setProperty(VARIABLES[clave], tema.colores[clave]);
   tema.ansi.forEach((color, indice) => raiz.setProperty(`--ansi-${indice}`, color));
@@ -87,7 +126,8 @@ export function aplicarTema(tema: Tema = temaActual()): void {
   raiz.setProperty("--tamano-mono", `${ajustes().tamanoFuente}px`);
 }
 
-export function temaTerminal(tema: Tema = temaActual()): ITheme {
+export function temaTerminal(base: Tema = temaActual()): ITheme {
+  const tema = conColoresDelLogo(base);
   const [black, red, green, yellow, blue, magenta, cyan, white] = tema.ansi;
   const [brightBlack, brightRed, brightGreen, brightYellow, brightBlue, brightMagenta, brightCyan, brightWhite] =
     tema.ansi.slice(8);

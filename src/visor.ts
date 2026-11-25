@@ -72,7 +72,7 @@ const TIPOS_MIME: Record<string, string> = {
 const ICONO_CERRAR = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1l8 8M9 1L1 9" /></svg>';
 
 const ESTILO_SINTAXIS = HighlightStyle.define([
-  { tag: [tags.keyword, tags.controlKeyword, tags.moduleKeyword, tags.operatorKeyword], color: "#c9a6ff" },
+  { tag: [tags.keyword, tags.controlKeyword, tags.moduleKeyword, tags.operatorKeyword], color: "var(--acento-claro)" },
   { tag: [tags.string, tags.special(tags.string), tags.regexp], color: "#6fdc9c" },
   { tag: [tags.number, tags.bool, tags.null, tags.atom], color: "#f4c96b" },
   { tag: [tags.comment, tags.lineComment, tags.blockComment], color: "#6b6880", fontStyle: "italic" },
@@ -80,7 +80,7 @@ const ESTILO_SINTAXIS = HighlightStyle.define([
   { tag: [tags.typeName, tags.className, tags.namespace], color: "#62d6e8" },
   { tag: [tags.tagName], color: "#ff6b81" },
   { tag: [tags.attributeName], color: "#f4c96b" },
-  { tag: [tags.heading], color: "#c9a6ff", fontWeight: "700" },
+  { tag: [tags.heading], color: "var(--acento-claro)", fontWeight: "700" },
   { tag: [tags.link, tags.url], color: "#74a7ff", textDecoration: "underline" },
   { tag: [tags.emphasis], fontStyle: "italic" },
   { tag: [tags.strong], fontWeight: "700" },

@@ -172,7 +172,8 @@ const INGLES: Record<string, string> = {
   "Subrayado": "Underline",
   "Cursor con parpadeo": "Blinking cursor",
   "Logo": "Logo",
-  "Se ve en la barra de la app, la barra de tareas y Alt+Tab.": "Shown in the app bar, the taskbar and Alt+Tab.",
+  "Se ve en la barra de la app, la barra de tareas y Alt+Tab. Con el tema MahzzTerm, los colores de la app siguen al logo.":
+    "Shown in the app bar, the taskbar and Alt+Tab. With the MahzzTerm theme, the app colors follow the logo.",
   "Clásico": "Classic",
   "Océano": "Ocean",
   "Esmeralda": "Emerald",

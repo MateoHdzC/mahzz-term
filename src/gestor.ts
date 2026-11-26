@@ -614,7 +614,15 @@ export class GestorPestanas {
       if (this.pestanas.indexOf(pestana) !== destino) {
         otras.splice(destino, 0, pestana);
         this.pestanas = otras;
-        this.barra.append(...this.pestanas.map((actual) => actual.elemento));
+        // Se acomodan las otras alrededor de la arrastrada, sin mover esa: sacarla y volver a
+        // meterla en la barra le hacía perder la captura del mouse, el soltar no llegaba y la
+        // pestaña quedaba desplazada fuera de la vista, dejando un hueco.
+        let ancla = raiz;
+        for (const antes of this.pestanas.slice(0, destino)) raiz.before(antes.elemento);
+        for (const despues of this.pestanas.slice(destino + 1)) {
+          ancla.after(despues.elemento);
+          ancla = despues.elemento;
+        }
       }
       // Fuera de la ventana, la pestaña se ve distinta: al soltar se abre aparte (o mueve la ventana).
       raiz.classList.toggle(
@@ -634,6 +642,7 @@ export class GestorPestanas {
       raiz.removeEventListener("pointermove", mover);
       raiz.removeEventListener("pointerup", soltar);
       raiz.removeEventListener("pointercancel", soltar);
+      raiz.removeEventListener("lostpointercapture", soltar);
       raiz.classList.remove("pestana--arrastrando", "pestana--afuera");
       raiz.style.transform = "";
       const afuera =
@@ -655,6 +664,10 @@ export class GestorPestanas {
     raiz.addEventListener("pointermove", mover);
     raiz.addEventListener("pointerup", soltar);
     raiz.addEventListener("pointercancel", soltar);
+    // Red de seguridad: si la captura se pierde sin soltar (por ejemplo con Alt+Tab en medio del
+    // arrastre), la pestaña vuelve a su lugar en vez de quedar trabada. Al ser otro tipo de
+    // evento que pointerup, no abre una ventana nueva aunque el mouse esté afuera.
+    raiz.addEventListener("lostpointercapture", soltar);
   }
 
   private async moverAVentana(pestana: Pestana, x: number | null, y: number | null): Promise<void> {

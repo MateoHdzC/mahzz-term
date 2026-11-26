@@ -2,6 +2,11 @@
 
 Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
+## [Sin publicar]
+
+### Corregido
+- **Arrastrar pestañas a veces dejaba un hueco en la barra.** Al reordenar, la pestaña agarrada podía perder el mouse: el soltar no llegaba y quedaba corrida fuera de la vista. Ahora se acomodan las otras a su alrededor y, si igual pierde el mouse (por ejemplo con Alt+Tab), vuelve a su lugar.
+
 ## [0.7.1] - 2026-11-25
 
 ### Corregido

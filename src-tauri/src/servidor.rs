@@ -124,10 +124,15 @@ fn ruta_local(raiz: &Path, camino: &str) -> Option<PathBuf> {
         let componente = Path::new(parte.as_ref());
         let normal = componente.components().count() == 1
             && matches!(componente.components().next(), Some(Component::Normal(_)));
-        if !normal || parte.contains(['\\', ':']) {
+        if !normal || parte.contains(['\\', ':']) || parte.starts_with('.') {
             return None;
         }
         ruta.push(parte.as_ref());
+    }
+    if let (Ok(real), Ok(base)) = (ruta.canonicalize(), raiz.canonicalize()) {
+        if !real.starts_with(base) {
+            return None;
+        }
     }
     Some(ruta)
 }
@@ -211,7 +216,13 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
         ruta.push("index.html");
     }
     let Ok(mut contenido) = fs::read(&ruta) else {
-        let pagina = format!("<h1>404</h1><p>No existe {}</p>", url.path());
+        let camino = url
+            .path()
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;");
+        let pagina = format!("<h1>404</h1><p>No existe {camino}</p>");
         responder(
             &mut conexion,
             "404 Not Found",
@@ -318,5 +329,8 @@ mod pruebas {
         assert_eq!(ruta_local(raiz, "/%2e%2e/secreto.txt"), None);
         assert_eq!(ruta_local(raiz, "/a%5C..%5Cb"), None);
         assert_eq!(ruta_local(raiz, "/C:%5Cwindows"), None);
+        assert_eq!(ruta_local(raiz, "/.env"), None);
+        assert_eq!(ruta_local(raiz, "/.git/config"), None);
+        assert_eq!(ruta_local(raiz, "/sub/.oculta/clave.txt"), None);
     }
 }

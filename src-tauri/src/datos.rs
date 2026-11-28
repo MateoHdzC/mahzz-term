@@ -68,7 +68,7 @@ fn copiar_faltantes(origen: &PathBuf, destino: &PathBuf) -> std::io::Result<()> 
     Ok(())
 }
 
-fn reescribir(ruta: &PathBuf, entradas: &[Value]) -> Result<(), String> {
+fn reescribir(ruta: &std::path::Path, entradas: &[Value]) -> Result<(), String> {
     let contenido: String = entradas
         .iter()
         .map(|entrada| format!("{entrada}\n"))
@@ -76,7 +76,14 @@ fn reescribir(ruta: &PathBuf, entradas: &[Value]) -> Result<(), String> {
     escribir_seguro(ruta, &contenido)
 }
 
-pub(crate) fn escribir_seguro(ruta: &PathBuf, contenido: &str) -> Result<(), String> {
+pub(crate) fn escribir_seguro(ruta: &std::path::Path, contenido: &str) -> Result<(), String> {
+    escribir_bytes_seguro(ruta, contenido.as_bytes())
+}
+
+pub(crate) fn escribir_bytes_seguro(
+    ruta: &std::path::Path,
+    contenido: &[u8],
+) -> Result<(), String> {
     let temporal = ruta.with_extension("tmp");
     fs::write(&temporal, contenido).map_err(|error| error.to_string())?;
     fs::rename(&temporal, ruta).map_err(|error| error.to_string())

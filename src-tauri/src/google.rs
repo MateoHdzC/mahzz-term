@@ -19,7 +19,7 @@ use url::Url;
 
 use crate::{
     ajustes::{abrir_externo, cifrar},
-    datos::carpeta_datos,
+    datos::{carpeta_datos, escribir_bytes_seguro},
 };
 
 const SERVIDOR: &str = "https://mahzzterm.xyz";
@@ -207,7 +207,7 @@ fn completar_login(app: &AppHandle) -> Result<Value, String> {
         "foto": datos["picture"].as_str().and_then(descargar_foto),
     });
     let texto = serde_json::to_vec(&cuenta).map_err(|error| error.to_string())?;
-    fs::write(ruta_cuenta(app)?, cifrar(&texto, true)?).map_err(|error| error.to_string())?;
+    escribir_bytes_seguro(&ruta_cuenta(app)?, &cifrar(&texto, true)?)?;
     Ok(perfil_publico(&cuenta))
 }
 

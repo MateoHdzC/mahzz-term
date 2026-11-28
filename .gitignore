@@ -3,15 +3,23 @@ dist/
 src-tauri/target/
 src-tauri/gen/schemas/
 *.log
-client_secret*.json
 datos/
 src-tauri/credenciales/
-
-# Configuración y notas locales: no se publican
 .claude/
+.playwright-mcp/
 RESPUESTAS.md
 SPEC.md
 mahzz.webp
-
-# Vistas previas de las imágenes del instalador
+opc*.webp
 src-tauri/instalador/*-vista.png
+
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*.dat
+client_secret*.json
+secretos*
+!src/secretos.ts

@@ -5,6 +5,12 @@ Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 ## [Sin publicar]
 
 ### Seguridad
+- **Ctrl+clic en una ruta ya no ejecuta programas.** MahzzTerm se niega a abrir .exe, .bat, .ps1, .lnk y otros ejecutables, y solo abre direcciones web http o https.
+- **La vista previa ya no sirve archivos ocultos** como `.env` o `.git/`, ni sigue accesos directos que salen del proyecto.
+- **Los logs tapan los secretos** (API keys, tokens, JWT, contraseñas) antes de guardarse.
+- **Mahzz-AI exige https** para la API, salvo en esta PC.
+- Los secretos, la cuenta y la config de Mahzz-AI se guardan sin riesgo de corromperse si se corta la luz.
+- Dependencias con avisos de seguridad actualizadas y GitHub Actions fijadas a una versión exacta.
 - **El login con Google ya no lleva el secret dentro de la app.** Ahora pasa por un backend propio en `mahzzterm.xyz/api` (carpeta `servidor/`), que es el único que conoce el secret. La app recibe un código de un solo uso protegido con PKCE. Quien tenía la sesión iniciada con una versión anterior tiene que volver a entrar una vez.
 
 ### Corregido

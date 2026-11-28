@@ -10,7 +10,10 @@ use std::{
 use serde_json::{json, Value};
 use tauri::{async_runtime::spawn_blocking, ipc::Channel, AppHandle};
 
-use crate::{ajustes::cifrar, datos::carpeta_datos};
+use crate::{
+    ajustes::cifrar,
+    datos::{carpeta_datos, escribir_bytes_seguro},
+};
 
 const URL: &str = "http://127.0.0.1:11434";
 const IDENTIDAD: &str = "Eres Mahzz-AI, el asistente de programación creado por MahzzStudio, integrado en la terminal MahzzTerm. \
@@ -54,7 +57,7 @@ fn leer_config(app: &AppHandle) -> Config {
 fn escribir_config(app: &AppHandle, config: &Config) -> Result<(), String> {
     let datos = json!({ "usarApi": config.usar_api, "url": config.url, "modelo": config.modelo, "key": config.key });
     let texto = serde_json::to_vec(&datos).map_err(|error| error.to_string())?;
-    fs::write(ruta_config(app)?, cifrar(&texto, true)?).map_err(|error| error.to_string())
+    escribir_bytes_seguro(&ruta_config(app)?, &cifrar(&texto, true)?)
 }
 
 fn api_completa(config: &Config) -> bool {
@@ -85,7 +88,21 @@ pub fn mahzz_guardar_config(
     if usar_api && !api_completa(&config) {
         return Err("Para usar una API completá la dirección, el modelo y la key.".into());
     }
+    if !config.url.is_empty() && !url_segura(&config.url) {
+        return Err("La dirección de la API tiene que ser https (o http solo en esta PC).".into());
+    }
     escribir_config(&app, &config)
+}
+
+fn url_segura(direccion: &str) -> bool {
+    let Ok(url) = url::Url::parse(direccion) else {
+        return false;
+    };
+    match url.scheme() {
+        "https" => true,
+        "http" => matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]")),
+        _ => false,
+    }
 }
 
 #[tauri::command]

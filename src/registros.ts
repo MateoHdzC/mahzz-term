@@ -20,11 +20,42 @@ function dia(momento: number): string {
   return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}`;
 }
 
+const PATRONES_SECRETOS: RegExp[] = [
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+  /\b(?:sk|pk|rk)-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}/g,
+  /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}\b/g,
+  /\bgithub_pat_[A-Za-z0-9_]{40,}\b/g,
+  /\bglpat-[A-Za-z0-9_-]{20,}\b/g,
+  /\bxox[abprs]-[A-Za-z0-9-]{10,}\b/g,
+  /\bAKIA[0-9A-Z]{16}\b/g,
+  /\bAIza[0-9A-Za-z_-]{35}\b/g,
+  /\bGOCSPX-[A-Za-z0-9_-]{20,}\b/g,
+  /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
+  /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{16,}/g,
+];
+
+const ASIGNACION_SECRETA = /\b([A-Za-z0-9_.-]*(?:key|token|secret|password|passwd|pwd|credential)[A-Za-z0-9_.-]*["']?\s*[=:]\s*["']?)([^\s"',;]{6,})/gi;
+
+export function ocultarSecretos(texto: string): string {
+  let limpio = texto;
+  for (const patron of PATRONES_SECRETOS) {
+    limpio = limpio.replace(patron, (_coincidencia, prefijo?: string) =>
+      prefijo && /^(Bearer|Basic)$/.test(prefijo) ? `${prefijo} [oculto]` : "[oculto]",
+    );
+  }
+  return limpio.replace(ASIGNACION_SECRETA, (_, nombre: string) => `${nombre}[oculto]`);
+}
+
 export function iniciarRegistro(): void {
   window.addEventListener("mahzz:bloque-terminado", (evento) => {
     const registro = (evento as CustomEvent<Registro>).detail;
     if (!registro.comando.trim() || pareceSecreto(registro.comando)) return;
-    void invoke("guardar_registro", { entrada: registro, dia: dia(registro.inicio) }).catch(() => undefined);
+    const entrada: Registro = {
+      ...registro,
+      texto: ocultarSecretos(registro.texto),
+      fragmento: registro.fragmento === undefined ? undefined : ocultarSecretos(registro.fragmento),
+    };
+    void invoke("guardar_registro", { entrada, dia: dia(registro.inicio) }).catch(() => undefined);
   });
 }
 

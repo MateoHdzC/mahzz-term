@@ -15,7 +15,7 @@ use windows::{
     },
 };
 
-use crate::datos::{carpeta_datos, escribir_seguro};
+use crate::datos::{carpeta_datos, escribir_bytes_seguro, escribir_seguro};
 
 #[tauri::command]
 pub fn leer_config(app: AppHandle) -> Result<Value, String> {
@@ -138,7 +138,7 @@ fn leer_baul(app: &AppHandle) -> Result<Vec<Value>, String> {
 fn escribir_baul(app: &AppHandle, baul: &[Value]) -> Result<(), String> {
     let ruta = carpeta_datos(app)?.join("secretos.dat");
     let texto = serde_json::to_vec(baul).map_err(|error| error.to_string())?;
-    fs::write(ruta, cifrar(&texto, true)?).map_err(|error| error.to_string())
+    escribir_bytes_seguro(&ruta, &cifrar(&texto, true)?)
 }
 
 #[tauri::command]
@@ -177,12 +177,68 @@ pub fn borrar_secreto(app: AppHandle, id: String) -> Result<(), String> {
     escribir_baul(&app, &baul)
 }
 
-#[tauri::command]
-pub fn abrir_externo(destino: String) -> Result<(), String> {
-    let es_web = destino.starts_with("https://") || destino.starts_with("http://");
-    if !es_web && !Path::new(&destino).exists() {
+const EXTENSIONES_EJECUTABLES: &[&str] = &[
+    "exe",
+    "com",
+    "bat",
+    "cmd",
+    "ps1",
+    "psm1",
+    "vbs",
+    "vbe",
+    "js",
+    "jse",
+    "wsf",
+    "wsh",
+    "hta",
+    "msi",
+    "msp",
+    "scr",
+    "pif",
+    "cpl",
+    "lnk",
+    "url",
+    "reg",
+    "inf",
+    "jar",
+    "appref-ms",
+    "application",
+    "settingcontent-ms",
+    "library-ms",
+    "search-ms",
+    "diagcab",
+    "msc",
+    "gadget",
+];
+
+fn validar_destino(destino: &str) -> Result<(), String> {
+    if destino.contains("://") || destino.starts_with("mailto:") {
+        let url = url::Url::parse(destino).map_err(|_| "La dirección no es válida".to_string())?;
+        return match url.scheme() {
+            "http" | "https" => Ok(()),
+            _ => Err("Solo se abren direcciones web http o https".to_string()),
+        };
+    }
+    let ruta = Path::new(destino);
+    if !ruta.exists() {
         return Err("El archivo ya no existe".to_string());
     }
+    let extension = ruta
+        .extension()
+        .and_then(|valor| valor.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if ruta.is_file() && EXTENSIONES_EJECUTABLES.contains(&extension.as_str()) {
+        return Err(
+            "Por seguridad, MahzzTerm no abre programas ni scripts con un clic".to_string(),
+        );
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn abrir_externo(destino: String) -> Result<(), String> {
+    validar_destino(&destino)?;
     let resultado = unsafe {
         ShellExecuteW(
             None,

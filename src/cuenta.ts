@@ -26,7 +26,6 @@ interface Paquete {
   historial: EntradaHistorial[];
 }
 
-// Nombre de antes del cambio a MahzzTerm: cambiarlo haría que se vuelva a mezclar todo con Drive.
 const CLAVE_FECHA = "mazz-sync-fecha";
 const RETRASO_SUBIDA = 8000;
 
@@ -61,11 +60,9 @@ function guardarFecha(fecha: number): void {
   try {
     localStorage.setItem(CLAVE_FECHA, String(fecha));
   } catch {
-    // Sin almacenamiento, la próxima sincronización vuelve a comparar todo.
   }
 }
 
-// Lo propio de esta PC, como el primer uso o el atajo global, no viaja entre equipos.
 function ajustesCompartidos(): Partial<Ajustes> {
   const { primerUsoHecho: _primerUso, desplegableActivo: _activo, desplegableAtajo: _atajo, ...resto } = ajustes();
   return resto;
@@ -88,7 +85,6 @@ async function fusionar(remoto: Paquete): Promise<void> {
     await cambiarAjustes(remoto.ajustes);
     for (const tema of remoto.temas) await guardarTema(tema);
 
-    // La primera vez se combinan ambos lados para no perder lo que ya había en esta PC.
     const locales = await invoke<ComandoRemoto[]>("leer_guardados");
     const ids = new Set(remoto.guardados.map((comando) => comando.id));
     const guardados = fechaLocal === 0

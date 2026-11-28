@@ -4,9 +4,6 @@ import { check, type Update } from "@tauri-apps/plugin-updater";
 import { avisar, confirmar } from "./dialogos";
 import { t } from "./i18n";
 
-// Busca versiones nuevas en los releases de GitHub. Las actualizaciones vienen firmadas:
-// si la firma no coincide con la clave pública de la app, no se instalan.
-
 const PRIMERA_REVISION = 8_000;
 const CADA_CUANTO = 6 * 60 * 60 * 1000;
 const CLAVE_AVISADA = "mahzz-actualizacion-avisada";
@@ -24,7 +21,6 @@ export function alCambiarActualizacion(oyente: () => void): void {
 
 function definirPendiente(actualizacion: Update | null): void {
   pendiente = actualizacion;
-  // Puntito en el botón de Ajustes mientras haya una versión sin instalar.
   const boton = document.getElementById("ajustes");
   boton?.classList.toggle("barra__boton--aviso", Boolean(actualizacion));
   if (boton) boton.title = actualizacion ? t("Ajustes: MahzzTerm {0} está disponible", actualizacion.version) : t("Ajustes");
@@ -43,11 +39,9 @@ function marcarAvisada(version: string): void {
   try {
     localStorage.setItem(CLAVE_AVISADA, version);
   } catch {
-    // Sin almacenamiento, en el peor caso se vuelve a avisar la misma versión.
   }
 }
 
-// Revisión silenciosa: si hay versión nueva, notificación de Windows (una sola vez por versión).
 async function revisar(): Promise<void> {
   let actualizacion: Update | null;
   try {
@@ -64,7 +58,6 @@ async function revisar(): Promise<void> {
   }).catch(() => undefined);
 }
 
-// La ventana principal revisa al abrir y después cada 6 horas mientras siga abierta.
 export function iniciarActualizaciones(): void {
   setTimeout(() => void revisar(), PRIMERA_REVISION);
   setInterval(() => void revisar(), CADA_CUANTO);
@@ -82,7 +75,6 @@ export async function instalarActualizacion(): Promise<void> {
   }
 }
 
-// Desde Ajustes: busca ahora y, si hay versión nueva, pregunta si instalarla.
 export async function buscarActualizacion(): Promise<void> {
   let actualizacion: Update | null;
   try {

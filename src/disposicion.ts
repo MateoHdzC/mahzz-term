@@ -15,7 +15,6 @@ export interface NodoDivision {
   b: Nodo;
 }
 
-// Una pestaña es un árbol: cada división parte su espacio en dos.
 export type Nodo = NodoPanel | NodoDivision;
 
 const TAMANO_MINIMO = 120;
@@ -47,7 +46,6 @@ export function dividirPanel(
   return nodo;
 }
 
-// Al quitar un panel, su hermano ocupa todo el espacio de la división.
 export function quitarPanel(nodo: Nodo, objetivo: Panel): Nodo | null {
   if (nodo.tipo === "panel") return nodo.panel === objetivo ? null : nodo;
   const a = quitarPanel(nodo.a, objetivo);

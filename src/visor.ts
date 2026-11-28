@@ -138,7 +138,6 @@ async function limpiarHtml(html: string): Promise<string> {
   return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
 }
 
-// Pregunta qué hacer con los cambios de un archivo antes de cerrarlo.
 function preguntarGuardar(nombre: string): Promise<"guardar" | "descartar" | "cancelar"> {
   return new Promise((resolver) => {
     const dialogo = document.createElement("dialog");
@@ -185,7 +184,6 @@ const CLAVE_ANCHO = "mahzz-visor-ancho";
 const ANCHO_MINIMO = 280;
 const INTERVALO_REVISION = 2500;
 
-// Panel lateral que muestra y edita archivos. Cada archivo abierto es una pestaña.
 export class PanelVisor {
   private readonly pestanas = document.createElement("div");
   private readonly ruta = document.createElement("span");
@@ -240,7 +238,6 @@ export class PanelVisor {
       const ancho = Number(localStorage.getItem(CLAVE_ANCHO));
       if (ancho >= ANCHO_MINIMO) this.elemento.style.width = `${ancho}px`;
     } catch {
-      // Sin almacenamiento se usa el ancho de fábrica.
     }
 
     this.elemento.addEventListener("keydown", (evento) => {
@@ -249,7 +246,6 @@ export class PanelVisor {
         void this.guardar();
       }
     });
-    // Los agentes cambian archivos mientras están abiertos: se revisa cada tanto.
     setInterval(() => void this.revisarCambiosAfuera(), INTERVALO_REVISION);
     window.addEventListener("focus", () => void this.revisarCambiosAfuera());
   }
@@ -352,7 +348,6 @@ export class PanelVisor {
     this.botonModo.hidden = !conVista;
     if (documento.tipo === "html") this.botonModo.textContent = documento.modo === "vista" ? t("Código") : t("Web");
     else this.botonModo.textContent = documento.modo === "vista" ? t("Editar") : t("Vista");
-    // La vista web carga el archivo del disco: con cambios sin guardar muestra la última versión guardada.
     const webDesactualizada = documento.tipo === "html" && documento.modo === "vista" && documento.sucio;
     this.aviso.textContent = documento.cambioAfuera
       ? t("Cambió afuera")
@@ -392,7 +387,6 @@ export class PanelVisor {
     documento.cambioAfuera = false;
 
     if (documento.vista && recargando) {
-      // Se reemplaza el texto en el mismo editor para no perder el desplazamiento.
       const vista = documento.vista;
       vista.dispatch({ changes: { from: 0, to: vista.state.doc.length, insert: datos.texto } });
       documento.guardado = vista.state.doc;
@@ -433,7 +427,6 @@ export class PanelVisor {
     this.mostrarTexto(documento);
   }
 
-  // El resaltado de cada lenguaje se descarga recién cuando se abre un archivo de ese tipo.
   private async ponerLenguaje(documento: Documento, lenguaje: Compartment): Promise<void> {
     const { languages } = await import("@codemirror/language-data");
     const descripcion = LanguageDescription.matchFilename(languages, nombreDe(documento.ruta));
@@ -466,9 +459,6 @@ export class PanelVisor {
     }
   }
 
-  // Como Live Server: un servidor local sirve todo el proyecto, así cargan el CSS, el JS
-  // y las imágenes aunque estén en otras carpetas, y la página se recarga sola al guardar.
-  // Corre en otro origen (127.0.0.1) y aislada: no puede tocar la terminal.
   private async mostrarWeb(documento: Documento): Promise<void> {
     let direccion: string;
     try {
@@ -478,7 +468,6 @@ export class PanelVisor {
       return;
     }
     const actual = documento.contenido.querySelector<HTMLIFrameElement>("iframe.visor__web");
-    // Si ya se está mostrando, la propia página se recarga sola cuando cambia algo.
     if (actual?.dataset.direccion === direccion && actual.isConnected) return;
     const marco = document.createElement("iframe");
     marco.className = "visor__web";
@@ -551,7 +540,6 @@ export class PanelVisor {
 
   private async mostrarHoja(documento: Documento, bytes: ArrayBuffer): Promise<void> {
     const XLSX = await import("xlsx");
-    // Con planillas enormes se muestran las primeras filas para no llenar la memoria.
     const libro = XLSX.read(new Uint8Array(bytes), { type: "array", sheetRows: 3000, dense: true });
     const contenedor = document.createElement("div");
     contenedor.className = "visor__hoja";
@@ -638,7 +626,6 @@ export class PanelVisor {
     }
   }
 
-  // Si el archivo cambió en el disco: sin cambios propios se recarga solo; con cambios, se avisa.
   private async revisarCambiosAfuera(): Promise<void> {
     const documento = this.activo;
     if (!documento || !this.visible || this.revisando || documento.fecha === 0) return;
@@ -658,7 +645,6 @@ export class PanelVisor {
     }
   }
 
-  // Avisos del panel de archivos: renombres, movidas y borrados.
   alMoverRuta(vieja: string, nueva: string): void {
     const prefijo = vieja.toLowerCase() + "\\";
     for (const documento of this.documentos) {
@@ -696,7 +682,6 @@ export class PanelVisor {
       try {
         localStorage.setItem(CLAVE_ANCHO, String(Math.round(this.elemento.getBoundingClientRect().width)));
       } catch {
-        // Sin almacenamiento el ancho dura hasta cerrar la ventana.
       }
     };
     asa.addEventListener("pointermove", mover);

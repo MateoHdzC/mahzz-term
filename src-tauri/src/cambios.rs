@@ -1,4 +1,3 @@
-// Revisión de cambios: lista lo que se modificó en el repositorio y deja aceptar o revertir cada archivo.
 use std::{
     fs,
     os::windows::process::CommandExt,
@@ -31,12 +30,10 @@ fn git(raiz: &Path, argumentos: &[&str]) -> Result<String, String> {
     }
 }
 
-// Así git toma la ruta tal cual, sin interpretar comodines como * o ?.
 fn literal(ruta: &str) -> String {
     format!(":(literal){ruta}")
 }
 
-// Las rutas vienen de git, pero igual se rechaza cualquier cosa que salga del repositorio.
 fn ruta_segura(raiz: &Path, relativa: &str) -> Result<PathBuf, String> {
     let ruta = Path::new(relativa);
     let valida = !relativa.is_empty()
@@ -56,7 +53,6 @@ fn raiz_de(carpeta: &str) -> Option<PathBuf> {
     (!raiz.is_empty()).then(|| PathBuf::from(raiz.replace('/', "\\")))
 }
 
-// git status -z separa con \0. En renombres, después de la ruta nueva viene la vieja.
 fn leer_estado(raiz: &Path) -> Result<Vec<Value>, String> {
     let salida = git(
         raiz,
@@ -99,7 +95,6 @@ pub async fn listar_cambios(carpeta: String) -> Result<Option<Value>, String> {
     .map_err(|error| error.to_string())?
 }
 
-// Un archivo que git todavía no conoce se muestra entero como agregado.
 fn diff_de_nuevo(raiz: &Path, relativa: &str) -> Result<Value, String> {
     let ruta = ruta_segura(raiz, relativa)?;
     let tamano = fs::metadata(&ruta)
@@ -162,7 +157,6 @@ pub async fn diff_cambio(
         argumentos.extend(rutas.iter().map(String::as_str));
         match git(&raiz, &argumentos) {
             Ok(texto) => Ok(recortar(texto)),
-            // Repositorio sin commits todavía: se compara contra lo que está en el índice.
             Err(_) => diff_de_nuevo(&raiz, &ruta),
         }
     })
@@ -192,7 +186,6 @@ pub async fn aceptar_cambio(
     .map_err(|error| error.to_string())?
 }
 
-// Deja el archivo como está en el último commit. Si el archivo es nuevo, lo borra.
 #[tauri::command]
 pub async fn revertir_cambio(
     raiz: String,

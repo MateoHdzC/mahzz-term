@@ -2,8 +2,6 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { idiomaWeb, t } from "./i18n";
 import type { Panel } from "./panel";
 
-// Panel lateral de Mahzz-AI: el copiloto local que corre en Ollama.
-
 interface Mensaje {
   role: "user" | "assistant";
   content: string;
@@ -32,7 +30,6 @@ interface ConfigApi {
   tieneKey: boolean;
 }
 
-// El modelo publicado en ollama.com: el comando de instalación que se muestra en el panel y en la web.
 const MODELO_PUBLICO = "dkdidmateo/mahzz";
 const COMANDO_INSTALAR = `ollama pull ${MODELO_PUBLICO}`;
 const URL_API_DEFECTO = "https://api.openai.com/v1";
@@ -44,13 +41,11 @@ const ANCHO_MAXIMO = 900;
 const LIMITE_SALIDA = 4000;
 const CLAVE_MODO = "mahzz-copiloto-modo";
 const CLAVE_CAJA = "mahzz-copiloto-caja";
-// Tamaño de la ventanita flotante: chica de entrada, se agranda desde los bordes.
 const FLOTANTE_ANCHO = 360;
 const FLOTANTE_ALTO = 520;
 const FLOTANTE_MIN_ANCHO = 300;
 const FLOTANTE_MIN_ALTO = 320;
 const MARGEN = 12;
-// Qué bordes mueve cada asa al redimensionar la ventanita.
 const BORDES = ["n", "s", "e", "o", "ne", "no", "se", "so"] as const;
 type Borde = (typeof BORDES)[number];
 
@@ -95,7 +90,6 @@ function guardarPreferencia(clave: string, valor: string): void {
   try {
     localStorage.setItem(clave, valor);
   } catch {
-    // Sin almacenamiento, la preferencia dura solo mientras la ventana esté abierta.
   }
 }
 
@@ -125,7 +119,6 @@ export class PanelCopiloto {
   private respondiendo = false;
   private conContexto = true;
   private disponible = true;
-  // Mientras se baja el modelo, el panel muestra el progreso aunque se cierre y se vuelva a abrir.
   private instalando: HTMLElement | null = null;
   private modo: Modo = leerPreferencia(CLAVE_MODO) === "anclado" ? "anclado" : "flotante";
   private caja: Caja | null = null;
@@ -142,7 +135,6 @@ export class PanelCopiloto {
     asa.setAttribute("aria-orientation", "vertical");
     asa.addEventListener("pointerdown", (evento) => this.iniciarAjusteAncho(asa, evento));
 
-    // Encabezado: marca, modelo en uso y acciones.
     const marca = document.createElement("div");
     marca.className = "copiloto__marca";
     const orbe = document.createElement("span");
@@ -168,7 +160,6 @@ export class PanelCopiloto {
     encabezado.className = "copiloto__encabezado";
     this.botonModo.addEventListener("click", () => this.cambiarModo());
     encabezado.append(marca, ajustes, nueva, this.botonModo, cerrar);
-    // En modo flotante, la ventanita se mueve arrastrándola del encabezado.
     encabezado.addEventListener("pointerdown", (evento) => this.iniciarArrastre(encabezado, evento));
     encabezado.addEventListener("dblclick", (evento) => {
       if (!(evento.target as HTMLElement).closest("button")) this.cambiarModo();
@@ -176,7 +167,6 @@ export class PanelCopiloto {
 
     this.lista.className = "copiloto__lista";
 
-    // Caja de escritura, estilo copilot.
     this.entrada.className = "copiloto__entrada";
     this.entrada.rows = 1;
     this.entrada.placeholder = t("Preguntale algo a Mahzz-AI…");
@@ -256,7 +246,6 @@ export class PanelCopiloto {
     if (visible) void this.revisarModelo();
   }
 
-  // Lo usa la pregunta del inicio: abre el panel y empieza a bajar el modelo.
   instalarAhora(): void {
     if (!this.visible) this.definirVisible(true);
     void this.instalarModelo();
@@ -307,8 +296,6 @@ export class PanelCopiloto {
     void invoke("abrir_externo", { destino });
   }
 
-  // Sin el modelo: se ofrece instalarlo solo (o a mano con el comando), o usar una API key.
-  // Sin Ollama: primero hay que instalar Ollama.
   private mostrarInstalar(codigo: string, motivo: string): void {
     const tarjeta = document.createElement("div");
     tarjeta.className = "copiloto__bienvenida copiloto__instalar";
@@ -352,7 +339,6 @@ export class PanelCopiloto {
     this.lista.replaceChildren(tarjeta);
   }
 
-  // Baja el modelo con barra de progreso. Al terminar, el panel queda listo para usar.
   private async instalarModelo(): Promise<void> {
     if (this.instalando) {
       this.lista.replaceChildren(this.instalando);
@@ -425,7 +411,6 @@ export class PanelCopiloto {
     }
   }
 
-  // Elegir entre el modelo local y una API compatible con OpenAI. La key se guarda cifrada y nunca vuelve a la interfaz.
   private async mostrarAjustes(): Promise<void> {
     if (this.respondiendo) return;
     let config: ConfigApi;
@@ -435,7 +420,6 @@ export class PanelCopiloto {
       config = { usarApi: false, url: "", modelo: "", tieneKey: false };
     }
 
-    // Lo que había en la lista vuelve si se cancela.
     const anteriores = this.lista.querySelector(".copiloto__ajustes") ? null : [...this.lista.childNodes];
     const formulario = document.createElement("form");
     formulario.className = "copiloto__ajustes";
@@ -540,7 +524,6 @@ export class PanelCopiloto {
     (api.radio.checked ? modelo.entrada : local.radio).focus();
   }
 
-  // Al cancelar vuelve lo de antes; al guardar arranca una charla nueva con el motor elegido.
   private async cerrarAjustes(anteriores: ChildNode[] | null): Promise<void> {
     if (anteriores) {
       this.lista.replaceChildren(...anteriores);
@@ -596,7 +579,6 @@ export class PanelCopiloto {
     this.entrada.focus();
   }
 
-  // El último comando terminado de la terminal activa, con la salida recortada.
   private ultimoComando(): string | null {
     const panel = this.obtenerPanel();
     if (!panel) return null;
@@ -656,7 +638,6 @@ export class PanelCopiloto {
         if (texto) {
           elemento.classList.remove("copiloto__mensaje--esperando");
           const html = await markdownSeguro(texto);
-          // Si mientras tanto empezó un repintado más nuevo, este ya quedó viejo.
           if (actual !== version) return;
           cuerpo.innerHTML = html;
           this.decorarCodigo(cuerpo);
@@ -749,7 +730,6 @@ export class PanelCopiloto {
     return { elemento, pensando, cuerpo };
   }
 
-  // Los bloques de código llevan "Copiar" y "A la terminal" (lo escribe sin ejecutarlo).
   private decorarCodigo(cuerpo: HTMLElement): void {
     for (const pre of cuerpo.querySelectorAll("pre")) {
       const codigo = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
@@ -805,8 +785,6 @@ export class PanelCopiloto {
     if (cerca || !this.respondiendo) this.lista.scrollTop = this.lista.scrollHeight;
   }
 
-  // ----- Flotante o anclado -----
-
   private cambiarModo(): void {
     this.modo = this.modo === "flotante" ? "anclado" : "flotante";
     guardarPreferencia(CLAVE_MODO, this.modo);
@@ -832,7 +810,6 @@ export class PanelCopiloto {
     }
   }
 
-  // De entrada aparece chica, abajo a la derecha, sin tapar la barra de la ventana.
   private cajaInicial(): Caja {
     const alto = Math.min(FLOTANTE_ALTO, window.innerHeight - this.techo() - MARGEN * 2);
     return {
@@ -847,7 +824,6 @@ export class PanelCopiloto {
     return document.querySelector(".barra")?.getBoundingClientRect().bottom ?? 40;
   }
 
-  // Que nunca quede afuera de la ventana ni más chica que el mínimo.
   private acomodar(caja: Caja): Caja {
     const maxAncho = Math.max(FLOTANTE_MIN_ANCHO, window.innerWidth - MARGEN * 2);
     const maxAlto = Math.max(FLOTANTE_MIN_ALTO, window.innerHeight - this.techo() - MARGEN);
@@ -880,7 +856,6 @@ export class PanelCopiloto {
     if (this.caja) guardarPreferencia(CLAVE_CAJA, JSON.stringify(this.caja));
   }
 
-  // Sigue al puntero hasta soltarlo y guarda la posición final.
   private seguirPuntero(asa: HTMLElement, inicio: PointerEvent, mover: (dx: number, dy: number) => void): void {
     inicio.preventDefault();
     asa.setPointerCapture(inicio.pointerId);
@@ -912,7 +887,6 @@ export class PanelCopiloto {
     const base = { ...this.caja };
     this.seguirPuntero(asa, inicio, (dx, dy) => {
       const caja = { ...base };
-      // Al tirar del borde izquierdo o de arriba, se corre el origen y el lado opuesto queda quieto.
       if (borde.includes("e")) caja.ancho = Math.max(FLOTANTE_MIN_ANCHO, base.ancho + dx);
       if (borde.includes("s")) caja.alto = Math.max(FLOTANTE_MIN_ALTO, base.alto + dy);
       if (borde.includes("o")) {

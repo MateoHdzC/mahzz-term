@@ -17,11 +17,9 @@ export interface DatosPestana {
   tituloManual: string | null;
   color: string | null;
   nodo: DatosNodo;
-  // Título que tenía al guardarse, para mostrarlo al elegir una sesión.
   titulo?: string;
 }
 
-// Al reabrir, cada panel vuelve con sus últimos bloques. Se recortan para que la sesión no pese.
 const BLOQUES_GUARDADOS = 30;
 const LINEAS_POR_BLOQUE = 400;
 const TEXTO_POR_BLOQUE = 50_000;
@@ -117,7 +115,6 @@ export class Pestana {
 
   private redibujar(): void {
     const nodo = dibujarNodo(this.raiz);
-    // Un panel que quedó solo no debe conservar la proporción de su división anterior.
     nodo.style.flex = "";
     this.contenido.replaceChildren(nodo, this.buscador.elemento);
     this.contenido.classList.toggle("contenido-pestana--dividida", this.raiz.tipo === "division");
@@ -150,7 +147,6 @@ export class Pestana {
     });
   }
 
-  // Se oculta sin quitarla del diseño para que sus programas conserven el tamaño real.
   ocultar(): void {
     this.contenido.classList.add("contenido-pestana--oculta");
     for (const panel of this.paneles) panel.activarDibujo(false);
@@ -170,7 +166,6 @@ export class Pestana {
     this.eventos.alCambiar(this);
   }
 
-  // Devuelve false cuando era el último panel y la pestaña quedó vacía.
   cerrarPanel(panel: Panel): boolean {
     const raiz = quitarPanel(this.raiz, panel);
     panel.cerrar();
@@ -241,7 +236,6 @@ export class Pestana {
     };
   }
 
-  // Versión liviana para volver a abrir la pestaña: guarda carpetas, no contenido.
   private planoDe(nodo: Nodo): DatosNodo {
     if (nodo.tipo === "panel") {
       return {

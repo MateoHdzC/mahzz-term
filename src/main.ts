@@ -33,12 +33,10 @@ async function actualizarIconoMaximizar(): Promise<void> {
   const maximizada = await ventana.isMaximized();
   boton("icono-maximizar").setAttribute("d", maximizada ? ICONO_RESTAURAR : ICONO_MAXIMIZAR);
   boton("maximizar").setAttribute("aria-label", maximizada ? t("Restaurar") : t("Maximizar"));
-  // Maximizada ocupa toda la pantalla, así que las esquinas vuelven a ser rectas.
   document.body.classList.toggle("ventana--maximizada", maximizada);
   await compensarBordesMaximizada(maximizada);
 }
 
-// Windows agranda las ventanas sin marco más allá de la pantalla: se recupera ese sobrante.
 async function compensarBordesMaximizada(maximizada: boolean): Promise<void> {
   if (!maximizada) {
     document.body.style.padding = "";
@@ -61,7 +59,6 @@ async function compensarBordesMaximizada(maximizada: boolean): Promise<void> {
   ].join(" ");
 }
 
-// Los botones de la ventana no se quedan con el foco del teclado.
 for (const id of ["minimizar", "maximizar", "cerrar", "perfil", "ajustes", "alternar-archivos", "alternar-cambios", "alternar-mahzz", "agentes"]) {
   boton(id).addEventListener("mousedown", (evento) => evento.preventDefault());
 }
@@ -76,8 +73,6 @@ function sincronizarDesplegable(): void {
   void invoke("definir_desplegable", { activo, atajo }).catch((error) => console.warn(error));
 }
 
-// "Abrir en MahzzTerm" y "Abrir con" se registran con el idioma y la ruta de esta copia.
-// En modo desarrollo no, para no pisar la de la app instalada.
 function sincronizarIntegracion(): void {
   if (!esPrincipal || import.meta.env.DEV) return;
   void invoke("integracion_windows", {
@@ -86,8 +81,6 @@ function sincronizarIntegracion(): void {
   }).catch((error) => console.warn(error));
 }
 
-// Quien ya usaba MahzzTerm antes de que el primer uso preguntara por el Explorador nunca vio la pregunta:
-// se le hace una sola vez. Sin aceptar, no se toca el registro.
 async function preguntarIntegracion(): Promise<void> {
   const aceptar = await confirmar(
     t("¿Sumamos MahzzTerm al Explorador de Windows?"),
@@ -97,8 +90,6 @@ async function preguntarIntegracion(): Promise<void> {
   await cambiarAjustes({ integracionPreguntada: true, integracionWindows: aceptar });
 }
 
-// Una sola vez: si falta el modelo de Mahzz-AI, se ofrece instalarlo. Si dice que no, el panel lo vuelve
-// a ofrecer cada vez que se abra. Con el modelo instalado o una API key configurada, no pregunta nada.
 async function preguntarModelo(gestor: GestorPestanas | null): Promise<void> {
   if (!esPrincipal || import.meta.env.DEV || ajustes().modeloPreguntado) return;
   const error = await invoke("mahzz_estado").then(() => null, (motivo) => String(motivo));
@@ -131,7 +122,6 @@ async function iniciar(): Promise<void> {
     definirAtajos(ajustes().atajos);
     traducirPagina();
 
-    // La fuente tiene que estar cargada antes de medir el tamaño de cada celda.
     await Promise.all([
       document.fonts.load('400 14px "JetBrains Mono"'),
       document.fonts.load('700 14px "JetBrains Mono"'),
@@ -160,7 +150,6 @@ async function iniciar(): Promise<void> {
     await actualizarIconoMaximizar();
 
     const traspaso = await invoke<DatosPestana | null>("tomar_traspaso");
-    // Abierta desde el Explorador: una carpeta ("Abrir en MahzzTerm") o un archivo ("Abrir con").
     const pedido = esPrincipal && !traspaso ? await invoke<PedidoWindows | null>("tomar_pedido_windows") : null;
     const restaurada = !traspaso && esPrincipal && ajustes().restaurarPestanas && (await creado.restaurarSesion());
     if (!restaurada && !pedido?.carpeta) {
@@ -171,11 +160,9 @@ async function iniciar(): Promise<void> {
   } catch (error) {
     boton("contenido").textContent = `No se pudo iniciar la terminal: ${String(error)}`;
   } finally {
-    // La ventana se muestra recién cuando está lista, para evitar el parpadeo blanco.
     await ventana.show();
     await ventana.setFocus();
     gestor?.recuperarFoco();
-    // Preguntas del inicio, de a una: primer uso (o Explorador para quien ya lo hizo) y después el modelo.
     if (esPrincipal && !ajustes().primerUsoHecho) {
       mostrarPrimerUso(() => {
         gestor?.recuperarFoco();
@@ -188,12 +175,10 @@ async function iniciar(): Promise<void> {
         gestor?.recuperarFoco();
       })();
     }
-    // Busca versiones nuevas al abrir y cada 6 horas; avisa con una notificación de Windows.
     if (esPrincipal && !import.meta.env.DEV && ajustes().buscarActualizaciones) iniciarActualizaciones();
   }
 }
 
-// Sin foco un rato (o con la ventana oculta), WebView2 pasa a modo de memoria baja.
 const ESPERA_MEMORIA_BAJA = 30_000;
 let temporizadorMemoria = 0;
 let memoriaBaja = false;

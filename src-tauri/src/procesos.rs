@@ -20,9 +20,6 @@ pub struct Proceso {
     nombre: String,
 }
 
-// Agentes que se instalan con npm: corren como `node` y se reconocen por el paquete que
-// aparece en su línea de comandos. Devuelven el mismo nombre que su ejecutable propio,
-// así el panel de agentes los trata igual.
 const AGENTES_NODE: &[(&str, &str)] = &[
     ("@anthropic-ai/claude-code", "claude"),
     ("@openai/codex", "codex"),
@@ -34,7 +31,6 @@ const AGENTES_NODE: &[(&str, &str)] = &[
     ("opencode-ai", "opencode"),
 ];
 
-// Saca una foto de todos los procesos de Windows en este momento.
 pub fn listar() -> Vec<Proceso> {
     let mut procesos = Vec::new();
     unsafe {
@@ -77,13 +73,10 @@ fn primer_hijo(pid: u32, procesos: &[Proceso]) -> Option<&Proceso> {
         .find(|proceso| proceso.padre == pid && !es_interno(&proceso.nombre))
 }
 
-// Lee la línea de comandos completa de otro proceso (por ejemplo `node ...\cli.js`).
-// Alcanza con el permiso mínimo de consulta: funciona con los procesos del mismo usuario.
 fn linea_de_comandos(pid: u32) -> Option<String> {
     unsafe {
         let proceso = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
         let mut largo = 0u32;
-        // La primera llamada falla a propósito: solo dice cuánto espacio hace falta.
         let _ = NtQueryInformationProcess(
             proceso,
             ProcessCommandLineInformation,
@@ -93,7 +86,6 @@ fn linea_de_comandos(pid: u32) -> Option<String> {
         );
         let mut linea = None;
         if largo as usize >= size_of::<UNICODE_STRING>() {
-            // Con u64 el UNICODE_STRING del principio del buffer queda bien alineado.
             let mut buffer = vec![0u64; (largo as usize).div_ceil(8)];
             let estado = NtQueryInformationProcess(
                 proceso,
@@ -114,7 +106,6 @@ fn linea_de_comandos(pid: u32) -> Option<String> {
     }
 }
 
-// Dice qué agente es un proceso `node` según su línea de comandos, si es uno conocido.
 fn agente_node(linea: &str) -> Option<&'static str> {
     let linea = linea.replace('\\', "/").to_ascii_lowercase();
     AGENTES_NODE
@@ -123,10 +114,8 @@ fn agente_node(linea: &str) -> Option<&'static str> {
         .map(|(_, agente)| *agente)
 }
 
-// Devuelve el programa que está corriendo dentro del shell, si hay alguno.
 pub fn programa_de(pid_shell: u32, procesos: &[Proceso]) -> Option<String> {
     let mut actual = primer_hijo(pid_shell, procesos)?;
-    // Los lanzadores .cmd abren un cmd intermedio: interesa el programa real.
     if actual.nombre.eq_ignore_ascii_case("cmd.exe") {
         if let Some(hijo) = primer_hijo(actual.pid, procesos) {
             actual = hijo;
@@ -137,7 +126,6 @@ pub fn programa_de(pid_shell: u32, procesos: &[Proceso]) -> Option<String> {
         .strip_suffix(".exe")
         .or_else(|| nombre.strip_suffix(".EXE"))
         .unwrap_or(nombre);
-    // Un agente instalado con npm se ve como `node`: se mira qué script está corriendo.
     if sin_extension.eq_ignore_ascii_case("node") {
         if let Some(agente) = linea_de_comandos(actual.pid).and_then(|linea| agente_node(&linea)) {
             return Some(agente.to_string());
@@ -159,7 +147,6 @@ mod tests {
             r#"node "C:\Users\ana\AppData\Roaming\npm\node_modules\@openai\codex\bin\codex.js""#;
         assert_eq!(agente_node(codex), Some("codex"));
 
-        // npx los corre desde su caché, que también es una carpeta node_modules.
         let gemini = r"node C:\Users\ana\AppData\Local\npm-cache\_npx\4f2a\node_modules\@google\gemini-cli\dist\index.js";
         assert_eq!(agente_node(gemini), Some("gemini"));
     }
@@ -171,7 +158,6 @@ mod tests {
             None
         );
         assert_eq!(agente_node("node servidor.js"), None);
-        // Un paquete que solo empieza igual no cuenta.
         assert_eq!(
             agente_node(r"node C:\x\node_modules\@openai\codex-tools\index.js"),
             None
@@ -184,7 +170,6 @@ mod tests {
         assert!(!linea.is_empty());
     }
 
-    // Lanza un "Codex" falso con node, como lo deja npm, y lo reconoce desde afuera.
     #[test]
     fn reconoce_un_agente_node_que_esta_corriendo() {
         let carpeta = std::env::temp_dir().join(format!("mahzz-agente-{}", std::process::id()));

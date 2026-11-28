@@ -79,8 +79,6 @@ export function temaActual(): Tema {
   return temas.find((tema) => tema.id === ajustes().tema) ?? TEMA_MAHZZ;
 }
 
-// Colores de cada logo, medidos sobre sus imágenes: el acento para botones, bordes y la
-// selección, y el claro para textos resaltados. El Clásico usa el violeta del tema.
 const COLORES_LOGO: Record<Exclude<Logo, "clasico">, { acento: string; acentoClaro: string }> = {
   azul: { acento: "#1a8fe3", acentoClaro: "#7fe3f5" },
   oceano: { acento: "#2f6fe8", acentoClaro: "#6fe0c8" },
@@ -89,7 +87,6 @@ const COLORES_LOGO: Record<Exclude<Logo, "clasico">, { acento: string; acentoCla
   aurora: { acento: "#25b4c4", acentoClaro: "#b7a4ff" },
 };
 
-// Mezcla dos colores #rrggbb: cantidad 0 deja el primero y 1 da el segundo.
 function mezclar(base: string, color: string, cantidad: number): string {
   const canal = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
   return `#${[0, 1, 2]
@@ -98,9 +95,6 @@ function mezclar(base: string, color: string, cantidad: number): string {
     .join("")}`;
 }
 
-// El tema MahzzTerm toma el color del logo elegido: el acento cambia y las superficies y los
-// bordes reciben un tinte leve del mismo color, como el violeta del Clásico. Los temas propios
-// no se tocan: quien eligió sus colores los mantiene.
 function conColoresDelLogo(tema: Tema): Tema {
   const logo = ajustes().logo;
   if (tema.id !== TEMA_MAHZZ.id || logo === "clasico") return tema;

@@ -38,7 +38,6 @@ interface Atajo {
   alt?: boolean;
 }
 
-// Valores de fábrica. Los cambios de la persona se guardan aparte, en los ajustes.
 const ATAJOS: Atajo[] = [
   { accion: "nuevaPestana", tecla: "t", ctrl: true, shift: true },
   { accion: "duplicarPestana", tecla: "u", ctrl: true, shift: true },
@@ -121,7 +120,6 @@ export function combinacionActual(accion: Accion): string | undefined {
   return atajo && aTexto(atajo);
 }
 
-// Devuelve la combinación presionada, o null si todavía falta la tecla principal.
 export function combinacionDeEvento(evento: KeyboardEvent): string | null {
   const tecla = evento.key.toLowerCase();
   if (["control", "shift", "alt", "meta"].includes(tecla)) return null;
@@ -134,7 +132,6 @@ export function combinacionDeEvento(evento: KeyboardEvent): string | null {
   });
 }
 
-// Estas teclas son del programa que esté corriendo, por ejemplo Claude Code o vim.
 export const ACCIONES_DE_BLOQUES: readonly Accion[] = [
   "buscar",
   "bloqueAnterior",

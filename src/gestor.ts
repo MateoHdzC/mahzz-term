@@ -50,7 +50,6 @@ function elemento<T extends HTMLElement>(id: string): T {
   return encontrado as T;
 }
 
-// La carpeta de un archivo. La raíz de un disco queda como "C:\".
 export function carpetaDe(ruta: string): string {
   const carpeta = ruta.replace(/[\\/][^\\/]*$/, "");
   return /^[A-Za-z]:$/.test(carpeta) ? `${carpeta}\\` : carpeta;
@@ -101,7 +100,6 @@ export class GestorPestanas {
       void this.terminarTarea(tarea.carpeta, tarea.nombre, "descartar", true).catch((error) => avisar(String(error))),
     alCerrar: () => this.recuperarFoco(),
   });
-  // Cada ventana principal es una sesión: se guarda con este id para reanudarla después.
   private readonly idSesion = String(Date.now());
   private readonly inicioSesion = Date.now();
 
@@ -151,7 +149,6 @@ export class GestorPestanas {
     abrirMenu(evento.clientX - 190, evento.clientY + 14, { opciones }, () => this.activa?.activo.enfocar());
   }
 
-  // Con la sesión iniciada, el botón muestra la foto de la cuenta de Google.
   private pintarPerfil(): void {
     const boton = elemento("perfil");
     const perfil = perfilActual();
@@ -175,7 +172,6 @@ export class GestorPestanas {
     abrirAjustes(seccion, () => this.recuperarFoco());
   }
 
-  // Las pestañas pueden ir arriba (en la barra de la ventana) o en una columna a un costado.
   private aplicarPosicionPestanas(): void {
     const posicion = ajustes().posicionPestanas;
     const lateral = elemento("lateral-pestanas");
@@ -202,7 +198,6 @@ export class GestorPestanas {
     }
   }
 
-  // Crea el worktree de la tarea, abre una pestaña ahí y arranca al agente.
   private async crearTareaConAgente(
     pedido: PedidoTarea,
     carpetaBase: string | null,
@@ -252,8 +247,6 @@ export class GestorPestanas {
     });
   }
 
-  // Une o descarta una tarea. Antes cierra los paneles que están en esa carpeta,
-  // porque Windows no deja borrar una carpeta que un PowerShell tiene abierta.
   private async terminarTarea(
     carpeta: string,
     nombre: string | null,
@@ -293,7 +286,6 @@ export class GestorPestanas {
     return resultado;
   }
 
-  // Lo que puede hacer una IA conectada por MCP (ver control.ts).
   private prepararControl(): void {
     iniciarControl({
       pestanas: () => this.pestanas,
@@ -329,7 +321,6 @@ export class GestorPestanas {
     };
   }
 
-  // Una pestaña nueva en la misma carpeta del panel activo, con el mismo color.
   async duplicarPestana(pestana: Pestana): Promise<void> {
     const datos = this.datosEnCarpeta(pestana.activo.carpeta);
     datos.color = pestana.color;
@@ -340,7 +331,6 @@ export class GestorPestanas {
     await this.nuevaPestana(this.datosEnCarpeta(carpeta));
   }
 
-  // "Abrir en MahzzTerm" abre una pestaña en esa carpeta; "Abrir con" muestra el archivo en el visor.
   async abrirDesdeWindows(pedido: PedidoWindows): Promise<void> {
     if (pedido.carpeta) await this.nuevaPestanaEn(pedido.carpeta);
     if (pedido.archivo) await this.visor.abrir(pedido.archivo);
@@ -354,7 +344,6 @@ export class GestorPestanas {
     }
   }
 
-  // Vuelve a abrir las pestañas y carpetas de la última vez.
   async restaurarSesion(): Promise<boolean> {
     const sesion = await invoke<{ pestanas: DatosPestana[]; activa: number } | null>("leer_sesion");
     if (!sesion?.pestanas?.length) return false;
@@ -369,7 +358,6 @@ export class GestorPestanas {
     if (activa) this.activar(activa);
   }
 
-  // `mahzz --resume` muestra las sesiones anteriores; `mahzz --resume 2` abre directo la segunda.
   private async reanudarSesion(numero: number | null): Promise<void> {
     let sesiones: SesionGuardada[];
     try {
@@ -437,12 +425,10 @@ export class GestorPestanas {
     }, 700);
   }
 
-  // Al volver a la ventana el teclado tiene que quedar listo para escribir.
   recuperarFoco(): void {
     if (document.querySelector("dialog[open], .menu")) return;
     if (document.activeElement instanceof HTMLInputElement) return;
     if (window.getSelection()?.isCollapsed === false) return;
-    // Si estabas en el visor o en el árbol de archivos, el foco se queda ahí.
     if (document.activeElement?.closest("#visor, #archivos")) return;
     this.activa?.activo.enfocar();
   }
@@ -515,8 +501,6 @@ export class GestorPestanas {
     this.programarGuardadoSesion();
   }
 
-  // El color de la pestaña activa tiñe todo el cuerpo de la ventana: resaltados, carpetas del árbol,
-  // textos de carpeta y rama, y la línea izquierda de los bloques. Sin color, vuelve el acento del tema.
   private aplicarColorActiva(color: string | null): void {
     const cuerpo = document.querySelector<HTMLElement>(".cuerpo");
     if (!cuerpo) return;
@@ -588,7 +572,6 @@ export class GestorPestanas {
     });
   }
 
-  // Arrastrar reordena. Soltar fuera de la ventana abre la pestaña en una ventana nueva.
   private iniciarArrastre(pestana: Pestana, inicio: PointerEvent): void {
     if (inicio.button !== 0) return;
     this.activar(pestana);
@@ -614,9 +597,6 @@ export class GestorPestanas {
       if (this.pestanas.indexOf(pestana) !== destino) {
         otras.splice(destino, 0, pestana);
         this.pestanas = otras;
-        // Se acomodan las otras alrededor de la arrastrada, sin mover esa: sacarla y volver a
-        // meterla en la barra le hacía perder la captura del mouse, el soltar no llegaba y la
-        // pestaña quedaba desplazada fuera de la vista, dejando un hueco.
         let ancla = raiz;
         for (const antes of this.pestanas.slice(0, destino)) raiz.before(antes.elemento);
         for (const despues of this.pestanas.slice(destino + 1)) {
@@ -624,7 +604,6 @@ export class GestorPestanas {
           ancla = despues.elemento;
         }
       }
-      // Fuera de la ventana, la pestaña se ve distinta: al soltar se abre aparte (o mueve la ventana).
       raiz.classList.toggle(
         "pestana--afuera",
         evento.clientX < 0 || evento.clientY < 0 || evento.clientX > innerWidth || evento.clientY > innerHeight,
@@ -653,7 +632,6 @@ export class GestorPestanas {
       if (evento.type === "pointerup" && arrastrando && afuera && this.pestanas.length > 1) {
         void this.moverAVentana(pestana, evento.screenX - 80, evento.screenY - 16);
       } else if (evento.type === "pointerup" && arrastrando && afuera) {
-        // Con una sola pestaña no hay nada que separar: se mueve la ventana entera, como en Chrome.
         void this.ventana.setPosition(new LogicalPosition(evento.screenX - 80, evento.screenY - 16));
         pestana.activo.enfocar();
       } else {
@@ -664,9 +642,6 @@ export class GestorPestanas {
     raiz.addEventListener("pointermove", mover);
     raiz.addEventListener("pointerup", soltar);
     raiz.addEventListener("pointercancel", soltar);
-    // Red de seguridad: si la captura se pierde sin soltar (por ejemplo con Alt+Tab en medio del
-    // arrastre), la pestaña vuelve a su lugar en vez de quedar trabada. Al ser otro tipo de
-    // evento que pointerup, no abre una ventana nueva aunque el mouse esté afuera.
     raiz.addEventListener("lostpointercapture", soltar);
   }
 
@@ -681,7 +656,6 @@ export class GestorPestanas {
       await pestana.reanudar();
       return;
     }
-    // Se suelta recién cuando la ventana nueva la tomó. Si no arranca a tiempo, la pestaña vuelve.
     pestana.elemento.classList.add("pestana--viajando");
     const tomada = await invoke<boolean>("esperar_traspaso", { etiqueta, segundos: 20 }).catch(() => false);
     pestana.elemento.classList.remove("pestana--viajando");
@@ -750,7 +724,6 @@ export class GestorPestanas {
     }
   }
 
-  // La usa el botón de cerrar y también Alt+F4.
   async confirmarCierreVentana(): Promise<boolean> {
     if (this.visor.hayCambiosSinGuardar()) {
       const descartar = await confirmar(
@@ -784,7 +757,6 @@ export class GestorPestanas {
   private alPresionarTecla(evento: KeyboardEvent): void {
     if (document.querySelector("dialog[open], .menu")) return;
     if (evento.target instanceof HTMLInputElement) return;
-    // En el visor (por ejemplo editando código) las teclas son del editor.
     if (evento.target instanceof Element && evento.target.closest("#visor")) return;
 
     const panel = this.activa?.activo;

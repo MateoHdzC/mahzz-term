@@ -21,7 +21,6 @@ const CLAVE_ANCHO = "mahzz-archivos-ancho";
 const ANCHO_MINIMO = 180;
 const ANCHO_MAXIMO = 520;
 const RETRASO_REFRESCO = 350;
-// Tipo propio para reconocer, al soltar, que lo arrastrado sale de este árbol.
 const TIPO_ARRASTRE = "application/x-mahzz-ruta";
 
 const ICONO_CARPETA =
@@ -47,11 +46,9 @@ function guardarPreferencia(clave: string, valor: string): void {
   try {
     localStorage.setItem(clave, valor);
   } catch {
-    // Sin almacenamiento, la preferencia dura solo mientras la ventana esté abierta.
   }
 }
 
-// Ruta corta desde la carpeta de la terminal, o completa si el archivo está afuera.
 function rutaRelativa(ruta: string, base: string | null): string {
   if (!base) return ruta;
   const prefijo = base.endsWith("\\") ? base : `${base}\\`;
@@ -63,7 +60,6 @@ function carpetaPadre(ruta: string): string {
   return corte > 2 ? ruta.slice(0, corte) : ruta.slice(0, corte + 1);
 }
 
-// Árbol de carpetas de la terminal activa, con las acciones de un explorador de archivos.
 export class PanelArchivos {
   private readonly titulo = document.createElement("span");
   private readonly arbol = document.createElement("div");
@@ -135,7 +131,6 @@ export class PanelArchivos {
     if (visible) this.sincronizar();
   }
 
-  // Sigue a la terminal activa y refleja los archivos que crean los comandos.
   sincronizar(): void {
     if (!this.visible) return;
     clearTimeout(this.temporizador);
@@ -280,7 +275,6 @@ export class PanelArchivos {
     void this.dibujar();
   }
 
-  // Carpeta donde se crea o pega: la seleccionada, la del archivo seleccionado o la raíz.
   private carpetaDestino(): string | null {
     const elegida = this.seleccion ? this.entradas.get(this.seleccion) : undefined;
     if (elegida) return elegida.directorio ? elegida.ruta : carpetaPadre(elegida.ruta);
@@ -307,7 +301,6 @@ export class PanelArchivos {
     }
   }
 
-  // Cambia el nombre ahí mismo en el árbol, como en VS Code.
   private renombrar(ruta: string): void {
     const fila = this.filaDe(ruta);
     const nombre = fila?.querySelector<HTMLElement>(".archivos__nombre");
@@ -350,7 +343,6 @@ export class PanelArchivos {
     campo.addEventListener("blur", () => void terminar(true));
   }
 
-  // Mantiene abiertas las carpetas expandidas y avisa al visor cuando cambia una ruta.
   private renombrarEnEstado(vieja: string, nueva: string): void {
     const prefijo = vieja.toLowerCase() + "\\";
     for (const ruta of [...this.expandidas]) {
@@ -446,7 +438,6 @@ export class PanelArchivos {
 
   private prepararTeclado(): void {
     this.arbol.addEventListener("contextmenu", (evento) => {
-      // Clic derecho en el espacio vacío: crear o pegar en la raíz.
       evento.preventDefault();
       this.seleccionar(null);
       abrirMenu(evento.clientX, evento.clientY, {
@@ -486,7 +477,6 @@ export class PanelArchivos {
     this.seleccionar(siguiente.dataset.ruta ?? null);
   }
 
-  // Soltar en una carpeta mueve (con Ctrl, copia). Soltar sobre la terminal escribe la ruta.
   private prepararSoltar(): void {
     const esNuestro = (evento: DragEvent) => Boolean(evento.dataTransfer?.types.includes(TIPO_ARRASTRE));
     const destinoDe = (evento: DragEvent): { carpeta: string; fila: HTMLElement | null } | null => {

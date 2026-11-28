@@ -36,8 +36,6 @@ pub fn quitar_integracion() {
 }
 
 pub fn iniciar() {
-    // Si la abrió el Explorador ("Abrir en MahzzTerm" o "Abrir con") y ya hay una MahzzTerm abierta,
-    // se le pasa la carpeta o el archivo a esa y esta copia se cierra sin abrir otra ventana.
     let pedido = integracion::leer_pedido(std::env::args());
     if pedido
         .as_ref()

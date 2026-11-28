@@ -19,11 +19,8 @@ export function rutaLogo(logo: Logo): string {
   return logo === "clasico" ? "/logo.png" : `/logos/${logo}.png`;
 }
 
-// El último logo pedido a Windows: así no se vuelve a pedir en cada cambio de ajustes.
 let logoAplicado: Logo | null = null;
 
-// Cambia el logo de la barra de la app, el icono de las ventanas (Alt+Tab y la barra de tareas)
-// y el de los accesos directos de MahzzTerm.
 export function aplicarLogo(): void {
   const logo = ajustes().logo;
   for (const imagen of document.querySelectorAll<HTMLImageElement>(".barra__logo")) imagen.src = rutaLogo(logo);
@@ -36,8 +33,6 @@ export function aplicarLogo(): void {
     .catch((error) => console.error("No se pudo cambiar el icono", error));
 }
 
-// Con MahzzTerm anclada, Windows dibuja el botón de la barra de tareas con el icono del acceso
-// anclado y lo guarda en caché: solo lo vuelve a leer al reiniciar el Explorador.
 async function ofrecerReiniciarExplorador(): Promise<void> {
   const aceptado = await confirmar(
     t("¿Actualizar el icono anclado?"),

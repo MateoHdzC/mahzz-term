@@ -22,11 +22,9 @@ const ESPERA_REINTENTO = 400;
 const VENTANA_REINTENTOS = 60_000;
 const MARGEN_VIVO = 12;
 const COMANDOS_LIMPIAR = /^\s*(cls|clear|clear-host)\s*$/i;
-// Los comandos rápidos terminan antes de este tiempo y así el editor no parpadea.
 const RETRASO_EJECUCION = 120;
 const ESPERA_LECTURA = 80;
 const LIMITE_ARRANQUE = 6000;
-// La salida que llega justo después de una tecla es el eco de lo escrito, no trabajo del programa.
 const MARGEN_ECO = 400;
 
 interface ComandoEnCurso {
@@ -66,7 +64,6 @@ export interface DatosPanel {
   rama?: string | null;
   enCurso?: DatosEnCurso | null;
   borrador?: string;
-  // Solo se guarda en las sesiones, para saber si había un agente corriendo.
   programa?: string | null;
 }
 
@@ -76,7 +73,6 @@ export interface EventosPanel {
   alBuscarBloque(panel: Panel, id: number): void;
 }
 
-// Convierte el aviso del shell (file:///C:/Users/...) en una ruta de Windows.
 function rutaDesdeUri(uri: string): string | null {
   try {
     const url = new URL(uri);
@@ -111,7 +107,6 @@ function codificarBase64(texto: string): string {
   return btoa(binario);
 }
 
-// Resultado de un comando terminado, para quien lo esté esperando (por ejemplo, la IA).
 export interface FinComando {
   comando: string;
   carpeta: string | null;
@@ -123,7 +118,6 @@ export interface FinComando {
 let ultimoIdPanel = 0;
 
 export class Panel {
-  // Número fijo mientras el panel exista: así lo nombra la IA.
   readonly id = ++ultimoIdPanel;
   readonly elemento = document.createElement("div");
   readonly terminal: Terminal;
@@ -131,7 +125,6 @@ export class Panel {
   sesion: number | null = null;
   carpeta: string | null;
   programa: string | null = null;
-  // Datos que usa el panel de agentes para saber si un programa está trabajando.
   ultimaSalida = 0;
   programaDesde = 0;
   pideAtencion = false;
@@ -237,12 +230,10 @@ export class Panel {
     return this.remoto ? this.remoto.carpeta : this.carpeta;
   }
 
-  // Mientras corre un programa, las teclas y atajos de bloques le pertenecen a él.
   get ocupado(): boolean {
     return this.enCurso !== null || this.terminal.buffer.active.type === "alternate";
   }
 
-  // La terminal recibe el teclado solo cuando un programa la necesita.
   private get usaTerminal(): boolean {
     return (
       this.elemento.classList.contains("panel--ejecutando") ||
@@ -255,7 +246,6 @@ export class Panel {
     return document.activeElement === this.terminal.textarea;
   }
 
-  // Se llama con el panel ya agregado a la página, porque xterm necesita medirlo.
   async iniciar(): Promise<void> {
     this.terminal.open(this.lienzo);
     this.abierto = true;
@@ -324,7 +314,6 @@ export class Panel {
       this.programarVivo();
     });
 
-    // Sin programa corriendo, la rueda del mouse recorre los bloques.
     this.lienzo.addEventListener(
       "wheel",
       (evento) => {
@@ -336,7 +325,6 @@ export class Panel {
       { capture: true, passive: false },
     );
 
-    // Los agentes como Claude Code tocan la campana cuando necesitan una respuesta.
     this.terminal.onBell(() => {
       this.pideAtencion = true;
     });
@@ -347,7 +335,6 @@ export class Panel {
       if (this.sesion !== null) {
         void invoke("escribir_sesion", { id: this.sesion, datos });
       } else if (this.conectando) {
-        // Windows consulta el cursor al arrancar y no sigue hasta recibir esta respuesta.
         this.entradaPendiente += datos;
       } else if (this.esperandoReinicio && datos === "\r") {
         this.terminal.reset();
@@ -361,10 +348,7 @@ export class Panel {
       }
     });
 
-    // Ctrl+C copia si hay selección. Sin selección llega al shell y cancela.
     this.terminal.attachCustomKeyEventHandler((evento) => {
-      // Shift+Enter manda ESC + Enter, como VS Code y Windows Terminal: en Claude Code, Codex y
-      // otros programas interactivos es un salto de línea en vez de enviar el mensaje.
       if (evento.key === "Enter" && evento.shiftKey && !evento.ctrlKey && !evento.altKey && !evento.metaKey) {
         if (evento.type === "keydown" && this.sesion !== null) {
           void invoke("escribir_sesion", { id: this.sesion, datos: "\x1b\r" });
@@ -380,13 +364,10 @@ export class Panel {
         this.terminal.clearSelection();
         return false;
       }
-      // Ctrl+V lo resuelve el evento de pegado del navegador.
       return tecla !== "v";
     });
   }
 
-  // Marcas del script: A prompt, C comando iniciado, D comando terminado,
-  // L alias y funciones de la sesión, P valor actual del PATH.
   private alRecibirMarca(datos: string): boolean {
     const separador = datos.indexOf(";");
     const tipo = separador < 0 ? datos : datos.slice(0, separador);
@@ -402,14 +383,12 @@ export class Panel {
     else if (tipo === "rw" && this.remoto) this.remoto.carpeta = decodificarBase64(valor);
     else if (tipo === "L") this.verificador.definirSesion(decodificarBase64(valor).split("\n"));
     else if (tipo === "P") this.verificador.definirRuta(decodificarBase64(valor));
-    // X: órdenes del comando mahzz, como mahzz --resume.
     else if (tipo === "X") {
       window.dispatchEvent(new CustomEvent("mahzz:orden", { detail: decodificarBase64(valor) }));
     }
     return true;
   }
 
-  // El comando ssh sigue abierto: mientras dure, los bloques son del servidor.
   private entrarEnRemoto(host: string): void {
     this.remoto = { host, carpeta: null, conexion: this.enCurso };
     this.inicioDesde = Math.max(0, this.enCurso?.marcador?.line ?? 0);
@@ -429,7 +408,6 @@ export class Panel {
     this.contexto.definirSsh(null);
   }
 
-  // Si PowerShell vuelve a responder, la conexión SSH ya terminó.
   private alTerminarLocal(codigo: number): void {
     const veniaDeRemoto = this.remoto !== null;
     this.salirDeRemoto();
@@ -446,7 +424,6 @@ export class Panel {
     this.actualizarContexto();
     this.programarVivo();
 
-    // PowerShell necesita un instante para empezar a leer después de dibujar el prompt.
     clearTimeout(this.temporizadorListo);
     this.temporizadorListo = window.setTimeout(() => {
       this.listo = true;
@@ -500,7 +477,6 @@ export class Panel {
     this.verificador.invalidar();
 
     if (!actual) {
-      // El primer prompt conserva lo que haya impreso el perfil de PowerShell.
       if (!this.inicioCapturado) {
         this.inicioCapturado = true;
         const captura = capturarRango(this.terminal, this.inicioDesde, this.lineaFinal());
@@ -584,7 +560,6 @@ export class Panel {
     return this.rama;
   }
 
-  // Promesa que se cumple cuando termina el próximo comando de este panel.
   esperarFinComando(): Promise<FinComando> {
     return new Promise((cumplir) => this.esperasFin.push(cumplir));
   }
@@ -595,22 +570,18 @@ export class Panel {
     for (const cumplir of esperas) cumplir(fin);
   }
 
-  // Las últimas líneas de lo que muestra la terminal ahora (salida en vivo o un programa interactivo).
   textoPantalla(lineas: number): string {
     const buffer = this.terminal.buffer.active;
     const leer = (indice: number) => buffer.getLine(indice)?.translateToString(true) ?? "";
-    // Se cuenta desde la última línea con texto: las filas vacías de abajo no suman.
     let fin = buffer.length;
     while (fin > 0 && !leer(fin - 1).trim()) fin--;
     const textos: string[] = [];
     for (let indice = Math.max(0, fin - lineas); indice < fin; indice++) {
-      // El editor manda los comandos codificados: se muestra el comando real.
       textos.push(leer(indice).replace(/#mahzz:([A-Za-z0-9+/=]+)/, (_, codigo: string) => decodificarBase64(codigo)));
     }
     return textos.join("\n");
   }
 
-  // Manda bytes tal cual al programa que corre (teclas, respuestas, Ctrl+C).
   escribirCrudo(datos: string): boolean {
     if (this.sesion === null) return false;
     void invoke("escribir_sesion", { id: this.sesion, datos });
@@ -630,7 +601,6 @@ export class Panel {
     return this.enviar(comando);
   }
 
-  // Escribe una ruta en el programa que esté corriendo o, si no hay ninguno, en el editor.
   enviarRuta(ruta: string): void {
     const conEspacios = /\s/.test(ruta);
     if (this.usaTerminal && this.sesion !== null) {
@@ -644,7 +614,6 @@ export class Panel {
     this.editor.enfocar();
   }
 
-  // Devuelve true si el comando fue aceptado y el editor se puede vaciar.
   private enviar(comando: string): boolean {
     if ((this.sesion === null && !this.conectando) || this.ocupado || this.enviando) return false;
     if (!this.listo) {
@@ -691,7 +660,6 @@ export class Panel {
     }
 
     if (!carpeta) return;
-    // Cada carpeta se analiza una sola vez hasta abrir otra pestaña o reiniciar el shell.
     if (this.proyectos.has(carpeta)) {
       this.contexto.definirProyecto(this.proyectos.get(carpeta) ?? null);
       return;
@@ -734,7 +702,6 @@ export class Panel {
     if (alFinal) this.lista.irAlFinal();
   }
 
-  // Sin programa corriendo se ve el editor. Si no, la salida se apoya abajo de los bloques.
   private actualizarVivo(): void {
     if (!this.abierto) return;
     if (!this.usaTerminal) {
@@ -750,7 +717,6 @@ export class Panel {
     const altoFila = pantalla.getBoundingClientRect().height / this.terminal.rows;
     const buffer = this.terminal.buffer.active;
     const marcador = buffer.type === "normal" ? this.enCurso?.marcador : null;
-    // El prompt y el comando ya se ven en el editor: se muestra solo lo que sale después.
     const inicio = marcador ? Math.max(0, Math.min(marcador.line - buffer.baseY, this.filasMaximas - 1)) : 0;
     const filasVisibles = Math.max(1, this.filasMaximas - inicio);
     const altoVivo = Math.min(altoTotal, Math.ceil(filasVisibles * altoFila) + MARGEN_VIVO);
@@ -795,7 +761,6 @@ export class Panel {
     this.proyectos.clear();
     this.elemento.classList.remove("panel--sin-shell");
     this.enfocar();
-    // Si el perfil pide datos al arrancar, la terminal tiene que quedar visible.
     this.temporizadorArranque = window.setTimeout(() => this.entrarEnEjecucion(), LIMITE_ARRANQUE);
     try {
       const id = await invoke<number>("crear_sesion", {
@@ -864,7 +829,6 @@ export class Panel {
     this.eventos.alCambiarEstado(this);
   }
 
-  // Un programa tiene que verse dos veces seguidas para evitar parpadeos en el título.
   registrarPrograma(nombre: string | null): void {
     const confirmado = nombre === null || nombre === this.candidato;
     this.candidato = nombre;
@@ -888,7 +852,6 @@ export class Panel {
     this.programarVivo();
   }
 
-  // Pegar varias líneas en un programa puede ejecutarlas: primero se confirma.
   private alPegar(evento: ClipboardEvent): void {
     const texto = evento.clipboardData?.getData("text") ?? "";
     const lineas = texto.split(/\r?\n/).filter((linea) => linea.trim()).length;
@@ -912,7 +875,6 @@ export class Panel {
     else this.editor.enfocar();
   }
 
-  // Solo los paneles visibles usan WebGL, porque Chromium limita los contextos activos.
   activarDibujo(visible: boolean): void {
     if (!this.abierto) return;
     this.dibujoVisible = visible;
@@ -936,7 +898,6 @@ export class Panel {
     }
   }
 
-  // Chromium puede quitar contextos WebGL si se abren y cierran muchos paneles seguidos.
   private recuperarDibujo(): void {
     const ahora = Date.now();
     if (ahora - this.ultimaPerdida > VENTANA_REINTENTOS) this.reintentosDibujo = 0;
@@ -948,12 +909,10 @@ export class Panel {
     }, ESPERA_REINTENTO);
   }
 
-  // Prepara el panel para seguir funcionando en otra ventana.
   async exportar(): Promise<DatosPanel> {
     const sesion = this.sesion;
     if (sesion !== null) {
       await invoke("pausar_sesion", { id: sesion });
-      // Deja llegar lo que ya estaba en camino antes de copiar la pantalla.
       await new Promise((listo) => setTimeout(listo, 60));
       await new Promise<void>((listo) => this.terminal.write("", listo));
     }
@@ -985,12 +944,10 @@ export class Panel {
     };
   }
 
-  // Vuelve a recibir la salida si el traspaso a otra ventana falló.
   async reanudar(): Promise<void> {
     if (this.sesion !== null) await this.adjuntar(this.sesion);
   }
 
-  // Libera la interfaz sin terminar el proceso: lo sigue usando otra ventana.
   soltar(): void {
     this.abierto = false;
     this.generacion++;

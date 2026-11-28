@@ -44,7 +44,6 @@ function acortarRuta(ruta: string, casa: string | null): string {
   return `${partes[0]}\\…\\${partes.slice(-2).join("\\")}`;
 }
 
-// Línea sobre el editor con la carpeta, el proyecto y el estado de git.
 export class BarraContexto {
   readonly elemento = document.createElement("div");
   private readonly botonCarpeta = document.createElement("button");

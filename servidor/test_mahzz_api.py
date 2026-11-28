@@ -1,5 +1,3 @@
-"""Pruebas del backend con un Google falso.  python -m unittest -v (desde servidor/)"""
-
 import base64
 import hashlib
 import json
@@ -93,7 +91,6 @@ class PruebasLogin(unittest.TestCase):
         self.assertEqual(estado, 200)
         self.assertEqual(tokens, {"access_token": "acceso", "refresh_token": "renovacion-123", "expires_in": 3599})
 
-        # El código sirve una sola vez
         estado, _ = self.post("/api/auth/canjear", {"codigo": a_la_app["code"], "verificador": self.verificador})
         self.assertEqual(estado, 400)
 

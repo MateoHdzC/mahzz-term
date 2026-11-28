@@ -22,16 +22,13 @@ use crate::{
     datos::carpeta_datos,
 };
 
-// El login pasa por el backend de MahzzTerm (servidor/): el secret de Google vive solo ahí.
 const SERVIDOR: &str = "https://mahzzterm.xyz";
 
 const REVOCAR: &str = "https://oauth2.googleapis.com/revoke";
 const PERFIL: &str = "https://openidconnect.googleapis.com/v1/userinfo";
 const ARCHIVOS: &str = "https://www.googleapis.com/drive/v3/files";
 const SUBIDA: &str = "https://www.googleapis.com/upload/drive/v3/files";
-// Conserva el nombre de antes del cambio a MahzzTerm: con otro nombre se perdería lo ya sincronizado.
 const ARCHIVO_SYNC: &str = "mazzterm-sync.json";
-// Igual que la vida del "state" en el backend: la primera vez Google muestra varias pantallas.
 const LIMITE_LOGIN: Duration = Duration::from_secs(600);
 const LIMITE_RESPUESTA: u64 = 64 * 1024 * 1024;
 
@@ -41,7 +38,6 @@ const PAGINA_ERROR: &str = "<!doctype html><html lang=\"es\"><meta charset=\"utf
 #[derive(Default)]
 pub struct TokenGoogle(Mutex<Option<(String, Instant)>>);
 
-// MAHZZTERM_SERVIDOR permite probar contra un backend local.
 fn servidor() -> String {
     std::env::var("MAHZZTERM_SERVIDOR")
         .ok()
@@ -100,7 +96,6 @@ fn responder(conexion: &mut TcpStream, estado: &str, cuerpo: &str) {
     );
 }
 
-// Espera la vuelta del navegador en una dirección que solo existe dentro de esta PC.
 fn esperar_codigo(servidor: &TcpListener, estado: &str) -> Result<String, String> {
     servidor
         .set_nonblocking(true)
@@ -150,7 +145,6 @@ fn esperar_codigo(servidor: &TcpListener, estado: &str) -> Result<String, String
     Err("Se agotó el tiempo para iniciar sesión".to_string())
 }
 
-// La foto se guarda dentro de la app porque la página no carga imágenes externas.
 fn descargar_foto(direccion: &str) -> Option<String> {
     let url = Url::parse(direccion).ok()?;
     if url.scheme() != "https" || !url.host_str()?.ends_with(".googleusercontent.com") {
@@ -231,7 +225,6 @@ fn token_acceso(app: &AppHandle) -> Result<String, String> {
         .as_str()
         .ok_or("La sesión no es válida")?;
     let respuesta = pedir_al_servidor("/api/auth/renovar", &json!({ "refresh_token": renovacion }));
-    // 401: Google revocó la sesión (o es de antes del backend). Hay que entrar de nuevo.
     if let Err(ureq::Error::StatusCode(401)) = respuesta {
         let _ = fs::remove_file(ruta_cuenta(app)?);
         return Err("La sesión de Google venció. Volvé a iniciar sesión".to_string());

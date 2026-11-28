@@ -23,7 +23,6 @@ pub fn leer_config(app: AppHandle) -> Result<Value, String> {
     let Ok(texto) = fs::read_to_string(ruta) else {
         return Ok(json!({}));
     };
-    // Si el archivo se editó mal a mano, la app arranca con los valores por defecto.
     Ok(toml::from_str(&texto).unwrap_or_else(|_| json!({})))
 }
 
@@ -93,7 +92,6 @@ pub fn guardar_sesion(app: AppHandle, sesion: Value) -> Result<(), String> {
     crate::sesiones::guardar_en_historial(&app, &sesion)
 }
 
-// Cifra con el usuario de Windows: copiado a otra PC o a otra cuenta no se puede leer.
 pub(crate) fn cifrar(datos: &[u8], proteger: bool) -> Result<Vec<u8>, String> {
     let entrada = CRYPT_INTEGER_BLOB {
         cbData: datos.len() as u32,
@@ -179,7 +177,6 @@ pub fn borrar_secreto(app: AppHandle, id: String) -> Result<(), String> {
     escribir_baul(&app, &baul)
 }
 
-// Solo abre páginas web o archivos que existen, nunca comandos arbitrarios.
 #[tauri::command]
 pub fn abrir_externo(destino: String) -> Result<(), String> {
     let es_web = destino.starts_with("https://") || destino.starts_with("http://");
@@ -213,7 +210,6 @@ pub fn avisar_comando(app: AppHandle, titulo: String, cuerpo: String) -> Result<
         .map_err(|error| error.to_string())
 }
 
-// Muestra u oculta la ventana principal como un panel que baja desde arriba.
 fn alternar_desplegable(app: &AppHandle) {
     let Some(ventana) = app.get_webview_window("main") else {
         return;

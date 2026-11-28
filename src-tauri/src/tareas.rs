@@ -1,6 +1,3 @@
-// Tareas en paralelo para agentes: cada tarea es un worktree de git con su propia rama
-// (mahzz/<nombre>), en una carpeta hermana del repo (<repo>-agentes/<nombre>). Así varios
-// agentes trabajan a la vez sin pisarse, y al terminar la tarea se une o se descarta.
 use std::{
     os::windows::process::CommandExt,
     path::{Path, PathBuf},
@@ -35,7 +32,6 @@ fn ruta_windows(texto: &str) -> PathBuf {
     PathBuf::from(texto.replace('/', "\\"))
 }
 
-// El repositorio principal, aunque se pregunte desde adentro de un worktree.
 fn repo_principal(carpeta: &Path) -> Result<PathBuf, String> {
     let comun = git(
         carpeta,
@@ -46,7 +42,6 @@ fn repo_principal(carpeta: &Path) -> Result<PathBuf, String> {
     Ok(comun.parent().map(Path::to_path_buf).unwrap_or(comun))
 }
 
-// "Arreglar el login!" → "arreglar-el-login"
 fn convertir_nombre(nombre: &str) -> String {
     let mut resultado = String::new();
     for caracter in nombre.trim().to_lowercase().chars() {
@@ -93,7 +88,6 @@ pub async fn crear_tarea(carpeta: String, nombre: String) -> Result<Value, Strin
         }
         let nombre_repo = repo.file_name().map(|valor| valor.to_string_lossy().into_owned()).unwrap_or_else(|| "repo".to_string());
         let contenedor = repo.parent().ok_or("Ruta inválida")?.join(format!("{nombre_repo}-agentes"));
-        // Si el nombre ya está usado, se agrega un número: tarea, tarea-2, tarea-3…
         let (slug, rama, destino) = (1..)
             .map(|numero| {
                 let slug = if numero == 1 { base.clone() } else { format!("{base}-{numero}") };
@@ -152,8 +146,6 @@ fn datos_tarea(carpeta: &Path) -> Result<(PathBuf, String), String> {
     Ok((repo, rama))
 }
 
-// Guarda lo que dejó el agente, lo une a la rama del repo principal y borra la tarea.
-// Si hay conflictos, se cancela la unión y la tarea queda como estaba.
 #[tauri::command]
 pub async fn unir_tarea(carpeta: String, mensaje: Option<String>) -> Result<Value, String> {
     spawn_blocking(move || {
@@ -188,7 +180,6 @@ pub async fn unir_tarea(carpeta: String, mensaje: Option<String>) -> Result<Valu
     .map_err(|error| error.to_string())?
 }
 
-// Borra la carpeta de la tarea y su rama, con todo lo que tenía.
 #[tauri::command]
 pub async fn descartar_tarea(carpeta: String) -> Result<Value, String> {
     spawn_blocking(move || {

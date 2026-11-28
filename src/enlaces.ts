@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { avisar } from "./dialogos";
 import { t } from "./i18n";
 
-// Web, rutas con separadores (con línea opcional) y hashes de git.
 const PATRON =
   /https?:\/\/[^\s<>"'`)\]]+|(?:[A-Za-z]:[\\/]|\.{0,2}[\\/])?[\w.-]+(?:[\\/][\w.-]+)+(?::\d+)*|\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b/g;
 
@@ -10,7 +9,6 @@ function esHash(texto: string): boolean {
   return /^[0-9a-f]{7,40}$/.test(texto);
 }
 
-// Convierte en enlaces lo que aparece en la salida, sin interpretar su contenido como HTML.
 export function decorarEnlaces(raiz: HTMLElement, soloWeb: boolean): void {
   const recorrido = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
   const nodos: Text[] = [];

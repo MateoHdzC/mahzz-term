@@ -1,12 +1,6 @@
-# Prepara los logos elegibles de MahzzTerm a partir de imágenes grandes (WebP o PNG).
-# Para cada una: saca el fondo negro si no tiene transparencia, borra las manchitas sueltas,
-# recorta al logo, lo centra en un cuadrado y lo guarda como PNG de 256 px en public/logos.
-#   powershell -ExecutionPolicy Bypass -File .\scripts\logos.ps1 -Origen C:\carpeta\con\opc1.webp...opc5.webp
 param([Parameter(Mandatory)] [string] $Origen)
 
 $ErrorActionPreference = "Stop"
-#   Se corre con Windows PowerShell 5.1 (powershell.exe), que referencia WPF por nombre:
-#   powershell -ExecutionPolicy Bypass -File .\scripts\logos.ps1 -Origen ...
 Add-Type -AssemblyName PresentationCore, WindowsBase, System.Xaml
 
 Add-Type -ReferencedAssemblies PresentationCore, WindowsBase, System.Xaml -TypeDefinition @'
@@ -18,7 +12,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 public static class Logos {
-    // Lee la imagen como BGRA de 8 bits por canal, sin premultiplicar.
     static byte[] Leer(string ruta, out int ancho, out int alto, out bool tieneAlfa) {
         var decodificador = BitmapDecoder.Create(new Uri(ruta), BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
         var cuadro = decodificador.Frames[0];
@@ -30,9 +23,6 @@ public static class Logos {
         return pixeles;
     }
 
-    // Fondo negro sólido: lo vuelve transparente solo desde los bordes, así el interior oscuro
-    // del logo (rodeado por su borde brillante) queda intacto. El brillo cerca del borde se
-    // convierte en transparencia gradual para no dejar un corte duro.
     static void SacarFondoNegro(byte[] p, int ancho, int alto) {
         const int Negro = 10, Limite = 48;
         var visto = new bool[ancho * alto];
@@ -56,7 +46,6 @@ public static class Logos {
         }
     }
 
-    // Se queda con la mancha más grande (el logo) y borra el resto. Devuelve su rectángulo.
     static Int32Rect LimpiarManchas(byte[] p, int ancho, int alto) {
         const int Umbral = 24;
         var grupo = new int[ancho * alto];
@@ -86,8 +75,6 @@ public static class Logos {
             if (x < minX) minX = x; if (x > maxX) maxX = x;
             if (y < minY) minY = y; if (y > maxY) maxY = y;
         }
-        // Afuera del logo (con un margen para el brillo) no queda nada; adentro, solo el logo
-        // y el brillo tenue que lo rodea.
         int margen = 24;
         for (int i = 0; i < grupo.Length; i++) {
             int x = i % ancho, y = i / ancho;
@@ -105,7 +92,6 @@ public static class Logos {
         var caja = LimpiarManchas(p, ancho, alto);
 
         var completa = BitmapSource.Create(ancho, alto, 96, 96, PixelFormats.Bgra32, null, p, ancho * 4);
-        // Cuadrado con un 4 % de aire alrededor, centrado en el logo.
         double ladoCaja = Math.Max(caja.Width, caja.Height) * 1.08;
         double cx = caja.X + caja.Width / 2.0, cy = caja.Y + caja.Height / 2.0;
         var visual = new DrawingVisual();
@@ -125,7 +111,6 @@ public static class Logos {
 }
 '@
 
-# Nombre de cada logo en la app, en el orden de las imágenes opc1..opc5.
 $nombres = @("azul", "oceano", "esmeralda", "hielo", "aurora")
 $carpeta = Join-Path $PSScriptRoot "..\public\logos"
 New-Item -ItemType Directory -Force $carpeta | Out-Null

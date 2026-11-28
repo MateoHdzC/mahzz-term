@@ -1,2 +1,1 @@
-# El backend corre en Linux y desplegar.ps1 le pasa comandos a bash: siempre LF
 servidor/** text eol=lf

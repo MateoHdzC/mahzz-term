@@ -1,5 +1,3 @@
-// Registro de todos los bloques terminados, para buscar en los logs de cualquier pestaña y día.
-// Un archivo JSONL por día en datos/logs. Se guardan 30 días.
 use std::{
     fs::{self, OpenOptions},
     io::Write,
@@ -19,7 +17,6 @@ const CONTEXTO: usize = 160;
 
 #[derive(Default)]
 pub struct Registros {
-    // Evita que dos bloques que terminan juntos mezclen sus líneas en el archivo.
     escritura: Mutex<()>,
     podado: Mutex<bool>,
 }
@@ -94,7 +91,6 @@ pub fn guardar_registro(
     writeln!(archivo, "{entrada}").map_err(|error| error.to_string())
 }
 
-// Un pedazo del texto alrededor de la coincidencia, para mostrar en la lista de resultados.
 fn fragmento(texto: &str, posicion: usize, largo: usize) -> String {
     let mut inicio = posicion.saturating_sub(CONTEXTO);
     while !texto.is_char_boundary(inicio) {
@@ -114,8 +110,6 @@ fn fragmento(texto: &str, posicion: usize, largo: usize) -> String {
     resultado
 }
 
-// Busca en los logs, del más nuevo al más viejo. Sin consulta devuelve los últimos bloques.
-// `solo_errores` deja solo los que terminaron con código distinto de 0.
 #[tauri::command]
 pub async fn buscar_registros(
     app: AppHandle,
@@ -160,7 +154,6 @@ pub async fn buscar_registros(
                         continue;
                     }
                     if let Some(posicion) = en_texto {
-                        // to_lowercase puede cambiar largos con algunos caracteres: se ajusta al texto real.
                         let posicion = posicion.min(texto.len());
                         entrada["fragmento"] = json!(fragmento(&texto, posicion, buscada.len()));
                     }

@@ -7,7 +7,6 @@ export interface EntradaHistorial {
   codigo: number;
 }
 
-// Estos comandos no se guardan porque pueden contener contraseñas o claves.
 const POSIBLE_SECRETO =
   /(pass(word|wd)?|pwd|secret|token|api[_-]?key|authorization|bearer)\s*[:=\s]\s*\S|\b(ghp_|gho_|github_pat_|glpat-|sk-[a-z0-9-]{8,}|xox[bp]-|AKIA[0-9A-Z]{12})/i;
 
@@ -35,7 +34,6 @@ export function entradasHistorial(): readonly EntradaHistorial[] {
   return entradas;
 }
 
-// Lista sin repetidos para recorrer con las flechas: el uso más reciente queda al final.
 export function comandosRecorribles(): string[] {
   const vistos = new Set<string>();
   const lista: string[] = [];
@@ -48,7 +46,6 @@ export function comandosRecorribles(): string[] {
   return lista.reverse();
 }
 
-// Prioriza lo usado en esta carpeta y lo que terminó sin errores.
 export function sugerenciaFantasma(prefijo: string, carpeta: string | null): string | null {
   let mejor: EntradaHistorial | null = null;
   let mejorPuntaje = -1;

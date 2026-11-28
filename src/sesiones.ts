@@ -39,7 +39,6 @@ function nombreCarpeta(carpeta: string): string {
   return carpeta.split("\\").filter(Boolean).at(-1) ?? carpeta;
 }
 
-// Dos sesiones con las mismas pestañas y carpetas son la misma: se muestra solo la más nueva.
 function firma(sesion: SesionGuardada): string {
   return JSON.stringify(
     sesion.pestanas.map((pestana) => [pestana.tituloManual, pestana.color, carpetasDe(pestana.nodo, [])]),
@@ -60,7 +59,6 @@ export async function listarSesiones(excluir: string): Promise<SesionGuardada[]>
   return resultado;
 }
 
-// Al reabrir, un panel que tenía Claude Code abierto queda con `claude --continue` listo en el editor.
 function prepararNodo(nodo: DatosNodo): DatosNodo {
   if (nodo.tipo === "division") return { ...nodo, a: prepararNodo(nodo.a), b: prepararNodo(nodo.b) };
   const comando = infoAgente(nodo.datos.programa)?.reanudar;

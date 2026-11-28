@@ -4,7 +4,6 @@ export interface OpcionMenu {
   accion: () => void;
   peligro?: boolean;
   desactivada?: boolean;
-  // Para menús que eligen un valor (los desplegables de Ajustes): marca la opción actual.
   marcada?: boolean;
 }
 
@@ -15,7 +14,6 @@ export interface ColorMenu {
 
 export interface ContenidoMenu {
   opciones: OpcionMenu[];
-  // Ancho fijo (el del botón que lo abre). Con ancho, la lista tiene scroll si es larga.
   ancho?: number;
   colores?: ColorMenu[];
   colorActual?: string | null;
@@ -24,7 +22,6 @@ export interface ContenidoMenu {
 
 const DURACION_AVISO = 2600;
 
-// Mensaje breve que confirma una acción sin interrumpir.
 export function avisar(texto: string): void {
   document.querySelector(".aviso")?.remove();
   const aviso = document.createElement("div");
@@ -35,7 +32,6 @@ export function avisar(texto: string): void {
   setTimeout(() => aviso.remove(), DURACION_AVISO);
 }
 
-// Pide confirmación con un diálogo propio, que resuelve el foco y la tecla Esc.
 export function confirmar(titulo: string, mensaje: string, textoAceptar: string): Promise<boolean> {
   return new Promise((resolver) => {
     const dialogo = document.createElement("dialog");
@@ -89,7 +85,6 @@ export interface CampoFormulario {
   obligatorio?: boolean;
 }
 
-// Pide datos en un diálogo. Devuelve null si la persona cancela.
 export function pedirDatos(
   titulo: string,
   campos: CampoFormulario[],
@@ -231,7 +226,6 @@ export function abrirMenu(x: number, y: number, contenido: ContenidoMenu, alCerr
     menu.classList.add("menu--desplegable");
     menu.style.width = `${contenido.ancho}px`;
   }
-  // Dentro de un diálogo modal (Ajustes), el menú tiene que estar en el diálogo para verse encima.
   (document.querySelector("dialog[open]") ?? document.body).append(menu);
   const caja = menu.getBoundingClientRect();
   menu.style.left = `${Math.max(4, Math.min(x, innerWidth - caja.width - 4))}px`;

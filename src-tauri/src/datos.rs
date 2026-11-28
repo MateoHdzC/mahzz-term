@@ -17,11 +17,7 @@ pub struct Historial {
     entradas: Mutex<Option<Vec<Value>>>,
 }
 
-// Los datos viven en una carpeta fija del usuario (%LOCALAPPDATA%), no junto al .exe.
-// Así la sesión de Google y los ajustes sobreviven a reinicios, actualizaciones y a
-// abrir MahzzTerm desde otra ruta. MAHZZTERM_DATOS permite usar otra carpeta (pruebas o portable).
 pub(crate) fn carpeta_datos(app: &AppHandle) -> Result<PathBuf, String> {
-    // Una variable vacía se ignora para no guardar datos en la carpeta donde se abrió la app.
     if let Some(propia) = env::var_os("MAHZZTERM_DATOS").filter(|valor| !valor.is_empty()) {
         let carpeta = PathBuf::from(propia);
         if fs::create_dir_all(&carpeta).is_ok() {
@@ -38,8 +34,6 @@ pub(crate) fn carpeta_datos(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(carpeta)
 }
 
-// Las versiones anteriores guardaban todo en `datos` junto al .exe. Se copia lo que falte,
-// sin pisar nada, y se deja una marca para no revisar en cada lectura.
 fn migrar_desde_ejecutable(destino: &PathBuf) {
     let Some(vieja) = env::current_exe()
         .ok()
@@ -82,7 +76,6 @@ fn reescribir(ruta: &PathBuf, entradas: &[Value]) -> Result<(), String> {
     escribir_seguro(ruta, &contenido)
 }
 
-// Escribe primero un temporal para no perder el archivo si la app se cierra a la mitad.
 pub(crate) fn escribir_seguro(ruta: &PathBuf, contenido: &str) -> Result<(), String> {
     let temporal = ruta.with_extension("tmp");
     fs::write(&temporal, contenido).map_err(|error| error.to_string())?;
@@ -146,7 +139,6 @@ pub fn agregar_historial(
     Ok(())
 }
 
-// Suma lo que llegó de otra PC sin repetir comandos ya registrados.
 #[tauri::command]
 pub fn fusionar_historial(
     app: AppHandle,
@@ -194,7 +186,6 @@ pub fn escribir_guardados(app: AppHandle, lista: Value) -> Result<(), String> {
     escribir_seguro(&ruta, &texto)
 }
 
-// Cada persona puede sumar autocompletados propios dejando archivos JSON en datos/specs.
 #[tauri::command]
 pub fn leer_specs_usuario(app: AppHandle) -> Result<Vec<Value>, String> {
     let carpeta = carpeta_datos(&app)?.join("specs");

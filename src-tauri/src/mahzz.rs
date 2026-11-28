@@ -1,5 +1,3 @@
-// Mahzz-AI: el copiloto de MahzzTerm. Habla desde Rust para no pelear con CORS ni la CSP del webview.
-// Dos formas de usarlo: el modelo propio instalado en Ollama, o cualquier API compatible con OpenAI con tu key.
 use std::{
     fs,
     io::{BufRead, BufReader, Read},
@@ -15,18 +13,13 @@ use tauri::{async_runtime::spawn_blocking, ipc::Channel, AppHandle};
 use crate::{ajustes::cifrar, datos::carpeta_datos};
 
 const URL: &str = "http://127.0.0.1:11434";
-// Con la API no está el ajuste propio, así que la identidad va como instrucción de sistema.
 const IDENTIDAD: &str = "Eres Mahzz-AI, el asistente de programación creado por MahzzStudio, integrado en la terminal MahzzTerm. \
 No eres ChatGPT. Hablas en español neutro, claro y directo. Eres experto en PowerShell, Windows, terminal, Python, C#, \
 JavaScript y Git. Cuando muestres comandos, ponlos en bloques de código con el lenguaje indicado.";
 
-// Cada respuesta tiene un número de turno: detener sube el número y la respuesta en curso se corta sola.
 static TURNO: AtomicU64 = AtomicU64::new(0);
-// El modelo publicado en ollama.com: el que baja "Instalar ahora".
 const MODELO_PUBLICO: &str = "dkdidmateo/mahzz";
 static CANCELAR_DESCARGA: AtomicBool = AtomicBool::new(false);
-
-// ---------- Configuración (cifrada con el usuario de Windows) ----------
 
 #[derive(Default, Clone)]
 struct Config {
@@ -68,14 +61,12 @@ fn api_completa(config: &Config) -> bool {
     !config.url.is_empty() && !config.modelo.is_empty() && !config.key.is_empty()
 }
 
-// Lo que ve la interfaz: nunca la key, solo si hay una guardada.
 #[tauri::command]
 pub fn mahzz_config(app: AppHandle) -> Value {
     let config = leer_config(&app);
     json!({ "usarApi": config.usar_api, "url": config.url, "modelo": config.modelo, "tieneKey": !config.key.is_empty() })
 }
 
-// `key` vacía deja la que ya estaba guardada.
 #[tauri::command]
 pub fn mahzz_guardar_config(
     app: AppHandle,
@@ -104,8 +95,6 @@ pub fn mahzz_borrar_key(app: AppHandle) -> Result<(), String> {
     config.usar_api = false;
     escribir_config(&app, &config)
 }
-
-// ---------- Ollama ----------
 
 fn ollama_prendido() -> bool {
     ureq::get(&format!("{URL}/api/version"))
@@ -160,7 +149,6 @@ fn modelos_instalados() -> Vec<String> {
         .unwrap_or_default()
 }
 
-// Vale "mahzz:latest" (el local) y "usuario/mahzz:latest" (el que se baja con ollama pull).
 fn es_mahzz(nombre: &str) -> bool {
     nombre
         .rsplit('/')
@@ -168,14 +156,11 @@ fn es_mahzz(nombre: &str) -> bool {
         .is_some_and(|base| base == "mahzz" || base.starts_with("mahzz:"))
 }
 
-// ---------- Elegir con qué responder ----------
-
 enum Motor {
     Local(String),
     Api(Config),
 }
 
-// Errores con un código al principio para que la interfaz sepa qué pantalla mostrar.
 fn elegir_motor(app: &AppHandle) -> Result<Motor, String> {
     let config = leer_config(app);
     if config.usar_api && api_completa(&config) {
@@ -207,8 +192,6 @@ pub async fn mahzz_estado(app: AppHandle) -> Result<Value, String> {
     .map_err(|error| error.to_string())?
 }
 
-// Baja el modelo con la API de Ollama y va pasando el progreso: {"estado", "total", "completado"}.
-// Si se corta o se cancela, lo ya bajado queda en Ollama y la próxima vez sigue desde ahí.
 #[tauri::command]
 pub async fn mahzz_instalar(canal: Channel<Value>) -> Result<(), String> {
     spawn_blocking(move || {
@@ -264,7 +247,6 @@ pub fn mahzz_detener() {
     TURNO.fetch_add(1, Ordering::SeqCst);
 }
 
-// Manda la charla y va pasando los trozos por el canal: {"pensando": "..."} o {"texto": "..."}.
 #[tauri::command]
 pub async fn mahzz_chat(
     app: AppHandle,
@@ -280,7 +262,6 @@ pub async fn mahzz_chat(
     .map_err(|error| error.to_string())?
 }
 
-// Devuelve false si la interfaz ya no escucha (se cerró la charla).
 fn mandar(canal: &Channel<Value>, tipo: &str, trozo: Option<&str>) -> bool {
     match trozo.filter(|t| !t.is_empty()) {
         Some(trozo) => canal.send(json!({ tipo: trozo })).is_ok(),
@@ -327,7 +308,6 @@ fn chat_ollama(
     Ok(())
 }
 
-// API compatible con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, LM Studio…), con streaming por SSE.
 fn chat_api(
     config: &Config,
     mensajes: Vec<Value>,

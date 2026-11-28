@@ -59,7 +59,6 @@ function estiloDeCelda(celda: IBufferCell): string {
   return reglas.join(";");
 }
 
-// La salida de los programas no es confiable: siempre se escapa antes de mostrarla.
 function escapar(texto: string): string {
   return texto.replace(/[&<>"']/g, (caracter) => `&#${caracter.charCodeAt(0)};`);
 }
@@ -73,7 +72,6 @@ function ultimaCeldaUsada(linea: IBufferLine, celda: IBufferCell): number {
   return 0;
 }
 
-// Convierte un tramo de la terminal en texto y HTML, uniendo las líneas partidas por el ancho.
 export function capturarRango(terminal: Terminal, desde: number, hasta: number): Captura {
   const buffer = terminal.buffer.normal;
   const celda = buffer.getNullCell();

@@ -19,7 +19,6 @@ pub async fn elegir_carpeta(
     Ok(Some(ruta.display().to_string()))
 }
 
-// Pregunta dónde guardar y escribe el archivo. Devuelve None si la persona cancela.
 #[tauri::command]
 pub async fn guardar_salida(
     ventana: WebviewWindow,

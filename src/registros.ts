@@ -3,7 +3,6 @@ import { avisar } from "./dialogos";
 import { pareceSecreto } from "./historial";
 import { t } from "./i18n";
 
-// Un bloque terminado, tal como queda en los logs de datos/logs.
 export interface Registro {
   comando: string;
   carpeta: string | null;
@@ -21,11 +20,9 @@ function dia(momento: number): string {
   return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}`;
 }
 
-// Cada panel avisa cuando termina un comando y acá se guarda en el log del día.
 export function iniciarRegistro(): void {
   window.addEventListener("mahzz:bloque-terminado", (evento) => {
     const registro = (evento as CustomEvent<Registro>).detail;
-    // Lo que parece tener una contraseña o una clave no se guarda.
     if (!registro.comando.trim() || pareceSecreto(registro.comando)) return;
     void invoke("guardar_registro", { entrada: registro, dia: dia(registro.inicio) }).catch(() => undefined);
   });
@@ -39,7 +36,6 @@ function fechaLegible(momento: number): string {
   return new Date(momento).toLocaleString("es", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
-// Buscador de todos los logs: cualquier pestaña, cualquier día (los últimos 30).
 export function abrirBuscadorRegistros(alUsarComando: (comando: string) => void, alCerrar: () => void): void {
   const dialogo = document.createElement("dialog");
   dialogo.className = "registros";

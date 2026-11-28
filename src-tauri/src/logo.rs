@@ -1,9 +1,3 @@
-// Logo elegible de MahzzTerm (Ajustes → Apariencia → Logo). Cambia el icono de todas las
-// ventanas (Alt+Tab y la barra de tareas) y el de los accesos directos de MahzzTerm: si la app
-// está anclada a la barra de tareas, Windows dibuja el botón con el icono del acceso directo
-// anclado y no con el de la ventana. El logo de adentro de la app lo cambia la interfaz con los
-// mismos archivos de public/logos.
-
 use std::{
     env, fs,
     os::windows::process::CommandExt,
@@ -28,7 +22,6 @@ use windows::{
 
 use crate::datos::carpeta_datos;
 
-// Los PNG van dentro del ejecutable: no dependen de archivos sueltos.
 fn bytes_del_logo(logo: &str) -> &'static [u8] {
     match logo {
         "azul" => include_bytes!("../../public/logos/azul.png"),
@@ -36,38 +29,32 @@ fn bytes_del_logo(logo: &str) -> &'static [u8] {
         "esmeralda" => include_bytes!("../../public/logos/esmeralda.png"),
         "hielo" => include_bytes!("../../public/logos/hielo.png"),
         "aurora" => include_bytes!("../../public/logos/aurora.png"),
-        // "clasico" o cualquier nombre desconocido: el icono de siempre.
         _ => include_bytes!("../icons/128x128@2x.png"),
     }
 }
 
-// Un .ico con una sola imagen PNG de 256 px adentro (Windows lo acepta desde Vista y achica
-// la imagen solo para los tamaños chicos).
 fn crear_ico(png: &[u8]) -> Vec<u8> {
     let mut ico = Vec::with_capacity(22 + png.len());
-    ico.extend_from_slice(&[0, 0, 1, 0, 1, 0]); // reservado, tipo icono, una imagen
-    ico.extend_from_slice(&[0, 0, 0, 0]); // ancho y alto 0 = 256, sin paleta, reservado
-    ico.extend_from_slice(&1u16.to_le_bytes()); // planos
-    ico.extend_from_slice(&32u16.to_le_bytes()); // bits por píxel
+    ico.extend_from_slice(&[0, 0, 1, 0, 1, 0]);
+    ico.extend_from_slice(&[0, 0, 0, 0]);
+    ico.extend_from_slice(&1u16.to_le_bytes());
+    ico.extend_from_slice(&32u16.to_le_bytes());
     ico.extend_from_slice(&(png.len() as u32).to_le_bytes());
-    ico.extend_from_slice(&22u32.to_le_bytes()); // la imagen empieza después de la cabecera
+    ico.extend_from_slice(&22u32.to_le_bytes());
     ico.extend_from_slice(png);
     ico
 }
 
-// Donde Windows guarda los accesos directos anclados a la barra de tareas.
 fn carpeta_anclados() -> Option<PathBuf> {
     env::var_os("APPDATA").map(|datos| {
         PathBuf::from(datos).join(r"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar")
     })
 }
 
-// Carpetas donde Windows guarda los accesos directos del usuario a MahzzTerm.
 fn carpetas_de_accesos(app: &AppHandle) -> Vec<PathBuf> {
     let mut carpetas: Vec<PathBuf> = carpeta_anclados().into_iter().collect();
     if let Some(datos) = env::var_os("APPDATA").map(PathBuf::from) {
         let programas = datos.join(r"Microsoft\Windows\Start Menu\Programs");
-        // El instalador puede dejar el acceso suelto o dentro de una carpeta propia.
         if let Ok(entradas) = fs::read_dir(&programas) {
             carpetas.extend(entradas.flatten().map(|e| e.path()).filter(|r| r.is_dir()));
         }
@@ -86,12 +73,9 @@ fn mismo_archivo(a: &Path, b: &Path) -> bool {
     }
 }
 
-// Cambia el icono de los accesos directos (.lnk) de `carpetas` que abren `exe`. Devuelve
-// los que cambió. Los que ya tienen ese icono no se vuelven a escribir.
 fn actualizar_accesos(carpetas: &[PathBuf], exe: &Path, icono: &Path) -> Vec<PathBuf> {
     let mut cambiados = Vec::new();
     unsafe {
-        // Si el hilo ya tenía COM iniciado, sigue funcionando igual.
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
         for carpeta in carpetas {
             let Ok(entradas) = fs::read_dir(carpeta) else {
@@ -142,9 +126,6 @@ unsafe fn actualizar_acceso(ruta: &Path, exe: &Path, icono: &Path) -> windows::c
     Ok(true)
 }
 
-// Deja el .ico del logo en la carpeta de datos y apunta los accesos directos a él. Con el
-// Clásico vuelven al icono del propio .exe. Devuelve si cambió el acceso anclado a la barra de
-// tareas: el botón anclado no se redibuja hasta que se reinicia el Explorador de Windows.
 fn actualizar_icono_de_accesos(app: &AppHandle, logo: &str) -> Result<bool, String> {
     let exe = env::current_exe().map_err(|error| error.to_string())?;
     let icono = if logo == "clasico" || bytes_del_logo(logo) == bytes_del_logo("clasico") {
@@ -158,7 +139,6 @@ fn actualizar_icono_de_accesos(app: &AppHandle, logo: &str) -> Result<bool, Stri
     };
     let cambiados = actualizar_accesos(&carpetas_de_accesos(app), &exe, &icono);
     if !cambiados.is_empty() {
-        // Para que el menú Inicio y el escritorio redibujen los iconos.
         unsafe { SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None) };
     }
     let anclados = carpeta_anclados();
@@ -169,8 +149,6 @@ fn actualizar_icono_de_accesos(app: &AppHandle, logo: &str) -> Result<bool, Stri
     }))
 }
 
-// Cambia el icono de las ventanas y de los accesos directos. Devuelve true si cambió el acceso
-// anclado a la barra de tareas, para que la interfaz ofrezca reiniciar el Explorador.
 #[tauri::command]
 pub async fn aplicar_logo(app: AppHandle, logo: String) -> Result<bool, String> {
     for ventana in app.webview_windows().values() {
@@ -179,14 +157,11 @@ pub async fn aplicar_logo(app: AppHandle, logo: String) -> Result<bool, String> 
             .set_icon(imagen)
             .map_err(|error| error.to_string())?;
     }
-    // Leer y guardar .lnk se hace en otro hilo para no trabar la ventana.
     spawn_blocking(move || actualizar_icono_de_accesos(&app, &logo))
         .await
         .map_err(|error| error.to_string())?
 }
 
-// Reinicia el Explorador de Windows para que la barra de tareas vuelva a leer los iconos
-// anclados. Las ventanas abiertas no se cierran: la barra desaparece un segundo y vuelve.
 #[tauri::command]
 pub async fn reiniciar_explorador() -> Result<(), String> {
     const SIN_CONSOLA: u32 = 0x0800_0000;
@@ -196,7 +171,6 @@ pub async fn reiniciar_explorador() -> Result<(), String> {
             .creation_flags(SIN_CONSOLA)
             .status()
             .map_err(|error| error.to_string())?;
-        // Windows suele volver a abrirlo solo; si a los dos segundos no está, se abre a mano.
         thread::sleep(Duration::from_secs(2));
         let corriendo = Command::new("tasklist")
             .args(["/fi", "IMAGENAME eq explorer.exe", "/nh"])
@@ -244,8 +218,6 @@ mod tests {
         assert_eq!(&ico[22..], png);
     }
 
-    // Crea un acceso directo de prueba al propio ejecutable de los tests y comprueba que se le
-    // cambia el icono, que uno a otro programa no se toca y que la segunda vez no reescribe.
     #[test]
     fn cambia_solo_los_accesos_a_mahzzterm() {
         let carpeta = env::temp_dir().join(format!("mahzz-accesos-{}", std::process::id()));

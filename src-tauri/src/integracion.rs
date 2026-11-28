@@ -1,9 +1,3 @@
-// Integración con el Explorador de Windows:
-// - "Abrir en MahzzTerm" en el clic derecho de una carpeta, del fondo de una carpeta y de un disco.
-// - MahzzTerm en "Abrir con" para los archivos: recomendado en los de texto y código, y disponible en cualquier otro.
-// Todo va en HKCU\Software\Classes: no pide ser administrador y no le saca a nadie el programa
-// por defecto, solo suma a MahzzTerm a la lista. En Windows 11, el menú de carpetas aparece en
-// "Mostrar más opciones".
 use std::{
     env,
     path::{Path, PathBuf},
@@ -28,16 +22,13 @@ use windows::{
 const CLASES: &str = r"Software\Classes";
 const PROGID: &str = "MahzzTerm.Archivo";
 const VERBO: &str = "MahzzTerm";
-// Subilo cuando cambie lo que se registra: al abrir, la app lo rehace.
 const VERSION: &str = "2";
-// Dos cambios de ajustes seguidos no tienen que registrar y borrar a la vez.
 static CANDADO: Mutex<()> = Mutex::new(());
 const MENUS_CARPETA: [&str; 3] = [
     r"Directory\shell",
     r"Directory\Background\shell",
     r"Drive\shell",
 ];
-// En estos MahzzTerm aparece como recomendado en "Abrir con". El resto lo cubre *\OpenWithList.
 const EXTENSIONES: &[&str] = &[
     "md",
     "markdown",
@@ -103,8 +94,6 @@ const EXTENSIONES: &[&str] = &[
     "svg",
 ];
 
-// ---------- Registro ----------
-
 fn clave(ruta: &str) -> HSTRING {
     HSTRING::from(format!(r"{CLASES}\{ruta}"))
 }
@@ -131,7 +120,6 @@ fn escribir(ruta: &str, nombre: &str, valor: &str) -> Result<(), String> {
     }
 }
 
-// OpenWithProgids lleva valores vacíos: lo que importa es el nombre.
 fn escribir_vacio(ruta: &str, nombre: &str) -> Result<(), String> {
     let estado = unsafe {
         RegSetKeyValueW(
@@ -203,7 +191,6 @@ fn borrar_valor(ruta: &str, nombre: &str) {
     }
 }
 
-// Si la clave quedó sin valores ni subclaves (la creó MahzzTerm para su entrada), se borra.
 fn borrar_si_vacia(ruta: &str) {
     let mut manija = HKEY::default();
     unsafe {
@@ -239,12 +226,9 @@ fn borrar_si_vacia(ruta: &str) {
     }
 }
 
-// Sin este aviso, el Explorador puede tardar en mostrar los cambios hasta reiniciarse.
 fn avisar_explorador() {
     unsafe { SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None) };
 }
-
-// ---------- Qué se registra ----------
 
 fn nombre_exe(exe: &Path) -> String {
     exe.file_name()
@@ -265,7 +249,6 @@ fn registrada() -> bool {
         || leer(&format!(r"{}\{VERBO}", MENUS_CARPETA[0]), "").is_some()
 }
 
-// Ya está todo como lo dejaría esta copia: misma ruta, mismo texto y misma versión.
 fn al_dia(exe: &Path, etiqueta: &str) -> bool {
     let menu = format!(r"{}\{VERBO}", MENUS_CARPETA[0]);
     leer(&format!(r"{menu}\command"), "").as_deref() == Some(comando_carpeta(exe).as_str())
@@ -274,7 +257,6 @@ fn al_dia(exe: &Path, etiqueta: &str) -> bool {
 }
 
 fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
-    // Entre comillas, como VS Code: así sirve aunque la ruta tenga espacios.
     let icono = format!("\"{}\",0", exe.display());
     for menu in MENUS_CARPETA {
         let base = format!(r"{menu}\{VERBO}");
@@ -295,7 +277,6 @@ fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
         escribir_vacio(&format!(r".{extension}\OpenWithProgids"), PROGID)?;
     }
 
-    // Para "Abrir con" de cualquier archivo: Windows busca el .exe en Applications.
     let aplicacion = format!(r"Applications\{}", nombre_exe(exe));
     escribir(&aplicacion, "FriendlyAppName", "MahzzTerm")?;
     escribir(&format!(r"{aplicacion}\DefaultIcon"), "", &icono)?;
@@ -310,8 +291,6 @@ fn registrar(exe: &Path, etiqueta: &str) -> Result<(), String> {
     Ok(())
 }
 
-// Borra solo lo que agrega MahzzTerm. Lo usa también el desinstalador (`MahzzTerm.exe --quitar-integracion`).
-// Si lo registró otra copia (otra ruta del .exe, por ejemplo una de prueba), no lo toca.
 pub fn quitar() {
     if let (Ok(exe), Some(comando)) = (
         env::current_exe(),
@@ -342,7 +321,6 @@ pub fn quitar() {
     avisar_explorador();
 }
 
-// La interfaz lo llama al abrir y al cambiar los ajustes. Devuelve si tocó algo.
 #[tauri::command]
 pub async fn integracion_windows(activar: bool, etiqueta: String) -> Result<bool, String> {
     spawn_blocking(move || {
@@ -368,12 +346,9 @@ pub async fn integracion_windows(activar: bool, etiqueta: String) -> Result<bool
     .map_err(|error| error.to_string())?
 }
 
-// ---------- Lo que pide el Explorador al abrir MahzzTerm ----------
-
 #[derive(Default)]
 pub struct PedidoInicial(pub Mutex<Option<Value>>);
 
-// `"C:\"` llega como `C:"` porque la barra escapa la comilla: se arregla. Solo valen rutas que existen.
 fn normalizar(ruta: &str) -> Option<PathBuf> {
     let mut texto = ruta.trim().trim_matches('"').to_string();
     if texto.ends_with(':') {
@@ -388,7 +363,6 @@ fn normalizar(ruta: &str) -> Option<PathBuf> {
     ruta.exists().then_some(ruta)
 }
 
-// `--carpeta "C:\x"` (clic derecho), `--abrir "C:\x\a.md"` (Abrir con) o una ruta suelta (soltada sobre el .exe).
 pub fn leer_pedido(argumentos: impl IntoIterator<Item = String>) -> Option<Value> {
     let mut argumentos = argumentos.into_iter().skip(1);
     while let Some(argumento) = argumentos.next() {
@@ -408,7 +382,6 @@ pub fn leer_pedido(argumentos: impl IntoIterator<Item = String>) -> Option<Value
     None
 }
 
-// La interfaz lo pide una sola vez, después de restaurar las pestañas.
 #[tauri::command]
 pub fn tomar_pedido_windows(pedido: State<'_, PedidoInicial>) -> Option<Value> {
     pedido
@@ -446,7 +419,6 @@ mod pruebas {
             pedir(&["exe", &texto_archivo]).unwrap()["archivo"],
             texto_archivo.as_str()
         );
-        // Así llega la raíz de un disco por culpa de la comilla escapada.
         assert_eq!(
             pedir(&["exe", "--carpeta", "C:\""]).unwrap()["carpeta"],
             "C:\\"

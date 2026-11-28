@@ -250,7 +250,6 @@ const INGLES: Record<string, string> = {
   "Buscar actualizaciones sola": "Check for updates automatically",
   "Al abrirse y cada 6 horas consulta GitHub. No manda datos tuyos.": "Checks GitHub on launch and every 6 hours. It sends no personal data.",
   "Podés cambiar todo esto después en Ajustes.": "You can change all of this later in Settings.",
-  // Agentes
   "Agentes activos": "Active agents",
   "Agentes (Ctrl+Shift+A)": "Agents (Ctrl+Shift+A)",
   "Agentes (ninguno activo)": "Agents (none active)",
@@ -262,7 +261,6 @@ const INGLES: Record<string, string> = {
   "No hay agentes corriendo en esta ventana.": "No agents running in this window.",
   "Claude Code en pestaña nueva": "Claude Code in a new tab",
   "Ver agentes activos": "Show active agents",
-  // Cambios
   "Revisar cambios": "Review changes",
   "Revisar cambios (Ctrl+Shift+G)": "Review changes (Ctrl+Shift+G)",
   "Revisar cambios: {0} sin aceptar": "Review changes: {0} not accepted",
@@ -294,7 +292,6 @@ const INGLES: Record<string, string> = {
   "No se pudo leer git: {0}": "Could not read git: {0}",
   "No se pudo: {0}": "Failed: {0}",
   "Cargando…": "Loading…",
-  // Visor y archivos
   "Visor de archivos": "File viewer",
   "Ocultar el visor": "Hide the viewer",
   "Guardar (Ctrl+S)": "Save (Ctrl+S)",
@@ -333,16 +330,13 @@ const INGLES: Record<string, string> = {
   "Copiar (Ctrl+C)": "Copy (Ctrl+C)",
   "Pegar (Ctrl+V)": "Paste (Ctrl+V)",
   "Renombrar (F2)": "Rename (F2)",
-  // Vista web de HTML
   "Web de lo guardado": "Web of the saved version",
   "Código": "Code",
   "Web": "Web",
-  // Control por IA
   "Control por IA (MCP)": "AI control (MCP)",
   "Deja que Claude Code y otras IAs usen la terminal: leer bloques y logs, ejecutar comandos y manejar pestañas.": "Lets Claude Code and other AIs use the terminal: read blocks and logs, run commands and manage tabs.",
   "Conectar con Claude Code": "Connect to Claude Code",
   "Pegalo en una terminal: registra el MCP de MahzzTerm en Claude Code.": "Paste it in a terminal: it registers the MahzzTerm MCP in Claude Code.",
-  // Actualizaciones
   "No se pudo buscar actualizaciones: {0}": "Could not check for updates: {0}",
   "Ya tenés la última versión": "You have the latest version",
   "MahzzTerm {0} está disponible": "MahzzTerm {0} is available",
@@ -360,7 +354,6 @@ const INGLES: Record<string, string> = {
   "MahzzTerm se fija sola al abrirse y cada 6 horas, y te avisa con una notificación.": "MahzzTerm checks when it opens and every 6 hours, and notifies you.",
   "Buscar ahora": "Check now",
   "MahzzTerm también se fija sola al abrirse.": "MahzzTerm also checks on its own when it opens.",
-  // Logs y tareas en paralelo
   "Buscar en todos los logs (comandos y salidas)…": "Search all logs (commands and output)…",
   "Solo errores": "Errors only",
   "Clic para ver la salida completa · Esc cierra": "Click to see the full output · Esc closes",
@@ -392,13 +385,11 @@ const INGLES: Record<string, string> = {
   "Se borran la carpeta y la rama con todo lo que hizo el agente. No se puede deshacer.": "The folder and branch are deleted with everything the agent did. This can't be undone.",
   "Tarea {0} unida": "Task {0} merged",
   "Tarea {0} descartada": "Task {0} discarded",
-  // Pestañas a un costado
   "Posición de las pestañas": "Tab position",
   "Arriba": "Top",
   "A la izquierda": "Left",
   "A la derecha": "Right",
   "A un costado entran más pestañas y se leen mejor los nombres.": "On the side, more tabs fit and names are easier to read.",
-  // Sesiones
   "Reanudar sesión": "Resume session",
   "Reanudar una sesión anterior": "Resume a previous session",
   "Más reciente": "Most recent",
@@ -476,14 +467,12 @@ export function guardarIdioma(idioma: Idioma): void {
   try {
     localStorage.setItem(CLAVE_IDIOMA, idioma);
   } catch {
-    // Sin almacenamiento se usa el idioma de Windows.
   }
 }
 
 const elegido = leerGuardado();
 const enIngles = elegido === "en" || (elegido === "auto" && !navigator.language.toLowerCase().startsWith("es"));
 
-// El texto en español funciona como clave. {0}, {1} son valores que se reemplazan.
 export function idiomaWeb(): "es" | "en" {
   return enIngles ? "en" : "es";
 }

@@ -1,18 +1,15 @@
-# Compila el release de MahzzTerm en GitHub (Windows) y deja un borrador de release para revisar.
-# Si SignPath está configurado (variables SIGNPATH_*), firma el .exe y el instalador con Authenticode.
-# Se corre a mano: Actions → "Release" → Run workflow. Nada se publica solo: el release queda en borrador.
 name: Release
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: write # crear el borrador del release
-  actions: read # SignPath lee el artefacto subido
+  contents: write
+  actions: read
 
 jobs:
   release:
-    runs-on: windows-latest # SignPath exige runners de GitHub para proyectos open source
+    runs-on: windows-latest
     env:
       FIRMAR: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
     steps:
@@ -42,10 +39,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # 1. Compila solo el .exe (sin instalador) para poder firmarlo antes de empaquetarlo.
       - run: pnpm tauri build --no-bundle
 
-      # 2. Firma el .exe con SignPath. Cada pedido lo tenés que aprobar a mano en signpath.io.
       - name: Subir .exe sin firmar
         if: env.FIRMAR == 'true'
         id: exe-sin-firmar
@@ -75,14 +70,12 @@ jobs:
         shell: pwsh
         run: Copy-Item firmado/exe/MahzzTerm.exe src-tauri/target/release/MahzzTerm.exe -Force
 
-      # 3. Arma el instalador NSIS con el .exe (firmado si hubo firma) y su firma de actualización.
       - name: Instalador
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: pnpm tauri bundle --bundles nsis
 
-      # 4. Firma el instalador y rehace la firma de actualización, porque cambiaron sus bytes.
       - name: Preparar instalador para firmar
         if: env.FIRMAR == 'true'
         shell: pwsh
@@ -127,7 +120,6 @@ jobs:
           pnpm tauri signer sign $instalador
           if ($LASTEXITCODE -ne 0) { throw "No se pudo firmar la actualización" }
 
-      # 5. Mismos archivos que arma publicar.ps1 en tu PC, y un release en borrador.
       - name: Armar archivos del release
         shell: pwsh
         run: ./scripts/publicar.ps1 -SinCompilar

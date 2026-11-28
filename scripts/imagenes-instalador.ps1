@@ -1,6 +1,3 @@
-# Genera las imágenes del instalador (NSIS) con la identidad de MahzzTerm.
-# Salen de src-tauri\icons\icon.png. Se vuelven a generar con:
-#   .\scripts\imagenes-instalador.ps1
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = "Stop"
 $raiz = Split-Path $PSScriptRoot -Parent
@@ -28,7 +25,6 @@ function TextoCentrado($g, [string]$texto, $fuente, $pincel, [int]$ancho, [float
     $g.DrawString($texto, $fuente, $pincel, (New-Object Drawing.RectangleF 0, $y, $ancho, 60), $formato)
 }
 
-# Panel lateral (bienvenida y final): 164x314, oscuro con brillo violeta
 $imagen, $g = Lienzo 164 314
 $fondo = New-Object Drawing.Drawing2D.LinearGradientBrush (New-Object Drawing.Point 0, 0), (New-Object Drawing.Point 0, 314), (Color "#140a24"), (Color "#050507")
 $g.FillRectangle($fondo, 0, 0, 164, 314)
@@ -51,7 +47,6 @@ $imagen.Save((Join-Path $salida "lateral.bmp"), [Drawing.Imaging.ImageFormat]::B
 $imagen.Save((Join-Path $salida "lateral-vista.png"), [Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose(); $imagen.Dispose()
 
-# Encabezado de cada paso: 150x57, claro (la franja de arriba del instalador es blanca)
 $imagen, $g = Lienzo 150 57
 $g.Clear((Color "#ffffff"))
 $g.DrawImage($logo, 104, 8, 41, 41)

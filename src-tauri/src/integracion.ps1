@@ -1,5 +1,3 @@
-# Se carga en cada sesión de mahzzterm sin modificar el $PROFILE del usuario.
-# Marca dónde empieza y termina cada comando para poder armar los bloques.
 $global:__mahzzEsc = [char]27
 $global:__mahzzBel = [char]7
 $global:__mahzzPromptOriginal = $function:prompt
@@ -8,7 +6,6 @@ function global:__mahzzBase64([string]$texto) {
     [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($texto))
 }
 
-# Lee la rama desde .git/HEAD: es mucho más rápido que ejecutar git en cada prompt.
 function global:__mahzzRama {
     try {
         $carpeta = [IO.DirectoryInfo]::new((Get-Location).ProviderPath)
@@ -35,13 +32,10 @@ if (-not (Get-Module PSReadLine)) { Import-Module PSReadLine -ErrorAction Ignore
 if (Test-Path Function:\PSConsoleHostReadLine) {
     $global:__mahzzLeerOriginal = $function:PSConsoleHostReadLine
 
-    # El editor manda el comando codificado para que varias líneas lleguen intactas.
-    # Esa línea técnica no se guarda: en el historial queda el comando real.
     $global:__mahzzHistorialOriginal = (Get-PSReadLineOption).AddToHistoryHandler
     Set-PSReadLineOption -AddToHistoryHandler {
         param([string]$linea)
         if ($linea -like '#mahzz:*') { return $false }
-        # PSReadLine guarda este filtro como delegado, por eso se llama con Invoke.
         if ($global:__mahzzHistorialOriginal) { return $global:__mahzzHistorialOriginal.Invoke($linea) }
         $true
     }
@@ -61,7 +55,6 @@ if (Test-Path Function:\PSConsoleHostReadLine) {
     }
 }
 
-# Las sesiones SSH interactivas cargan un script temporal para tener bloques en el servidor.
 $global:__mahzzRemoto = "exec sh -c 'command -v bash >/dev/null 2>&1 && command -v base64 >/dev/null 2>&1 && f=`$(mktemp) && printf %s __MAHZZ_REMOTO__ | base64 -d > `$f && MAHZZ_RC=`$f exec bash --rcfile `$f -i; exec `${SHELL:-sh} -l'"
 
 function global:ssh {
@@ -88,7 +81,6 @@ function global:ssh {
     else { & $programa @args }
 }
 
-# Órdenes para la propia terminal. Viajan como una marca invisible que lee la interfaz.
 function global:mahzz {
     $orden = ($args | ForEach-Object { [string]$_ }) -join ' '
     $valida = $orden -match '^\s*(--resume|-r)(\s+\d+)?\s*$' -or $orden -match '^\s*(--agentes|--cambios)\s*$'
@@ -112,14 +104,12 @@ function global:prompt {
     $ultimoCodigo = $global:LASTEXITCODE
     $codigo = if ($exito) { 0 } elseif ($ultimoCodigo) { $ultimoCodigo } else { 1 }
 
-    # Lo tecleado mientras corría un programa no debe mezclarse con el próximo comando.
     try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
 
     $esc = $global:__mahzzEsc
     $bel = $global:__mahzzBel
     $marcas = "$esc]133;D;$codigo$bel$esc[2J$esc[3J$esc[H"
 
-    # El editor usa estos datos para avisar si un comando no existe.
     $alias = Get-ChildItem Alias:
     $funciones = Get-ChildItem Function:
     $firma = "$($alias.Count)|$($funciones.Count)|$env:PATH"

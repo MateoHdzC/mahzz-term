@@ -1,7 +1,3 @@
-// Servidor local para ver HTML como en el navegador, al estilo de Live Server de VS Code.
-// Sirve la carpeta raíz del proyecto, así funcionan las rutas entre carpetas, las que
-// empiezan con "/", los módulos de JS y fetch. La página se recarga sola cuando cambia
-// el HTML o cualquier archivo que haya cargado.
 use std::{
     collections::HashMap,
     fs,
@@ -24,14 +20,12 @@ const SIN_VENTANA: u32 = 0x0800_0000;
 const MAXIMO_PEDIDO: usize = 16 * 1024;
 const RUTA_CAMBIOS: &str = "/__mahzz/cambios";
 
-// Se agrega al final de cada HTML servido: pregunta cada tanto si cambió algún archivo.
 const RECARGA: &str = "<script>(()=>{const d=Date.now();setInterval(async()=>{try{const r=await fetch('/__mahzz/cambios?desde='+d,{cache:'no-store'});if((await r.text())==='1')location.reload()}catch{}},700)})()</script>";
 
 struct Servidor {
     raiz: PathBuf,
     puerto: u16,
     clave: String,
-    // Archivos que pidió la página, con su fecha: si alguno cambia, se recarga.
     servidos: Mutex<HashMap<PathBuf, u64>>,
 }
 
@@ -64,8 +58,6 @@ fn raiz_git(carpeta: &Path) -> Option<PathBuf> {
     (salida.status.success() && !texto.is_empty()).then(|| PathBuf::from(texto))
 }
 
-// La raíz del proyecto: el repositorio de git, si no la carpeta más cercana con
-// package.json y, si tampoco hay, la carpeta del propio HTML.
 fn raiz_del_proyecto(html: &Path) -> PathBuf {
     let carpeta = html.parent().unwrap_or(html).to_path_buf();
     if let Some(raiz) = raiz_git(&carpeta) {
@@ -125,7 +117,6 @@ fn responder(conexion: &mut TcpStream, estado: &str, tipo: &str, cuerpo: &[u8], 
     }
 }
 
-// Convierte "/css/estilos%20nuevos.css" en una ruta dentro de la raíz, sin dejar salir de ella.
 fn ruta_local(raiz: &Path, camino: &str) -> Option<PathBuf> {
     let mut ruta = raiz.to_path_buf();
     for parte in camino.split('/').filter(|parte| !parte.is_empty()) {
@@ -172,7 +163,6 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
         return;
     }
 
-    // Solo responde a pedidos dirigidos a esta dirección local: evita ataques de DNS rebinding.
     let host_esperado = format!("127.0.0.1:{}", servidor.puerto);
     if encabezados.get("host").map(String::as_str) != Some(host_esperado.as_str()) {
         responder(&mut conexion, "403 Forbidden", "text/plain", b"", cabeza);
@@ -182,8 +172,6 @@ fn atender(servidor: &Servidor, mut conexion: TcpStream) {
         responder(&mut conexion, "400 Bad Request", "text/plain", b"", cabeza);
         return;
     };
-    // La primera carga trae la clave; lo demás lo pide la misma página. Una web cualquiera
-    // del navegador no tiene la clave y sus pedidos llegan marcados como de otro sitio.
     let con_clave = url
         .query_pairs()
         .any(|(nombre, valor)| nombre == "mahzz" && valor == servidor.clave);
@@ -272,7 +260,6 @@ fn iniciar(raiz: PathBuf) -> Result<Arc<Servidor>, String> {
     Ok(servidor)
 }
 
-// Devuelve la dirección para ver el HTML. Reusa el servidor si el proyecto ya tiene uno.
 #[tauri::command]
 pub async fn servir_html(ruta: String) -> Result<String, String> {
     spawn_blocking(move || {

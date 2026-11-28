@@ -5,7 +5,6 @@ type Oyente = () => void;
 const RETRASO_LISTA = 1500;
 let listaCompartida: Promise<string[]> | null = null;
 
-// La lista se pide una sola vez por ventana y después de abrir, para no demorar el inicio.
 function obtenerCmdlets(): Promise<string[]> {
   listaCompartida ??= new Promise((listo) => setTimeout(listo, RETRASO_LISTA)).then(() =>
     invoke<string[]>("comandos_powershell"),
@@ -13,7 +12,6 @@ function obtenerCmdlets(): Promise<string[]> {
   return listaCompartida;
 }
 
-// Decide si un comando existe combinando cmdlets, alias, funciones y programas del PATH.
 export class VerificadorComandos {
   private cmdlets: Set<string> | null = null;
   private nombresCmdlets: string[] = [];
@@ -44,7 +42,6 @@ export class VerificadorComandos {
 
   enRemoto = false;
 
-  // En un servidor no se puede saber qué comandos existen desde esta PC.
   definirRemoto(remoto: boolean): void {
     this.enRemoto = remoto;
     this.avisar();
@@ -69,13 +66,11 @@ export class VerificadorComandos {
     this.invalidar();
   }
 
-  // Después de cada comando puede haber programas nuevos o una carpeta distinta.
   invalidar(): void {
     this.externos.clear();
     this.avisar();
   }
 
-  // Devuelve true solo cuando hay certeza de que el comando no existe.
   noExiste(nombre: string): boolean {
     const clave = nombre.toLowerCase();
     if (this.enRemoto || !this.cmdlets || this.cmdlets.has(clave) || this.sesion.has(clave)) return false;

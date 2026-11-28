@@ -23,14 +23,12 @@ const MAXIMO_ARCHIVOS_REVISADOS: usize = 500;
 const MAXIMO_RUTAS: usize = 200;
 const MAXIMO_ENTRADAS_CARPETA: usize = 3000;
 
-// Las versiones y parámetros no cambian durante la sesión: se consultan una sola vez.
 #[derive(Default)]
 pub struct Versiones {
     conocidas: Mutex<HashMap<String, Option<String>>>,
     parametros: Mutex<HashMap<String, Vec<String>>>,
 }
 
-// Ejecuta un programa sin mostrar ventana y lo corta si tarda demasiado.
 fn ejecutar(
     programa: &OsStr,
     argumentos: &[&str],
@@ -144,7 +142,6 @@ pub fn existen_comandos(
         .collect()
 }
 
-// La lista tarda en generarse, por eso se guarda en disco y se renueva cada semana.
 #[tauri::command]
 pub async fn comandos_powershell(app: AppHandle) -> Result<Vec<String>, String> {
     let cache = app
@@ -294,7 +291,6 @@ fn comando_version(tipo: &str) -> Option<(&'static str, &'static [&'static str])
     }
 }
 
-// Toma la primera palabra que parece un número de versión, como 24.18.0.
 fn extraer_version(texto: &str) -> Option<String> {
     texto
         .split(|caracter: char| caracter.is_whitespace() || caracter == '"')
@@ -341,7 +337,6 @@ pub async fn detectar_proyecto(app: AppHandle, carpeta: String) -> Result<Option
     .map_err(|error| error.to_string())
 }
 
-// Lista archivos y carpetas que empiezan con lo que se lleva escrito.
 #[tauri::command]
 pub fn listar_rutas(parcial: String, carpeta: Option<String>) -> Vec<Value> {
     let corte = parcial.rfind(['\\', '/']).map_or(0, |indice| indice + 1);
@@ -385,7 +380,6 @@ pub fn listar_rutas(parcial: String, carpeta: Option<String>) -> Vec<Value> {
         .collect()
 }
 
-// Servidores definidos en ~/.ssh/config. Se omiten comodines y accesos solo para git.
 #[tauri::command]
 pub fn hosts_ssh() -> Vec<String> {
     let Some(casa) = env::var_os("USERPROFILE") else {
@@ -422,7 +416,6 @@ pub fn hosts_ssh() -> Vec<String> {
     hosts
 }
 
-// Contenido de una carpeta para el panel de archivos: primero carpetas, después archivos.
 #[tauri::command]
 pub fn listar_carpeta(ruta: String) -> Result<Vec<Value>, String> {
     let lectura = fs::read_dir(&ruta).map_err(|error| error.to_string())?;
@@ -477,7 +470,6 @@ pub async fn listar_ejecutables(ruta: Option<String>) -> Result<Vec<String>, Str
     .map_err(|error| error.to_string())
 }
 
-// Ramas, remotos y scripts de la carpeta para sugerir argumentos reales.
 #[tauri::command]
 pub async fn datos_proyecto(carpeta: String) -> Result<Value, String> {
     spawn_blocking(move || {
@@ -511,10 +503,8 @@ pub async fn datos_proyecto(carpeta: String) -> Result<Value, String> {
     .map_err(|error| error.to_string())
 }
 
-// Consulta los parámetros reales de un cmdlet y los recuerda durante la sesión.
 #[tauri::command]
 pub async fn parametros_cmdlet(app: AppHandle, nombre: String) -> Result<Vec<String>, String> {
-    // Solo se aceptan nombres simples porque el valor se usa dentro de un comando.
     if nombre.is_empty()
         || !nombre
             .chars()

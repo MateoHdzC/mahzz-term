@@ -5,7 +5,6 @@ use tauri::AppHandle;
 
 use crate::datos::{carpeta_datos, escribir_seguro};
 
-// Cuántas sesiones viejas se guardan para poder reanudarlas con `mahzz --resume`.
 const MAXIMO_SESIONES: usize = 30;
 
 fn carpeta_sesiones(app: &AppHandle) -> Result<PathBuf, String> {
@@ -14,14 +13,12 @@ fn carpeta_sesiones(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(carpeta)
 }
 
-// El id es la hora de inicio de la ventana en milisegundos: solo se aceptan dígitos.
 fn id_valido(sesion: &Value) -> Option<String> {
     let id = sesion.get("id")?.as_str()?;
     (!id.is_empty() && id.len() <= 20 && id.chars().all(|caracter| caracter.is_ascii_digit()))
         .then(|| id.to_string())
 }
 
-// Cada ventana principal tiene su archivo, que se va pisando mientras está abierta.
 pub fn guardar_en_historial(app: &AppHandle, sesion: &Value) -> Result<(), String> {
     let Some(id) = id_valido(sesion) else {
         return Ok(());
@@ -47,7 +44,6 @@ fn ids_guardados(carpeta: &PathBuf) -> Vec<(u128, PathBuf)> {
             Some((numero, ruta))
         })
         .collect();
-    // Las más nuevas primero.
     ids.sort_by_key(|sesion| std::cmp::Reverse(sesion.0));
     ids
 }

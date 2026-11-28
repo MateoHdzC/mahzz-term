@@ -10,8 +10,6 @@ interface Paso {
   elegir: (valor: string) => Partial<Ajustes>;
 }
 
-// Configuración rápida que aparece la primera vez. La integración con Windows se pregunta acá:
-// no se toca el sistema sin que la persona lo acepte.
 export function mostrarPrimerUso(alTerminar: () => void): void {
   const pasos: Paso[] = [
     {

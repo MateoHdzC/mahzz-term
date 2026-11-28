@@ -7,11 +7,9 @@ import { listarTareas, type ListaTareas, type Tarea } from "./tareas";
 
 interface InfoAgente {
   nombre: string;
-  // Comando que retoma la última conversación al reabrir una sesión guardada.
   reanudar?: string;
 }
 
-// Programas que se consideran agentes, por el nombre de su ejecutable.
 const AGENTES: Record<string, InfoAgente> = {
   claude: { nombre: "Claude Code", reanudar: "claude --continue" },
   codex: { nombre: "Codex" },
@@ -27,9 +25,7 @@ const AGENTES: Record<string, InfoAgente> = {
   ollama: { nombre: "Ollama" },
 };
 
-// Sin salida durante este tiempo, el agente ya no está trabajando.
 const QUIETO = 3000;
-// Solo se avisa si el agente trabajó al menos esto: evita avisos por respuestas cortas.
 const TRABAJO_PARA_AVISAR = 10_000;
 
 export function infoAgente(programa: string | null | undefined): InfoAgente | null {
@@ -42,7 +38,6 @@ type Estado = "trabajando" | "esperando" | "atencion";
 interface Seguimiento {
   estado: Estado;
   trabajandoDesde: number;
-  // El agente terminó mientras no lo mirabas.
   pendiente: boolean;
 }
 
@@ -86,7 +81,6 @@ const TEXTO_ESTADO: Record<Estado, string> = {
   atencion: t("Te necesita"),
 };
 
-// Botón de la barra que despliega los agentes que corren en esta ventana.
 export class PanelAgentes {
   private readonly desplegable = document.createElement("div");
   private readonly insignia = document.createElement("span");
@@ -148,7 +142,6 @@ export class PanelAgentes {
     void this.refrescarTareas();
   }
 
-  // Las tareas salen de git (worktrees con rama mahzz/…) del repo de la pestaña activa.
   async refrescarTareas(): Promise<void> {
     const carpeta = this.api.carpetaActiva();
     if (this.revisandoTareas) return;
@@ -171,7 +164,6 @@ export class PanelAgentes {
     this.api.alCerrar();
   }
 
-  // Lo que ve la IA con estado_agentes.
   listar() {
     return this.filas.map((fila) => ({
       panel: fila.panel.id,
@@ -184,7 +176,6 @@ export class PanelAgentes {
     }));
   }
 
-  // Se llama una vez por segundo, después de actualizar qué programa corre en cada panel.
   actualizar(): void {
     const ahora = Date.now();
     const activa = this.api.activa();
@@ -294,7 +285,6 @@ export class PanelAgentes {
       this.api.nuevaTarea();
     });
 
-    // Se conserva el foco del teclado al redibujar cada segundo.
     const enfocada = this.desplegable.contains(document.activeElement)
       ? (document.activeElement as HTMLElement).dataset.clave
       : undefined;

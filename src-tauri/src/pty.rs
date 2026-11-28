@@ -24,7 +24,6 @@ const MAXIMO_PENDIENTE: usize = 16 * 1024 * 1024;
 const INTEGRACION: &str = include_str!("integracion.ps1");
 const INTEGRACION_REMOTA: &str = include_str!("integracion-remota.sh");
 
-// Hacia dónde va la salida. Mientras una pestaña cambia de ventana se guarda en `pendiente`.
 #[derive(Default)]
 struct Destinos {
     salida: Option<Channel>,
@@ -32,7 +31,6 @@ struct Destinos {
     pendiente: Vec<u8>,
 }
 
-// Una sesión es un PowerShell corriendo dentro de una pseudoconsola de Windows.
 struct Sesion {
     maestro: Box<dyn MasterPty + Send>,
     escritor: Box<dyn Write + Send>,
@@ -49,7 +47,6 @@ pub struct Sesiones {
 }
 
 impl Sesiones {
-    // Cierra solo las sesiones de esa ventana: las demás ventanas siguen trabajando.
     pub fn cerrar_de_ventana(&self, etiqueta: &str) {
         if let Ok(mut mapa) = self.mapa.lock() {
             for sesion in mapa
@@ -75,8 +72,6 @@ fn tamano(filas: u16, columnas: u16) -> PtySize {
     }
 }
 
-// Busca el ejecutable a mano porque pwsh de la Microsoft Store es un alias especial
-// que las comprobaciones normales de existencia de archivos no siempre detectan.
 fn buscar_en_path(ejecutable: &str) -> Option<PathBuf> {
     env::split_paths(&env::var_os("PATH")?)
         .map(|carpeta| carpeta.join(ejecutable))
@@ -89,7 +84,6 @@ pub(crate) fn ruta_shell() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("powershell.exe"))
 }
 
-// PowerShell recibe el script codificado, así no hace falta crear archivos temporales.
 fn integracion_codificada() -> String {
     let remoto = STANDARD.encode(INTEGRACION_REMOTA.replace("\r\n", "\n"));
     let bytes: Vec<u8> = INTEGRACION
@@ -189,7 +183,6 @@ pub fn crear_sesion(
             },
         );
 
-    // Manda la salida del shell a la interfaz sin convertirla a texto.
     let destinos_lector = destinos.clone();
     let hilo_lector = thread::spawn(move || {
         let mut bufer = vec![0u8; TAMANO_LECTURA];
@@ -201,7 +194,6 @@ pub fn crear_sesion(
         }
     });
 
-    // Al cerrar la pseudoconsola se termina la lectura y no se pierde el final de la salida.
     let registro = sesiones.inner().clone();
     thread::spawn(move || {
         let codigo = proceso.wait().map(|estado| estado.exit_code()).unwrap_or(1);
@@ -251,13 +243,11 @@ pub fn redimensionar_sesion(
 pub fn cerrar_sesion(id: u32, sesiones: State<'_, Sesiones>) -> Result<(), String> {
     let mut mapa = sesiones.mapa.lock().map_err(|error| error.to_string())?;
     if let Some(sesion) = mapa.get_mut(&id) {
-        // portable-pty informa un error falso en Windows aunque el proceso se haya cerrado.
         let _ = sesion.terminador.kill();
     }
     Ok(())
 }
 
-// Retiene la salida mientras la sesión pasa de una ventana a otra.
 #[tauri::command]
 pub fn pausar_sesion(id: u32, sesiones: State<'_, Sesiones>) -> Result<(), String> {
     let mapa = sesiones.mapa.lock().map_err(|error| error.to_string())?;

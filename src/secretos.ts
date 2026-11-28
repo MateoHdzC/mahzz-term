@@ -27,7 +27,6 @@ export function borrarSecreto(id: string): Promise<void> {
   return invoke("borrar_secreto", { id });
 }
 
-// Pregunta una sola vez por sesión para cada comando que parece tener una clave.
 export async function ofrecerGuardarSecreto(comando: string, alTerminar: () => void): Promise<void> {
   if (!ajustes().preguntarSecretos || consultados.has(comando)) return;
   consultados.add(comando);

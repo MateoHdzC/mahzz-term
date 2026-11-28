@@ -1,7 +1,3 @@
-# Toma el JSON del cliente web de Google (Descargas) y crea /srv/apps/mahzz-api/.env en la VPS.
-# El secret va directo por SSH: no se muestra en pantalla ni queda en el repo.
-#   .\servidor\subir-credenciales.ps1            (busca el client_secret_*.json más nuevo en Descargas)
-#   .\servidor\subir-credenciales.ps1 -Json ruta
 param([string]$Json)
 $ErrorActionPreference = "Stop"
 if (-not $Json) {

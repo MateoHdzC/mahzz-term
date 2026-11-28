@@ -1,4 +1,3 @@
-// Leer, guardar y organizar archivos desde el panel de archivos y el visor.
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -32,7 +31,6 @@ fn fecha_de(ruta: &Path) -> u64 {
         .unwrap_or(0)
 }
 
-// Un nombre de archivo de Windows: sin barras, sin caracteres reservados y sin ser "." o "..".
 fn nombre_valido(nombre: &str) -> Result<&str, String> {
     let nombre = nombre.trim();
     if nombre.is_empty() || nombre == "." || nombre == ".." || nombre.ends_with('.') {
@@ -53,7 +51,6 @@ pub async fn leer_texto(ruta: String) -> Result<Value, String> {
             return Ok(json!({ "grande": true, "tamano": tamano }));
         }
         let bytes = fs::read(&ruta).map_err(texto_error)?;
-        // Un byte nulo en el principio casi siempre indica un archivo binario.
         if bytes.iter().take(8000).any(|byte| *byte == 0) {
             return Ok(json!({ "binario": true, "tamano": tamano }));
         }
@@ -71,8 +68,6 @@ pub async fn leer_texto(ruta: String) -> Result<Value, String> {
     .map_err(texto_error)?
 }
 
-// Guarda con los mismos finales de línea y la misma marca BOM que tenía el archivo.
-// Si alguien lo cambió afuera desde que se abrió, avisa en vez de pisarlo (salvo que se fuerce).
 #[tauri::command]
 pub async fn guardar_texto(
     ruta: String,
@@ -116,7 +111,6 @@ pub fn fecha_archivo(ruta: String) -> u64 {
     fecha_de(Path::new(&ruta))
 }
 
-// Los bytes viajan sin convertir a base64: la interfaz los recibe como ArrayBuffer.
 #[tauri::command]
 pub async fn leer_binario(ruta: String) -> Result<Response, String> {
     spawn_blocking(move || {
@@ -162,7 +156,6 @@ pub fn renombrar_ruta(ruta: String, nombre: String) -> Result<String, String> {
     let origen = PathBuf::from(&ruta);
     let padre = origen.parent().ok_or("Ruta inválida")?;
     let destino = padre.join(nombre_valido(&nombre)?);
-    // Cambiar solo mayúsculas en Windows es el mismo archivo: se permite.
     let mismo = destino.to_string_lossy().to_lowercase() == origen.to_string_lossy().to_lowercase();
     if destino.exists() && !mismo {
         return Err("Ya existe un archivo con ese nombre".to_string());
@@ -171,7 +164,6 @@ pub fn renombrar_ruta(ruta: String, nombre: String) -> Result<String, String> {
     Ok(destino.to_string_lossy().into_owned())
 }
 
-// "archivo.txt" → "archivo - copia.txt", "archivo - copia 2.txt"…
 fn nombre_libre(carpeta: &Path, nombre: &str) -> PathBuf {
     let candidato = carpeta.join(nombre);
     if !candidato.exists() {
@@ -213,7 +205,6 @@ fn dentro_de(ruta: &Path, carpeta: &Path) -> bool {
     ruta == carpeta || ruta.starts_with(&format!("{}\\", carpeta.trim_end_matches('\\')))
 }
 
-// Mueve o copia varias rutas a una carpeta. Devuelve los pares [vieja, nueva].
 #[tauri::command]
 pub async fn mover_rutas(
     rutas: Vec<String>,
@@ -252,7 +243,6 @@ pub async fn mover_rutas(
             if nueva.exists() {
                 return Err(format!("Ya existe \"{nombre}\" en el destino"));
             }
-            // Entre discos distintos rename falla: se copia y después se borra el original.
             if fs::rename(&origen, &nueva).is_err() {
                 copiar_recursivo(&origen, &nueva).map_err(texto_error)?;
                 if origen.is_dir() {
@@ -270,11 +260,9 @@ pub async fn mover_rutas(
     .map_err(texto_error)?
 }
 
-// Manda a la papelera de Windows, así se puede recuperar.
 #[tauri::command]
 pub async fn enviar_papelera(rutas: Vec<String>) -> Result<(), String> {
     spawn_blocking(move || {
-        // SHFileOperation espera las rutas separadas por \0 y la lista terminada en \0\0.
         let mut lista: Vec<u16> = Vec::new();
         for ruta in &rutas {
             if !Path::new(ruta).is_absolute() {

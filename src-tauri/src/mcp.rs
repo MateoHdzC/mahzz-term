@@ -1,5 +1,3 @@
-// Servidor MCP: `MahzzTerm.exe --mcp` habla JSON-RPC por stdin/stdout con la IA (Claude Code,
-// Cursor, etc.) y le pasa cada herramienta a la MahzzTerm abierta. Si no está abierta, la abre.
 use std::{
     env, fs,
     io::{self, BufRead, Write},
@@ -224,8 +222,6 @@ fn pedir(
     serde_json::from_str(&texto).map_err(|error| error.to_string())
 }
 
-// Si la app abierta heredara los caños de este proceso, quien lanzó el MCP (por ejemplo
-// Claude Code) se quedaría esperando a que se cierre la ventana. Se marcan como no heredables.
 fn no_heredar_entrada_salida() {
     for cual in [STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
         unsafe {
@@ -244,14 +240,10 @@ fn conectada() -> Option<Conexion> {
     Some(conexion)
 }
 
-// Le pasa un pedido a la MahzzTerm que ya está abierta. Devuelve false si no hay ninguna
-// o si no lo pudo atender (por ejemplo, una versión vieja que no conoce la acción).
 pub(crate) fn pasar_a_abierta(accion: &str, args: &Value) -> bool {
     let Some(conexion) = conectada() else {
         return false;
     };
-    // Windows solo deja pasar una ventana al frente si lo permite el proceso que tiene el foco:
-    // este, que acaba de abrir el Explorador.
     if let Some(pid) = conexion.pid {
         unsafe {
             let _ = AllowSetForegroundWindow(pid);
@@ -261,7 +253,6 @@ pub(crate) fn pasar_a_abierta(accion: &str, args: &Value) -> bool {
         .is_ok_and(|respuesta| respuesta["ok"] == true)
 }
 
-// Si MahzzTerm no está abierta, se abre la misma app (sin --mcp) y se espera a que responda.
 fn conectar() -> Result<Conexion, String> {
     if let Some(conexion) = conectada() {
         return Ok(conexion);
@@ -279,7 +270,6 @@ fn conectar() -> Result<Conexion, String> {
     while inicio.elapsed() < ESPERA_APERTURA {
         thread::sleep(Duration::from_millis(500));
         if let Some(conexion) = conectada() {
-            // La interfaz necesita un momento más para tener la primera pestaña lista.
             thread::sleep(Duration::from_millis(1500));
             return Ok(conexion);
         }
@@ -340,7 +330,6 @@ pub fn correr() {
             );
             continue;
         };
-        // Las notificaciones no tienen id y no llevan respuesta.
         let Some(id) = mensaje.get("id").cloned() else {
             continue;
         };

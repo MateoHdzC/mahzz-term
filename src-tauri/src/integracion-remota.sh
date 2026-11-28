@@ -1,4 +1,3 @@
-# Integración de mahzzterm para sesiones SSH. Se borra sola y no modifica el servidor.
 [ -n "$MAHZZ_RC" ] && rm -f "$MAHZZ_RC"
 unset MAHZZ_RC
 
@@ -42,7 +41,6 @@ __mahzz_prompt() {
   __mahzz_marca "ra;$(__mahzz_b64 "$(__mahzz_rama)")"
 }
 
-# El editor manda el comando codificado para que varias líneas lleguen intactas.
 __mahzz_e() {
   local __mahzz_comando
   __mahzz_comando=$(printf '%s' "$1" | base64 -d)

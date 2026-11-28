@@ -61,8 +61,6 @@ function fila(etiqueta: string, control: HTMLElement, ayuda?: string): HTMLEleme
   return contenedor;
 }
 
-// Desplegable propio. La lista nativa de <select> se abre transparente (invisible) porque las ventanas
-// de MahzzTerm son transparentes para tener las esquinas redondeadas.
 function lista(opciones: [string, string][], valor: string, alCambiar: (valor: string) => void): HTMLButtonElement {
   let actual = valor;
   const desplegable = document.createElement("button");
@@ -133,7 +131,6 @@ function boton(texto: string, accion: () => void, clase = "boton"): HTMLButtonEl
   return elemento;
 }
 
-// Si ya hay una versión nueva descargable, el botón la instala directo.
 function filaActualizaciones(): HTMLElement {
   const nueva = actualizacionPendiente();
   if (nueva) {
@@ -150,7 +147,6 @@ function filaActualizaciones(): HTMLElement {
   );
 }
 
-// El comando usa la ruta real de este .exe, así funciona instalado o compilado.
 async function copiarComandoMcp(): Promise<void> {
   const exe = await invoke<string | null>("ruta_ejecutable");
   if (!exe) return;
@@ -198,7 +194,6 @@ function seccionGeneral(): HTMLElement[] {
   ];
 }
 
-// Una miniatura por logo: se elige con un clic y queda marcada la actual.
 function selectorLogo(): HTMLElement {
   const grupo = document.createElement("div");
   grupo.className = "logos";

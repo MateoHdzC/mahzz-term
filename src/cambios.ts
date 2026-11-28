@@ -48,7 +48,6 @@ function guardarPreferencia(clave: string, valor: string): void {
   try {
     localStorage.setItem(clave, valor);
   } catch {
-    // Sin almacenamiento, la preferencia dura solo mientras la ventana esté abierta.
   }
 }
 
@@ -60,7 +59,6 @@ function tipoDe(archivo: ArchivoCambiado): Tipo {
   return "modificado";
 }
 
-// Aceptado = ya está en el índice de git y no tiene cambios nuevos encima.
 function estaAceptado(archivo: ArchivoCambiado): boolean {
   return archivo.indice !== " " && archivo.indice !== "?" && archivo.trabajo === " ";
 }
@@ -73,7 +71,6 @@ const TITULO_TIPO: Record<Tipo, string> = {
   renombrado: t("Renombrado"),
 };
 
-// Revisión de lo que cambió en el repositorio de la terminal activa, archivo por archivo.
 export class PanelCambios {
   private readonly titulo = document.createElement("span");
   private readonly resumen = document.createElement("span");
@@ -136,7 +133,6 @@ export class PanelCambios {
     if (ancho >= ANCHO_MINIMO && ancho <= ANCHO_MAXIMO) this.elemento.style.width = `${ancho}px`;
     this.definirVisible(leerPreferencia(CLAVE_VISIBLE) === "si");
 
-    // Los agentes cambian archivos sin terminar un comando: se revisa seguido mientras esté abierto.
     setInterval(() => {
       if (this.visible && document.visibilityState === "visible") void this.dibujar(false);
     }, INTERVALO);
@@ -158,7 +154,6 @@ export class PanelCambios {
     if (visible) this.sincronizar();
   }
 
-  // Sigue a la terminal activa y se refresca cuando termina un comando.
   sincronizar(): void {
     clearTimeout(this.temporizador);
     this.temporizador = window.setTimeout(() => void this.dibujar(false), RETRASO_REFRESCO);
@@ -228,7 +223,6 @@ export class PanelCambios {
       return;
     }
 
-    // Los diffs abiertos se vuelven a pedir: el archivo pudo cambiar sin cambiar de estado.
     const rutas = new Set(estado.archivos.map((archivo) => archivo.ruta));
     for (const ruta of [...this.abiertos]) if (!rutas.has(ruta)) this.abiertos.delete(ruta);
     const diffs = await Promise.all(
@@ -277,7 +271,6 @@ export class PanelCambios {
     }
   }
 
-  // Convierte el diff unificado en filas con número de línea viejo y nuevo.
   private htmlDiff(diff: Diff): string {
     const escapar = (texto: string) =>
       texto.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -436,7 +429,6 @@ export class PanelCambios {
     );
   }
 
-  // El asa está a la izquierda: arrastrar hacia la izquierda agranda el panel.
   private iniciarAjusteAncho(asa: HTMLElement, inicio: PointerEvent): void {
     inicio.preventDefault();
     asa.setPointerCapture(inicio.pointerId);

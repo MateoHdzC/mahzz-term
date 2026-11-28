@@ -7,13 +7,11 @@ import type { Pestana } from "./pestana";
 import { buscarRegistros } from "./registros";
 import { listarTareas, type PedidoTarea, type TareaCreada } from "./tareas";
 
-// Lo que pide el Explorador de Windows: "Abrir en MahzzTerm" (carpeta) o "Abrir con" (archivo).
 export interface PedidoWindows {
   carpeta?: string;
   archivo?: string;
 }
 
-// Lo que el gestor de pestañas le presta al control por IA.
 export interface ApiControl {
   pestanas(): Pestana[];
   activa(): Pestana | null;
@@ -53,7 +51,6 @@ function texto(valor: unknown): string | null {
   return typeof valor === "string" && valor.trim() ? valor : null;
 }
 
-// Si la salida es muy larga se queda con el final, que es donde suelen estar los errores.
 function recortar(salida: string, maximo: number): string {
   if (salida.length <= maximo) return salida;
   return `…[recortado: se omitieron ${salida.length - maximo} caracteres del principio]\n${salida.slice(-maximo)}`;
@@ -123,7 +120,6 @@ async function ejecutar(api: ApiControl, args: Record<string, unknown>) {
 }
 
 async function atender(api: ApiControl, accion: string, args: Record<string, unknown>): Promise<unknown> {
-  // Lo manda otra copia de MahzzTerm que abrió el Explorador, no una IA: no depende del control por IA.
   if (accion === "abrir_desde_windows") {
     await api.abrirDesdeWindows({ carpeta: texto(args.carpeta) ?? undefined, archivo: texto(args.archivo) ?? undefined });
     return { abierto: true };
@@ -312,7 +308,6 @@ async function atender(api: ApiControl, accion: string, args: Record<string, unk
   }
 }
 
-// Solo la ventana principal atiende los pedidos de la IA.
 export function iniciarControl(api: ApiControl): void {
   void listen<Pedido>("mahzz:control", async ({ payload }) => {
     let resultado: unknown;

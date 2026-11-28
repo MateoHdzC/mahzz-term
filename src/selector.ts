@@ -15,7 +15,6 @@ export interface OpcionesSelector {
   ayuda: string;
   items: ItemSelector[];
   alCerrar: () => void;
-  // Permite teclas extra. Devuelve true si la tecla ya se usó.
   alTecla?: (evento: KeyboardEvent, item: ItemSelector | null, cerrar: () => void) => boolean;
 }
 
@@ -26,7 +25,6 @@ interface Coincidencia {
 
 const MAXIMO_VISIBLES = 80;
 
-// Búsqueda aproximada: las letras deben aparecer en orden y premia las que van seguidas.
 export function puntuar(consulta: string, texto: string): Coincidencia | null {
   const buscado = consulta.toLowerCase();
   const destino = texto.toLowerCase();

@@ -1,5 +1,3 @@
-# Sube el backend a la VPS y lo (re)inicia.  .\servidor\desplegar.ps1
-# La primera vez hay que crear el .env con .\servidor\subir-credenciales.ps1 (ver servidor/README.md).
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 tar -czf - mahzz_api.py Dockerfile compose.yaml | ssh hrdzz-claude 'set -e

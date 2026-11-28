@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { pedirDatos } from "./dialogos";
 import { t } from "./i18n";
 
-// Una tarea en paralelo: un worktree de git con su rama mahzz/<nombre> donde trabaja un agente.
 export interface Tarea {
   nombre: string;
   rama: string;
@@ -47,7 +46,6 @@ export function descartarTarea(carpeta: string): Promise<{ descartada: string }>
   return invoke("descartar_tarea", { carpeta });
 }
 
-// El comando que arranca al agente con sus instrucciones, con las comillas de PowerShell bien puestas.
 export function comandoAgente(agente: string, instrucciones: string): string {
   const programa = agente.trim() || "claude";
   const texto = instrucciones.trim();
@@ -68,7 +66,6 @@ export async function pedirNuevaTarea(): Promise<PedidoTarea | null> {
   return { nombre: datos.nombre, instrucciones: datos.instrucciones ?? "", agente: datos.agente ?? "claude" };
 }
 
-// ¿La ruta está dentro de la carpeta de la tarea? (Windows no distingue mayúsculas.)
 export function estaDentro(ruta: string | null, carpeta: string): boolean {
   if (!ruta) return false;
   const a = ruta.toLowerCase().replace(/[\\/]+$/, "");

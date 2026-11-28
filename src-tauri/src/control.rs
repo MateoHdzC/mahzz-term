@@ -1,6 +1,3 @@
-// Servidor de control: recibe pedidos del MCP (`MahzzTerm.exe --mcp`) y se los pasa a la interfaz.
-// Escucha solo en 127.0.0.1 con un puerto al azar y pide una clave que se guarda en
-// control.json, dentro de la carpeta de datos del usuario.
 use std::{
     collections::HashMap,
     env, fs,
@@ -29,8 +26,6 @@ pub struct Control {
     siguiente: AtomicU64,
 }
 
-// La misma carpeta que usa la app (%LOCALAPPDATA%\com.mahzz.mahzzterm\datos), pero sin
-// necesitar Tauri: el proceso del MCP también la tiene que encontrar.
 pub fn ruta_control() -> Option<PathBuf> {
     let carpeta = env::var_os("MAHZZTERM_DATOS")
         .filter(|valor| !valor.is_empty())
@@ -161,7 +156,6 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
         return;
     }
 
-    // Desde el Explorador: la ventana vuelve al frente aunque esté minimizada u oculta.
     if accion == "abrir_desde_windows" {
         if let Some(ventana) = app.get_webview_window("main") {
             let _ = ventana.unminimize();
@@ -170,7 +164,6 @@ fn atender(app: &AppHandle, mut conexion: TcpStream, puerto: u16, clave: &str) {
         }
     }
 
-    // Se le pasa el pedido a la interfaz y se espera su respuesta.
     let control = app.state::<Control>();
     let id = control.siguiente.fetch_add(1, Ordering::Relaxed) + 1;
     let (enviar, recibir) = mpsc::channel();

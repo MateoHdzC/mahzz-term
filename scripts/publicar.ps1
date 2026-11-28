@@ -1,13 +1,3 @@
-# Compila el instalador firmado de MahzzTerm y arma los archivos del release.
-# Con -Publicar, además crea el release en GitHub (es público: hacelo cuando estés seguro).
-#
-#   .\scripts\publicar.ps1             # solo compila y prepara los archivos
-#   .\scripts\publicar.ps1 -Publicar   # compila y publica el release vX.Y.Z
-#   .\scripts\publicar.ps1 -SinCompilar  # solo arma los archivos con un instalador ya hecho
-#                                        # (lo usa GitHub Actions después de firmar con SignPath)
-#
-# Necesita la clave privada de firma en ~\.tauri\mahzzterm.key (nunca va al repo).
-# Si se pierde, las copias instaladas no van a aceptar actualizaciones nuevas.
 param([switch]$Publicar, [switch]$SinCompilar)
 
 $ErrorActionPreference = "Stop"
@@ -21,9 +11,6 @@ if (-not $SinCompilar) {
 $clave = Join-Path $env:USERPROFILE ".tauri\mahzzterm.key"
 if (-not (Test-Path $clave)) { throw "Falta la clave de firma en $clave" }
 
-# Si el .exe está abierto (la app o el MCP de Claude Code), se renombra sin cerrarlo.
-# Se prueba abriéndolo en exclusiva en vez de comparar rutas: con la carpeta enlazada desde otro
-# disco, el proceso puede haberlo abierto por otra ruta.
 $exe = Join-Path $raiz "src-tauri\target\release\MahzzTerm.exe"
 if (Test-Path $exe) {
     try {
@@ -35,7 +22,6 @@ if (Test-Path $exe) {
 }
 
 $env:TAURI_SIGNING_PRIVATE_KEY = [IO.File]::ReadAllText($clave)
-# La clave se generó con la contraseña literal "" (dos comillas).
 $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = '""'
 try {
     pnpm tauri build
@@ -53,16 +39,13 @@ $salida = "src-tauri\target\release\publicar"
 if (Test-Path $salida) { Remove-Item $salida -Recurse -Force }
 New-Item -ItemType Directory $salida | Out-Null
 Copy-Item $instalador.FullName "$salida\$($instalador.Name)"
-# Nombre fijo para que la web pueda enlazar siempre al último instalador.
 Copy-Item $instalador.FullName "$salida\MahzzTerm-setup.exe"
 
-# Las notas salen de la sección de esta versión en CHANGELOG.md.
 $changelog = Get-Content "CHANGELOG.md" -Raw
 $seccion = [regex]::Match($changelog, "(?s)## \[$([regex]::Escape($version))\][^\n]*\n(.*?)(?=\n## \[|\z)")
 $notas = if ($seccion.Success) { $seccion.Groups[1].Value.Trim() } else { "MahzzTerm $version" }
 Set-Content "$salida\notas.md" $notas -Encoding utf8
 
-# latest.json es lo que consulta la app para saber si hay una versión nueva.
 $ultimo = [ordered]@{
     version   = $version
     notes     = "MahzzTerm $version"

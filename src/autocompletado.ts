@@ -53,7 +53,6 @@ function cargarSpecsUsuario(): Promise<void> {
   return specsUsuario;
 }
 
-// Separa la línea hasta el cursor en palabras, respetando comillas y el comando actual.
 export function analizarLinea(texto: string, posicion: number): LineaAnalizada {
   let argumentos: string[] = [];
   let actual = "";
@@ -98,7 +97,6 @@ export class MotorAutocompletado {
   ) {}
 
   async sugerir(texto: string, posicion: number): Promise<Sugerencias | null> {
-    // Los archivos y programas locales no sirven como sugerencia dentro de un servidor.
     if (this.verificador.enRemoto) return null;
     await cargarSpecsUsuario();
     const linea = analizarLinea(texto, posicion);
@@ -221,7 +219,6 @@ export class MotorAutocompletado {
       const completa = `${base}${nombre}`;
       const conEspacios = /\s/.test(completa);
       const escapada = completa.replaceAll("'", "''");
-      // Las carpetas con espacios dejan la comilla abierta para seguir completando adentro.
       const aplicar = directorio
         ? `${conEspacios ? "'" : ""}${conEspacios ? escapada : completa}\\`
         : conEspacios

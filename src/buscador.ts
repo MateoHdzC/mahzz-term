@@ -13,7 +13,6 @@ interface Coincidencia {
 function crearExpresion(texto: string, comoRegex: boolean): RegExp | null {
   try {
     const patron = comoRegex ? texto : texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // La bandera m hace que ^ y $ funcionen en cada línea de la salida.
     return new RegExp(patron, "gimu");
   } catch {
     return null;
@@ -27,7 +26,6 @@ function nodosDeTexto(raiz: HTMLElement): Text[] {
   return nodos;
 }
 
-// Busca dentro de los bloques sin modificar su contenido, usando resaltados nativos.
 export class Buscador {
   readonly elemento = document.createElement("div");
   private readonly entrada = document.createElement("input");

@@ -1,16 +1,3 @@
-"""Backend de MahzzTerm: hace el login con Google para que el secret nunca viaje en la app.
-
-Flujo:
-  1. La app abre el navegador en /api/auth/google?puerto=..&state=..&desafio=..
-  2. Este servidor manda al usuario a Google y Google vuelve a /api/auth/google/callback.
-  3. Acá se canjea el código con el secret (que solo existe en este servidor).
-  4. Se redirige al puerto local de la app con un código de un solo uso.
-  5. La app canjea ese código en /api/auth/canjear presentando el verificador (PKCE).
-  6. Cuando el acceso vence, la app pide uno nuevo en /api/auth/renovar.
-
-Sin dependencias externas: solo la biblioteca estándar de Python.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -31,10 +18,9 @@ AUTORIZAR = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN = "https://oauth2.googleapis.com/token"
 PERMISOS = "openid email profile https://www.googleapis.com/auth/drive.appdata"
 
-VIDA_ESTADO = 10 * 60  # segundos que tiene el usuario para elegir su cuenta
-VIDA_CODIGO = 60  # segundos que dura el código de un solo uso
+VIDA_ESTADO = 10 * 60
+VIDA_CODIGO = 60
 MAX_CUERPO = 16 * 1024
-# Pedidos por minuto y por IP en las rutas sensibles
 LIMITE_POR_MINUTO = 30
 
 BASE64URL = re.compile(r"^[A-Za-z0-9_-]{32,128}$")
@@ -64,7 +50,6 @@ class Config:
 
 
 class Estado:
-    """Lo que se guarda en memoria. Si el servidor se reinicia, solo se pierden logins a medias."""
 
     def __init__(self) -> None:
         self.clave = secrets.token_bytes(32)
@@ -72,7 +57,6 @@ class Estado:
         self.pedidos: dict[str, list[float]] = {}
         self.cerrojo = threading.Lock()
 
-    # El "state" que va a Google lleva firmados los datos de la app: no hace falta guardarlo.
     def firmar(self, datos: dict) -> str:
         cuerpo = b64url(json.dumps(datos, separators=(",", ":")).encode())
         firma = b64url(hmac.new(self.clave, cuerpo.encode(), hashlib.sha256).digest())
@@ -143,10 +127,9 @@ def crear_manejador(config: Config, estado: Estado, google=pedir_a_google):
         server_version = "mahzz-api"
         sys_version = ""
 
-        def log_message(self, formato, *args):  # sin datos de usuarios en los registros
+        def log_message(self, formato, *args):
             print(f"{self.command} {urllib.parse.urlsplit(self.path).path} {args[1] if len(args) > 1 else ''}", flush=True)
 
-        # Caddy agrega la IP real del cliente.
         def ip(self) -> str:
             return self.headers.get("X-Forwarded-For", self.client_address[0]).split(",")[0].strip()
 
@@ -281,7 +264,6 @@ def crear_manejador(config: Config, estado: Estado, google=pedir_a_google):
                 }
             )
             if codigo_http != 200 or "access_token" not in tokens:
-                # invalid_grant = la sesión se revocó o venció: la app tiene que pedir login otra vez
                 return self.json(401, {"error": tokens.get("error", "google_rechazo")})
             self.json(200, {"access_token": tokens["access_token"], "expires_in": tokens.get("expires_in", 3600)})
 

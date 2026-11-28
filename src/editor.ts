@@ -39,7 +39,6 @@ import { comandosRecorribles, sugerenciaFantasma } from "./historial";
 import { tokenizar } from "./sintaxis";
 
 export interface EventosEditor {
-  // Devuelve true si el comando se envió y el editor se puede vaciar.
   alEjecutar(comando: string): boolean;
   alEnfocar(): void;
 }
@@ -166,7 +165,6 @@ export class EditorComandos {
       state: EditorState.create({
         doc: textoInicial,
         extensions: [
-          // Con el menú abierto, las flechas y Enter se usan para elegir una sugerencia.
           Prec.highest(keymap.of(completionKeymap)),
           Prec.high(teclas),
           history(),
@@ -183,7 +181,6 @@ export class EditorComandos {
             maxRenderedOptions: 60,
             tooltipClass: () => "sugerencias",
           }),
-          // El menú se dibuja afuera del panel para que no quede recortado.
           tooltips({ parent: document.body, position: "fixed" }),
           keymap.of([...closeBracketsKeymap, ...historyKeymap, ...defaultKeymap]),
           placeholder(t("Escribí un comando")),
@@ -243,7 +240,6 @@ export class EditorComandos {
     return true;
   }
 
-  // Con texto marcado deja copiar. Sin selección vacía el editor, como cancelar en una terminal.
   private copiarOVaciar(): boolean {
     if (this.vista.state.selection.ranges.some((rango) => !rango.empty)) return false;
     this.indiceHistorial = null;
@@ -266,7 +262,6 @@ export class EditorComandos {
     return true;
   }
 
-  // Con una sola opción la completa directo. Con varias abre el menú.
   private async completar(): Promise<void> {
     const { state } = this.vista;
     if (state.selection.ranges.length > 1) return;

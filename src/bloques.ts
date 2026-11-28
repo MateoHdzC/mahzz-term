@@ -110,7 +110,6 @@ export class ListaBloques {
     return Boolean(seleccion && !seleccion.isCollapsed && this.elemento.contains(seleccion.anchorNode));
   }
 
-  // Con texto marcado, Ctrl+C copia. Cualquier otra tecla vuelve a la terminal.
   private alPresionarTecla(evento: KeyboardEvent): void {
     const copiar = evento.ctrlKey && !evento.shiftKey && evento.key.toLowerCase() === "c";
     if (copiar && this.haySeleccionDeTexto()) {
@@ -348,7 +347,6 @@ export class ListaBloques {
     this.seleccionar(null);
   }
 
-  // Sin selección, la flecha hacia arriba empieza por el último bloque.
   moverSeleccion(paso: number): void {
     const conComando = this.bloques.filter((bloque) => bloque.datos.tipo === "comando");
     if (conComando.length === 0) return;
@@ -357,7 +355,6 @@ export class ListaBloques {
     this.seleccionar(conComando[destino]);
   }
 
-  // Devuelve los textos donde se puede buscar, con todas sus líneas ya dibujadas.
   zonasDeBusqueda(id: number | null): HTMLElement[] {
     const zonas: HTMLElement[] = [];
     for (const bloque of this.bloques) {

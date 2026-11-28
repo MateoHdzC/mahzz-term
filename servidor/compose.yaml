@@ -1,5 +1,3 @@
-# Se une a la red de Caddy (proyecto auren) para que mahzzterm.xyz/api/* llegue acá.
-# El puerto no se publica: desde internet solo se entra por Caddy.
 name: mahzz-api
 
 services:

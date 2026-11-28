@@ -13,7 +13,6 @@ export interface Token {
   desde: number;
   hasta: number;
   tipo: TipoToken;
-  // Solo estos comandos se verifican, para no marcar errores cuando hay dudas.
   verificable?: boolean;
 }
 
@@ -23,7 +22,6 @@ const CLAVES = new Set(
 const FIN_DE_PALABRA = /[\s|;(){}'"&<>,=$`]/;
 const NUMERO = /^\d+(\.\d+)?([kmgtp]b)?$/i;
 
-// Reconoce la sintaxis de PowerShell mientras se escribe, sin ejecutar nada.
 export function tokenizar(texto: string): Token[] {
   const tokens: Token[] = [];
   const pila: string[] = [];
@@ -189,7 +187,6 @@ export function tokenizar(texto: string): Token[] {
       agregar(i, j, "numero");
       esperaComando = false;
     } else if (palabra === "." && esperaComando) {
-      // El punto ejecuta un script en la sesión actual: lo que sigue es el comando.
       agregar(i, j, "operador");
     } else if (saltarNombre) {
       agregar(i, j, "comando");

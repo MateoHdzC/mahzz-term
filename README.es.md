@@ -203,11 +203,13 @@ MahzzTerm guarda los ajustes, el historial, las sesiones y la cuenta en `%LOCALA
 <details>
 <summary><b>Inicio de sesión con Google (opcional)</b></summary>
 
-El repositorio no incluye credenciales. Para habilitar la sincronización:
+La app **no lleva ningún secret de Google**. El login pasa por un backend chico en la VPS ([`servidor/`](servidor/README.md)), que es el único que conoce el client secret:
 
-1. En Google Cloud, creá un cliente OAuth de tipo **App de escritorio** y activá la API de Google Drive.
-2. Descargá el JSON y guardalo como `src-tauri/credenciales/google.json`. Esa carpeta está en `.gitignore`.
-3. Volvé a compilar. Sin ese archivo, la app funciona igual y solo oculta la sincronización.
+1. La app abre el navegador en `mahzzterm.xyz/api/auth/google`.
+2. El backend manda al usuario a Google y canjea el código con el secret.
+3. La app recibe en `127.0.0.1` un código de un solo uso y lo cambia por la sesión (con PKCE).
+
+Para probar con un backend local: `$env:MAHZZTERM_SERVIDOR = "http://127.0.0.1:8080"`.
 
 > Si el cliente OAuth está en modo «Prueba», Google vence la sesión a los 7 días. Para que dure, publicá la app en la pantalla de consentimiento.
 

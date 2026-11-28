@@ -1,0 +1,32 @@
+# Se une a la red de Caddy (proyecto auren) para que mahzzterm.xyz/api/* llegue acá.
+# El puerto no se publica: desde internet solo se entra por Caddy.
+name: mahzz-api
+
+services:
+  api:
+    build: .
+    container_name: mahzz-api
+    restart: unless-stopped
+    env_file: .env
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/salud', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - auren_default
+
+networks:
+  auren_default:
+    external: true

@@ -15,7 +15,6 @@ jobs:
     runs-on: windows-latest # SignPath exige runners de GitHub para proyectos open source
     env:
       FIRMAR: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
-      HAY_GOOGLE: ${{ secrets.GOOGLE_CREDENCIALES_JSON != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,15 +39,6 @@ jobs:
         run: |
           $v = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           "version=$v" >> $env:GITHUB_OUTPUT
-
-      - name: Credenciales de Google (opcional)
-        if: env.HAY_GOOGLE == 'true'
-        shell: pwsh
-        env:
-          GOOGLE_JSON: ${{ secrets.GOOGLE_CREDENCIALES_JSON }}
-        run: |
-          New-Item -ItemType Directory -Force src-tauri/credenciales | Out-Null
-          Set-Content src-tauri/credenciales/google.json $env:GOOGLE_JSON -NoNewline
 
       - run: pnpm install --frozen-lockfile
 

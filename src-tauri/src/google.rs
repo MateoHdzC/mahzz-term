@@ -22,32 +22,42 @@ use crate::{
     datos::carpeta_datos,
 };
 
-// Se incorporan al compilar desde un archivo local que nunca se publica.
-const CLIENTE: Option<&str> = option_env!("MAZZ_GOOGLE_ID");
-const CLAVE: Option<&str> = option_env!("MAZZ_GOOGLE_SECRET");
+// El login pasa por el backend de MahzzTerm (servidor/): el secret de Google vive solo ahí.
+const SERVIDOR: &str = "https://mahzzterm.xyz";
 
-const AUTORIZAR: &str = "https://accounts.google.com/o/oauth2/v2/auth";
-const TOKEN: &str = "https://oauth2.googleapis.com/token";
 const REVOCAR: &str = "https://oauth2.googleapis.com/revoke";
 const PERFIL: &str = "https://openidconnect.googleapis.com/v1/userinfo";
 const ARCHIVOS: &str = "https://www.googleapis.com/drive/v3/files";
 const SUBIDA: &str = "https://www.googleapis.com/upload/drive/v3/files";
-const PERMISOS: &str = "openid email profile https://www.googleapis.com/auth/drive.appdata";
 // Conserva el nombre de antes del cambio a MahzzTerm: con otro nombre se perdería lo ya sincronizado.
 const ARCHIVO_SYNC: &str = "mazzterm-sync.json";
-const LIMITE_LOGIN: Duration = Duration::from_secs(180);
+// Igual que la vida del "state" en el backend: la primera vez Google muestra varias pantallas.
+const LIMITE_LOGIN: Duration = Duration::from_secs(600);
 const LIMITE_RESPUESTA: u64 = 64 * 1024 * 1024;
 
 const PAGINA_LISTA: &str = "<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>MahzzTerm</title><body style=\"margin:0;display:grid;place-items:center;height:100vh;background:#050507;color:#e4e2ec;font-family:Segoe UI,sans-serif\"><main style=\"text-align:center\"><h1 style=\"font-size:24px\">Listo</h1><p>Ya podés volver a MahzzTerm y cerrar esta pestaña.</p></main></body></html>";
+const PAGINA_ERROR: &str = "<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>MahzzTerm</title><body style=\"margin:0;display:grid;place-items:center;height:100vh;background:#050507;color:#e4e2ec;font-family:Segoe UI,sans-serif\"><main style=\"text-align:center\"><h1 style=\"font-size:24px\">No se pudo iniciar sesión</h1><p>Volvé a MahzzTerm para ver el motivo y probá de nuevo.</p></main></body></html>";
 
 #[derive(Default)]
 pub struct TokenGoogle(Mutex<Option<(String, Instant)>>);
 
-fn credenciales() -> Result<(&'static str, &'static str), String> {
-    match (CLIENTE, CLAVE) {
-        (Some(cliente), Some(clave)) => Ok((cliente, clave)),
-        _ => Err("Esta copia de MahzzTerm no tiene configurado Google".to_string()),
-    }
+// MAHZZTERM_SERVIDOR permite probar contra un backend local.
+fn servidor() -> String {
+    std::env::var("MAHZZTERM_SERVIDOR")
+        .ok()
+        .filter(|valor| !valor.is_empty())
+        .unwrap_or_else(|| SERVIDOR.to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+fn pedir_al_servidor(
+    ruta: &str,
+    cuerpo: &Value,
+) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
+    ureq::post(format!("{}{ruta}", servidor()))
+        .header("Content-Type", "application/json")
+        .send(cuerpo.to_string())
 }
 
 fn ruta_cuenta(app: &AppHandle) -> Result<PathBuf, String> {
@@ -123,11 +133,18 @@ fn esperar_codigo(servidor: &TcpListener, estado: &str) -> Result<String, String
             responder(&mut conexion, "404 Not Found", "");
             continue;
         }
-        responder(&mut conexion, "200 OK", PAGINA_LISTA);
         return match (valor("code"), valor("error")) {
-            (Some(codigo), _) => Ok(codigo),
-            (_, Some(error)) => Err(error),
-            _ => Err("Google no devolvió un código".to_string()),
+            (Some(codigo), _) => {
+                responder(&mut conexion, "200 OK", PAGINA_LISTA);
+                Ok(codigo)
+            }
+            (_, error) => {
+                responder(&mut conexion, "200 OK", PAGINA_ERROR);
+                Err(format!(
+                    "No se pudo iniciar sesión ({})",
+                    error.unwrap_or_else(|| "sin código".to_string())
+                ))
+            }
         };
     }
     Err("Se agotó el tiempo para iniciar sesión".to_string())
@@ -151,43 +168,32 @@ fn descargar_foto(direccion: &str) -> Option<String> {
 }
 
 fn completar_login(app: &AppHandle) -> Result<Value, String> {
-    let (cliente, clave) = credenciales()?;
-    let servidor = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| error.to_string())?;
-    let puerto = servidor
+    let servidor_local = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| error.to_string())?;
+    let puerto = servidor_local
         .local_addr()
         .map_err(|error| error.to_string())?
-        .port();
-    let redireccion = format!("http://127.0.0.1:{puerto}");
+        .port()
+        .to_string();
     let estado = aleatorio()?;
     let verificador = aleatorio()?;
     let desafio = URL_SAFE_NO_PAD.encode(Sha256::digest(verificador.as_bytes()));
 
     let direccion = Url::parse_with_params(
-        AUTORIZAR,
+        &format!("{}/api/auth/google", servidor()),
         [
-            ("client_id", cliente),
-            ("redirect_uri", redireccion.as_str()),
-            ("response_type", "code"),
-            ("scope", PERMISOS),
+            ("puerto", puerto.as_str()),
             ("state", estado.as_str()),
-            ("code_challenge", desafio.as_str()),
-            ("code_challenge_method", "S256"),
-            ("access_type", "offline"),
-            ("prompt", "consent"),
+            ("desafio", desafio.as_str()),
         ],
     )
     .map_err(|error| error.to_string())?;
     abrir_externo(direccion.to_string())?;
 
-    let codigo = esperar_codigo(&servidor, &estado)?;
-    let tokens = leer_json(ureq::post(TOKEN).send_form([
-        ("client_id", cliente),
-        ("client_secret", clave),
-        ("code", codigo.as_str()),
-        ("code_verifier", verificador.as_str()),
-        ("grant_type", "authorization_code"),
-        ("redirect_uri", redireccion.as_str()),
-    ]))?;
+    let codigo = esperar_codigo(&servidor_local, &estado)?;
+    let tokens = leer_json(pedir_al_servidor(
+        "/api/auth/canjear",
+        &json!({ "codigo": codigo, "verificador": verificador }),
+    ))?;
     let acceso = tokens["access_token"]
         .as_str()
         .ok_or("Google no devolvió acceso")?;
@@ -220,17 +226,17 @@ fn token_acceso(app: &AppHandle) -> Result<String, String> {
             }
         }
     }
-    let (cliente, clave) = credenciales()?;
     let cuenta = leer_cuenta(app).ok_or("No hay una sesión iniciada")?;
     let renovacion = cuenta["renovacion"]
         .as_str()
         .ok_or("La sesión no es válida")?;
-    let tokens = leer_json(ureq::post(TOKEN).send_form([
-        ("client_id", cliente),
-        ("client_secret", clave),
-        ("refresh_token", renovacion),
-        ("grant_type", "refresh_token"),
-    ]))?;
+    let respuesta = pedir_al_servidor("/api/auth/renovar", &json!({ "refresh_token": renovacion }));
+    // 401: Google revocó la sesión (o es de antes del backend). Hay que entrar de nuevo.
+    if let Err(ureq::Error::StatusCode(401)) = respuesta {
+        let _ = fs::remove_file(ruta_cuenta(app)?);
+        return Err("La sesión de Google venció. Volvé a iniciar sesión".to_string());
+    }
+    let tokens = leer_json(respuesta)?;
     let token = tokens["access_token"]
         .as_str()
         .ok_or("Google no renovó la sesión")?
@@ -269,7 +275,7 @@ fn buscar_archivo(token: &str) -> Result<Option<String>, String> {
 
 #[tauri::command]
 pub fn google_configurado() -> bool {
-    credenciales().is_ok()
+    true
 }
 
 #[tauri::command]

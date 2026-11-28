@@ -4,6 +4,9 @@ Todas las versiones de MahzzTerm. Las fechas usan el formato año-mes-día.
 
 ## [Sin publicar]
 
+### Seguridad
+- **El login con Google ya no lleva el secret dentro de la app.** Ahora pasa por un backend propio en `mahzzterm.xyz/api` (carpeta `servidor/`), que es el único que conoce el secret. La app recibe un código de un solo uso protegido con PKCE. Quien tenía la sesión iniciada con una versión anterior tiene que volver a entrar una vez.
+
 ### Corregido
 - **Arrastrar pestañas a veces dejaba un hueco en la barra.** Al reordenar, la pestaña agarrada podía perder el mouse: el soltar no llegaba y quedaba corrida fuera de la vista. Ahora se acomodan las otras a su alrededor y, si igual pierde el mouse (por ejemplo con Alt+Tab), vuelve a su lugar.
 

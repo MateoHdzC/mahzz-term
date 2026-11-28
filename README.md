@@ -203,11 +203,13 @@ MahzzTerm keeps settings, history, sessions and the account in `%LOCALAPPDATA%\c
 <details>
 <summary><b>Google sign-in (optional)</b></summary>
 
-The repository doesn't include credentials. To enable sync:
+The app **ships no Google secret**. Sign-in goes through a small backend on the VPS ([`servidor/`](servidor/README.md)), the only place that knows the client secret:
 
-1. In Google Cloud, create an OAuth client of type **Desktop app** and enable the Google Drive API.
-2. Download the JSON and save it as `src-tauri/credenciales/google.json`. That folder is in `.gitignore`.
-3. Build again. Without that file the app works the same and just hides sync.
+1. The app opens the browser at `mahzzterm.xyz/api/auth/google`.
+2. The backend sends the user to Google and exchanges the code with the secret.
+3. The app receives a one-time code on `127.0.0.1` and trades it for the session (with PKCE).
+
+To test against a local backend: `$env:MAHZZTERM_SERVIDOR = "http://127.0.0.1:8080"`.
 
 > If the OAuth client is in "Testing" mode, Google expires the session after 7 days. To make it last, publish the app on the consent screen.
 

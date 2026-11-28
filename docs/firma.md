@@ -25,9 +25,6 @@ Sin las variables de SignPath, hace lo mismo pero sin firmar. Sirve para probar 
    ```powershell
    gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD -R MateoHdzC/mahzz-term --body '""'
    ```
-   ```powershell
-   gh secret set GOOGLE_CREDENCIALES_JSON -R MateoHdzC/mahzz-term < src-tauri\credenciales\google.json
-   ```
 
    La contraseña de la clave es literalmente `""` (dos comillas), igual que en `publicar.ps1`.
 3. **Probá el workflow sin firma:** Actions → Release → Run workflow. Tiene que terminar con un borrador de release. Borralo después si no lo vas a usar.
